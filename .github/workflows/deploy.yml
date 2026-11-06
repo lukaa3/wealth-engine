@@ -1,0 +1,110 @@
+# Builds the site, refreshes market data on a schedule, and deploys to GitHub Pages.
+# Setup: Settings → Pages → Source: "GitHub Actions".
+#        Settings → Secrets and variables → Actions → add the secrets/variables listed in README.md.
+name: Update data & deploy
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "45 21 * * 1-5"   # 21:45 UTC on weekdays ≈ after the US close (4:45 pm EST / 5:45 pm EDT)
+  workflow_dispatch:
+
+permissions:
+  contents: write   # commit refreshed public/data/*.json
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_CLAUDE: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Refresh market data (scheduled / manual runs only)
+        if: github.event_name != 'push'
+        env:
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          WATCHLIST: ${{ vars.WATCHLIST }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          AI_PROVIDER: ${{ vars.AI_PROVIDER }}
+          AI_MODEL: ${{ vars.AI_MODEL }}
+          AI_MAX_STOCKS: ${{ vars.AI_MAX_STOCKS }}
+        run: node scripts/update-screener.mjs
+
+      # Claude (uses your Pro/Max subscription via CLAUDE_CODE_OAUTH_TOKEN). If it fails, free-tier/earlier takes stay.
+      - name: Claude analyst takes
+        if: github.event_name != 'push' && env.HAS_CLAUDE == 'true'
+        continue-on-error: true
+        timeout-minutes: 20
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: "--allowedTools Read,Write --max-turns 8"
+          prompt: |
+            Read .ai/brief.md. It has one section per stock (## TICKER) with the screener's data:
+            scores, the HTF bullish FVG setup, stop and targets, valuation, analyst consensus and recent analyst headlines.
+
+            For EVERY ticker in the brief, write a short note for a trader holding about 1 month (swing) or about 6 months (position).
+            Use ONLY the data in the brief. Do not add news, numbers or events that are not there. If data is missing, say so.
+            Plain language, no hype, no guarantees, no telling anyone to buy or sell.
+
+            Write the result to .ai/claude_takes.json as ONE JSON object keyed by ticker:
+            {"NVDA": {"verdict": "Buy setup" | "Accumulate" | "Wait for entry" | "Watch" | "Avoid",
+                      "summary": "2 sentences on why the setup looks the way it does",
+                      "bull": ["short point", "short point"],
+                      "bear": ["short point", "short point"],
+                      "watch": "one sentence naming the level or event to watch next",
+                      "confidence": "low" | "medium" | "high"}, ...}
+            Write only that file. Do not edit any other file.
+
+      - name: Merge Claude takes
+        if: github.event_name != 'push' && env.HAS_CLAUDE == 'true'
+        continue-on-error: true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/merge-ai-takes.mjs
+
+      - name: Commit refreshed data
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data
+          git diff --cached --quiet || (git commit -m "chore: refresh screener data [skip ci]" && git push)
+
+      - name: Install & build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_WATCHLIST: ${{ vars.WATCHLIST }}
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
