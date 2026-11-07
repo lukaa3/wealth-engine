@@ -752,7 +752,7 @@ function Intelligence({ scored, byTicker, feedRes, txRes, onOpen }) {
 /* ================= Tab 3: Portfolio Tracker & Rebalancer ================= */
 const inputCls = "w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none disabled:opacity-40";
 
-function HoldingForm({ byTicker, scored, onAdd }) {
+function HoldingForm({ byTicker, scored, priceBook, onAdd }) {
   const [ticker, setTicker] = useState("");
   const [shares, setShares] = useState("");
   const [cost, setCost] = useState("");
@@ -760,12 +760,18 @@ function HoldingForm({ byTicker, scored, onAdd }) {
   const t = ticker.trim().toUpperCase();
   const isCash = t === "CASH";
   const known = byTicker[t];
+  const scanned = !known && priceBook[t];
+  const options = useMemo(() => {
+    const m = new Map(scored.map((s) => [s.ticker, s.name]));
+    Object.entries(priceBook).forEach(([k, v]) => { if (!m.has(k)) m.set(k, v.name); });
+    return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [scored, priceBook]);
 
   function submit(e) {
     e.preventDefault();
     const sh = parseFloat(shares), c = parseFloat(cost);
     if (!t) return setErr("Enter a ticker symbol.");
-    if (!isCash && !known) return setErr(t + " isn't in the coverage universe. Pick one from the list, or enter CASH.");
+    if (!isCash && !/^[A-Z][A-Z0-9.\-]{0,9}$/.test(t)) return setErr("That doesn't look like a ticker symbol (e.g. AAPL, BRK.B).");
     if (!(sh > 0)) return setErr(isCash ? "Enter a cash amount above 0." : "Shares must be above 0.");
     if (!isCash && !(c > 0)) return setErr("Average cost must be above 0.");
     onAdd({ ticker: t, shares: sh, cost: isCash ? 1 : c });
@@ -777,17 +783,19 @@ function HoldingForm({ byTicker, scored, onAdd }) {
       <form onSubmit={submit} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
         <label className="block"><span className="mb-1 block text-xs text-slate-400">Ticker symbol</span>
           <input list="ticker-list" value={ticker} onChange={(e) => setTicker(e.target.value)} placeholder="e.g. ABBV or CASH" className={inputCls + " uppercase"} autoComplete="off" />
-          <datalist id="ticker-list">{scored.map((s) => <option key={s.ticker} value={s.ticker}>{s.name}</option>)}<option value="CASH">Cash balance</option></datalist>
+          <datalist id="ticker-list">{options.map(([k, name]) => <option key={k} value={k}>{name}</option>)}<option value="CASH">Cash balance</option></datalist>
         </label>
         <label className="block"><span className="mb-1 block text-xs text-slate-400">{isCash ? "Cash amount ($)" : "Shares owned"}</span>
           <input type="number" min="0" step="any" value={shares} onChange={(e) => setShares(e.target.value)} placeholder={isCash ? "5000" : "25"} className={inputCls} />
         </label>
         <label className="block"><span className="mb-1 block text-xs text-slate-400">Avg cost basis ($/sh)</span>
-          <input type="number" min="0" step="any" value={isCash ? "" : cost} disabled={isCash} onChange={(e) => setCost(e.target.value)} placeholder={isCash ? "n/a" : known ? String(known.price) : "150.00"} className={inputCls} />
+          <input type="number" min="0" step="any" value={isCash ? "" : cost} disabled={isCash} onChange={(e) => setCost(e.target.value)} placeholder={isCash ? "n/a" : known ? String(known.price) : scanned ? String(scanned.price) : "150.00"} className={inputCls} />
         </label>
         <button type="submit" className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-emerald-400"><Icon name="Plus" size={15} />Add</button>
       </form>
       {known && !err && <p className="mt-2 text-xs text-slate-400">{known.name} · {known.sector} · last {px(known.price)} · score {known.composite} · {PLAN_STATUS[known.plan.status][0]}</p>}
+      {scanned && !err && <p className="mt-2 text-xs text-slate-400">{scanned.name} · {scanned.sector} · last {px(scanned.price)} · in the market scan (price only, no full score today)</p>}
+      {!known && !scanned && !isCash && t && !err && <p className="mt-2 text-xs text-amber-300">{t} isn't in today's data, so it's tracked at your cost basis until a price is available. Add it to the repo's WATCHLIST variable to get it fully checked every day.</p>}
       {err && <p className="mt-2 flex items-center gap-1.5 text-xs text-rose-400"><Icon name="AlertTriangle" size={13} />{err}</p>}
       <p className="mt-2 text-xs text-slate-500">Adding a ticker you already hold merges it at a blended cost basis.</p>
     </Card>
@@ -921,7 +929,7 @@ function HoldingRow({ r, onOpen, onSave, onDelete }) {
       <td className={cell + " text-slate-300"}>{cash ? "—" : px(r.price)}</td>
       <td className={cell + " font-medium text-slate-100"}>{usd(r.value)}</td>
       <td className={cell + " " + tone(r.pl)}>{cash ? "—" : <>{usd(r.pl)} <span className="text-xs opacity-80">({spct(r.plPct)})</span></>}</td>
-      <td className="px-3 py-3">{r.stock ? <PlanPill s={r.stock} /> : r.unpriced ? <span className="text-xs text-amber-300">No data from current source</span> : <span className="text-slate-500">—</span>}</td>
+      <td className="px-3 py-3">{r.stock ? <PlanPill s={r.stock} /> : r.scanOnly ? <span className="text-xs text-slate-400">Price only (not fully checked)</span> : r.unpriced ? <span className="text-xs text-amber-300">No price data yet (held at cost)</span> : <span className="text-slate-500">—</span>}</td>
       <td className={cell + " text-slate-300"}>{pct(r.weight)}</td>
       <td className="px-3 py-3">{r.score != null ? <ScoreBadge score={r.score} size="sm" /> : <span className="text-slate-500">—</span>}</td>
       <td className="relative whitespace-nowrap px-3 py-3 text-right">
@@ -941,9 +949,10 @@ function HoldingRow({ r, onOpen, onSave, onDelete }) {
   );
 }
 
-function PortfolioTab({ scored, byTicker, onOpen }) {
+function PortfolioTab({ scored, byTicker, scan, onOpen }) {
   const { holdings, addHolding, updateHolding, deleteHolding, resetPortfolio } = usePortfolio();
-  const a = useMemo(() => analyzePortfolio(holdings, byTicker, SECTORS, SECTOR_COLORS), [holdings, byTicker]);
+  const priceBook = useMemo(() => Object.fromEntries(((scan && scan.items) || []).map((r) => [r.ticker, r])), [scan]);
+  const a = useMemo(() => analyzePortfolio(holdings, byTicker, SECTORS, SECTOR_COLORS, priceBook), [holdings, byTicker, priceBook]);
   const rows = a.rows.slice().sort((x, y) => y.value - x.value);
   return (
     <div className="space-y-5">
@@ -953,7 +962,7 @@ function PortfolioTab({ scored, byTicker, onOpen }) {
         <Stat label="Portfolio beta vs SPY" value={a.beta.toFixed(2)} sub={a.beta > 1.1 ? "more volatile than SPY" : a.beta < 0.9 ? "less volatile than SPY" : "close to SPY"} icon="Gauge" />
         <Stat label="Overall P/L %" value={spct(a.plPct)} sub="unrealized, excludes cash" valueTone={a.plPct >= 0 ? "up" : "down"} icon="Percent" />
       </div>
-      <HoldingForm byTicker={byTicker} scored={scored} onAdd={addHolding} />
+      <HoldingForm byTicker={byTicker} scored={scored} priceBook={priceBook} onAdd={addHolding} />
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
         <AllocationChart sectors={a.sectors} total={a.total} />
         <RebalanceFeed a={a} onOpen={onOpen} />
@@ -1225,7 +1234,7 @@ export default function App() {
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {tab === "picks" && <Picks scored={scored} byTicker={byTicker} scan={screener.source !== "mock" ? scanRes.data : null} onOpen={setOpen} />}
         {tab === "intelligence" && <Intelligence scored={scored} byTicker={byTicker} feedRes={feed} txRes={insider} onOpen={setOpen} />}
-        {tab === "portfolio" && <PortfolioTab scored={scored} byTicker={byTicker} onOpen={setOpen} />}
+        {tab === "portfolio" && <PortfolioTab scored={scored} byTicker={byTicker} scan={screener.source !== "mock" ? scanRes.data : null} onOpen={setOpen} />}
       </main>
 
       <footer className="mx-auto max-w-7xl px-4 pb-8 text-xs text-slate-500 sm:px-6">

@@ -129,9 +129,16 @@ export function scoreUniverse(stocks, sectorPE, insiderTransactions) {
 }
 
 /** Portfolio math + rebalancing signals. holdings: [{id, ticker, shares, cost}], byTicker: scored map. */
-export function analyzePortfolio(holdings, byTicker, sectors, sectorColors) {
+export function analyzePortfolio(holdings, byTicker, sectors, sectorColors, priceBook = {}) {
   const rows = holdings
     .map((h) => {
+      const pb = priceBook[h.ticker];
+      if (h.ticker !== "CASH" && !byTicker[h.ticker] && pb && pb.price) {
+        // In the market scan (chart data only): live price + sector, but no full score.
+        const value = h.shares * pb.price, costBasis = h.shares * h.cost;
+        return { id: h.id, ticker: h.ticker, name: pb.name || h.ticker, sector: pb.sector || "Other", shares: h.shares, cost: h.cost, price: pb.price,
+          value, costBasis, pl: value - costBasis, plPct: costBasis ? (value - costBasis) / costBasis : 0, beta: 1, score: null, stock: null, scanOnly: true };
+      }
       if (h.ticker !== "CASH" && !byTicker[h.ticker]) {
         // Ticker missing from the current data source: carry at cost so the holding doesn't vanish.
         const v = h.shares * h.cost;
