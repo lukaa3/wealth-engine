@@ -1,6 +1,51 @@
 {
- "generatedAt": "2026-11-06T20:53:29.616Z",
+ "generatedAt": "2026-11-07T00:43:17.605Z",
  "items": [
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "AAPL",
+   "insider_role": "Newstead Jennifer",
+   "shares": 2399,
+   "value": -781474,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "SCHW",
+   "insider_role": "Schwab Charles R.",
+   "shares": 11675,
+   "value": -1041584,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ISRG",
+   "insider_role": "GUTHART GARY S",
+   "shares": 10000,
+   "value": -4573370,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ISRG",
+   "insider_role": "BARRATT CRAIG H",
+   "shares": 1150,
+   "value": -529003,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "PG",
+   "insider_role": "Schulten Andre",
+   "shares": 33624,
+   "value": -5547960,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
   {
    "filing_date": "2026-11-03",
    "ticker": "SCHW",
