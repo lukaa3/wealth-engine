@@ -1,228 +1,219 @@
 {
- "generatedAt": "2026-11-07T01:21:23.485Z",
+ "generatedAt": "2026-11-07T21:33:52.872Z",
  "items": [
   {
    "filing_date": "2026-11-05",
-   "ticker": "ROP",
-   "insider_role": "Cross Brandon L",
-   "shares": 2000,
-   "value": -978600,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "Lane Michael",
-   "shares": 1677,
-   "value": -1152868,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "Lane Michael",
-   "shares": 2059,
-   "value": -1420092,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "Lane Michael",
-   "shares": 243,
-   "value": -167148,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "Underberg Sharon E.",
-   "shares": 1055,
-   "value": -727973,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "Underberg Sharon E.",
-   "shares": 1503,
-   "value": -1035636,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "Underberg Sharon E.",
-   "shares": 6348,
-   "value": -4368995,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 331,
-   "value": -235655,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 775,
-   "value": -551264,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 1501,
-   "value": -1065891,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 1300,
-   "value": -921702,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 1840,
-   "value": -1302434,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 840,
-   "value": -593880,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 240,
-   "value": -169342,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 3950,
-   "value": -2778624,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 2136,
-   "value": -1499922,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 4540,
-   "value": -3184158,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 1667,
-   "value": -1167442,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 4075,
-   "value": -2849761,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "MAZELSKY JONATHAN JAY",
-   "shares": 1945,
-   "value": -1358121,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "JUNIUS DANIEL M",
+   "ticker": "REGN",
+   "insider_role": "Zoghbi Huda Y",
    "shares": 500,
-   "value": -350843,
+   "value": -485530,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-05",
-   "ticker": "IDXX",
-   "insider_role": "JUNIUS DANIEL M",
-   "shares": 700,
-   "value": -494046,
+   "ticker": "REGN",
+   "insider_role": "Zoghbi Huda Y",
+   "shares": 6939,
+   "value": -6733744,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-05",
-   "ticker": "ACN",
-   "insider_role": "Egawa Atsushi",
-   "shares": 10000,
-   "value": -2700000,
+   "ticker": "AEE",
+   "insider_role": "MOEHN MICHAEL L",
+   "shares": 6500,
+   "value": -719680,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "VMC",
+   "insider_role": "Hill J Thomas",
+   "shares": 2660,
+   "value": -764032,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "VMC",
+   "insider_role": "Hill J Thomas",
+   "shares": 7768,
+   "value": -2224289,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "VMC",
+   "insider_role": "Hill J Thomas",
+   "shares": 6082,
+   "value": -1736411,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "VMC",
+   "insider_role": "Hill J Thomas",
+   "shares": 11490,
+   "value": -3266492,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-04",
-   "ticker": "GEN",
-   "insider_role": "Witteveen Travis Michael",
-   "shares": 30000,
-   "value": -892422,
+   "ticker": "REGN",
+   "insider_role": "LAROSA JOSEPH J",
+   "shares": 527,
+   "value": -509140,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-04",
-   "ticker": "TYL",
-   "insider_role": "Pope Daniel M",
-   "shares": 680,
-   "value": -277141,
+   "ticker": "REGN",
+   "insider_role": "LAROSA JOSEPH J",
+   "shares": 3939,
+   "value": -3802750,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "SING GEORGE L",
+   "shares": 200,
+   "value": -194036,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "SING GEORGE L",
+   "shares": 1040,
+   "value": -1005753,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "SING GEORGE L",
+   "shares": 1522,
+   "value": -1470663,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "SING GEORGE L",
+   "shares": 7073,
+   "value": -6828133,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "SING GEORGE L",
+   "shares": 2670,
+   "value": -2575402,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "SING GEORGE L",
+   "shares": 4338,
+   "value": -4179533,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "SING GEORGE L",
+   "shares": 2522,
+   "value": -2427702,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "SING GEORGE L",
+   "shares": 540,
+   "value": -519399,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "SING GEORGE L",
+   "shares": 1224,
+   "value": -1175738,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "POON CHRISTINE A",
+   "shares": 201,
+   "value": -195233,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "POON CHRISTINE A",
+   "shares": 937,
+   "value": -909368,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "POON CHRISTINE A",
+   "shares": 3203,
+   "value": -3105309,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "POON CHRISTINE A",
+   "shares": 2499,
+   "value": -2420481,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "POON CHRISTINE A",
+   "shares": 772,
+   "value": -746817,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "REGN",
+   "insider_role": "POON CHRISTINE A",
+   "shares": 218,
+   "value": -210749,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -345,190 +336,73 @@
   },
   {
    "filing_date": "2026-11-03",
-   "ticker": "ROP",
-   "insider_role": "Stipancich John K",
-   "shares": 4200,
-   "value": -1965978,
+   "ticker": "REGN",
+   "insider_role": "Guarini Kathryn",
+   "shares": 400,
+   "value": -360000,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-03",
-   "ticker": "TYL",
-   "insider_role": "MOORE H LYNN JR",
-   "shares": 1,
-   "value": -397,
+   "ticker": "REGN",
+   "insider_role": "McCourt Marion",
+   "shares": 1132,
+   "value": -984195,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-03",
-   "ticker": "TYL",
-   "insider_role": "MOORE H LYNN JR",
-   "shares": 1144,
-   "value": -453177,
+   "ticker": "REGN",
+   "insider_role": "BROWN MICHAEL S",
+   "shares": 1929,
+   "value": -1687875,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-03",
-   "ticker": "TYL",
-   "insider_role": "MOORE H LYNN JR",
-   "shares": 2236,
-   "value": -883727,
+   "ticker": "MAS",
+   "insider_role": "Cole Kenneth G.",
+   "shares": 34470,
+   "value": -2779768,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-03",
-   "ticker": "TYL",
-   "insider_role": "MOORE H LYNN JR",
-   "shares": 1752,
-   "value": -690546,
+   "ticker": "VMC",
+   "insider_role": "Clement David P",
+   "shares": 200,
+   "value": -57724,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-03",
-   "ticker": "TYL",
-   "insider_role": "MOORE H LYNN JR",
-   "shares": 861,
-   "value": -338689,
+   "ticker": "VMC",
+   "insider_role": "Clement David P",
+   "shares": 4800,
+   "value": -1381584,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-11-03",
-   "ticker": "TYL",
-   "insider_role": "MOORE H LYNN JR",
-   "shares": 1080,
-   "value": -423645,
+   "filing_date": "2026-11-02",
+   "ticker": "ROL",
+   "insider_role": "R. Randall Rollins Voting Trust U/A dated August 25, 1994",
+   "shares": 1444402,
+   "value": 49956665,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-11-03",
-   "ticker": "TYL",
-   "insider_role": "MOORE H LYNN JR",
-   "shares": 1280,
-   "value": -500452,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-03",
-   "ticker": "TYL",
-   "insider_role": "MOORE H LYNN JR",
-   "shares": 1186,
-   "value": -462370,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-03",
-   "ticker": "TYL",
-   "insider_role": "MOORE H LYNN JR",
-   "shares": 460,
-   "value": -178687,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-03",
-   "ticker": "AMT",
-   "insider_role": "Font Juan",
-   "shares": 592,
-   "value": -112261,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-03",
-   "ticker": "NI",
-   "insider_role": "Anderson Shawn",
-   "shares": 6500,
-   "value": -292500,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-03",
-   "ticker": "NI",
-   "insider_role": "Jefferson William Jr.",
-   "shares": 40000,
-   "value": -1782400,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-03",
-   "ticker": "SO",
-   "insider_role": "Kim Matthew M.",
-   "shares": 100,
-   "value": -9339,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-30",
-   "ticker": "AMT",
-   "insider_role": "Dowling Ruth T",
-   "shares": 952,
-   "value": -176891,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-30",
-   "ticker": "AMT",
-   "insider_role": "Dowling Ruth T",
-   "shares": 626,
-   "value": -113932,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-29",
-   "ticker": "KEY",
-   "insider_role": "Paine Andrew J III",
-   "shares": 39130,
-   "value": -829556,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-28",
-   "ticker": "ROP",
-   "insider_role": "Stipancich John K",
-   "shares": 3500,
-   "value": -1571640,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-28",
-   "ticker": "ACN",
-   "insider_role": "Sweet Julie Spellman",
-   "shares": 10100,
-   "value": 2486318,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-28",
-   "ticker": "ACN",
-   "insider_role": "Sweet Julie Spellman",
-   "shares": 2100,
-   "value": 514723,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-28",
-   "ticker": "ACN",
-   "insider_role": "Price Paula A",
-   "shares": 800,
-   "value": 199848,
+   "filing_date": "2026-11-02",
+   "ticker": "ROL",
+   "insider_role": "LOR INC",
+   "shares": 1444402,
+   "value": 49956665,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -587,69 +461,6 @@
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-27",
-   "ticker": "ROP",
-   "insider_role": "Conley Jason",
-   "shares": 1469,
-   "value": -640499,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-27",
-   "ticker": "ROP",
-   "insider_role": "Conley Jason",
-   "shares": 10105,
-   "value": -4401031,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-27",
-   "ticker": "ROP",
-   "insider_role": "Conley Jason",
-   "shares": 426,
-   "value": -184824,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-22",
-   "ticker": "ACN",
-   "insider_role": "Sekido Ryoji",
-   "shares": 1102,
-   "value": -270297,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-22",
-   "ticker": "ACN",
-   "insider_role": "Sekido Ryoji",
-   "shares": 4742,
-   "value": -1160529,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-22",
-   "ticker": "ACN",
-   "insider_role": "Burgum Melissa A",
-   "shares": 811,
-   "value": -202750,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-22",
-   "ticker": "AMT",
-   "insider_role": "Clarke Teresa Hillary",
-   "shares": 43,
-   "value": 7878,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
    "filing_date": "2026-10-21",
    "ticker": "META",
    "insider_role": "Olivan Javier",
@@ -691,6 +502,258 @@
    "insider_role": "Olivan Javier",
    "shares": 946,
    "value": -669011,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-16",
+   "ticker": "CDNS",
+   "insider_role": "Cunningham Paul",
+   "shares": 2000,
+   "value": -648260,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 50,
+   "value": -39074,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 463,
+   "value": -361432,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 380,
+   "value": -296244,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 454,
+   "value": -353503,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 38,
+   "value": -29555,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 66,
+   "value": -51236,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 376,
+   "value": -291573,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 121,
+   "value": -93712,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 224,
+   "value": -173242,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 211,
+   "value": -163010,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 283,
+   "value": -218351,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 12,
+   "value": -9242,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 127,
+   "value": -97701,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 105,
+   "value": -80675,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 192,
+   "value": -147339,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 279,
+   "value": -213845,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 271,
+   "value": -207421,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 219,
+   "value": -167404,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 25,
+   "value": -19094,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 55,
+   "value": -41941,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 27,
+   "value": -20557,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 74,
+   "value": -56288,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 14,
+   "value": -10639,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 24,
+   "value": -18196,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 16,
+   "value": -12123,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 35,
+   "value": -26457,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-15",
+   "ticker": "REGN",
+   "insider_role": "MURPHY ANDREW J",
+   "shares": 6,
+   "value": -4523,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -740,56 +803,200 @@
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-13",
-   "ticker": "ACN",
-   "insider_role": "Hogan Catherine Kiernan",
-   "shares": 32,
-   "value": -6924,
+   "filing_date": "2026-10-08",
+   "ticker": "EW",
+   "insider_role": "Lippis Daniel J.",
+   "shares": 619,
+   "value": -53017,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-13",
-   "ticker": "ACN",
-   "insider_role": "Hogan Catherine Kiernan",
-   "shares": 206,
-   "value": -44317,
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 297,
+   "value": -104617,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-13",
-   "ticker": "ACN",
-   "insider_role": "Hogan Catherine Kiernan",
-   "shares": 242,
-   "value": -51822,
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 2162,
+   "value": -759730,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-13",
-   "ticker": "ACN",
-   "insider_role": "Hogan Catherine Kiernan",
-   "shares": 219,
-   "value": -46692,
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 4240,
+   "value": -1485587,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-13",
-   "ticker": "ACN",
-   "insider_role": "Hogan Catherine Kiernan",
-   "shares": 1,
-   "value": -211,
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 3900,
+   "value": -1362590,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-09",
-   "ticker": "ACN",
-   "insider_role": "Hogan Catherine Kiernan",
-   "shares": 1320,
-   "value": -264000,
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 7688,
+   "value": -2677195,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 9022,
+   "value": -3132454,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 5694,
+   "value": -1972399,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 752,
+   "value": -277742,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 4083,
+   "value": -1504957,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 8559,
+   "value": -3147344,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 9170,
+   "value": -3362222,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 6179,
+   "value": -2259605,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 4260,
+   "value": -1552312,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 157,
+   "value": -55900,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 6136,
+   "value": -2181050,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 2823,
+   "value": -1000240,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 5892,
+   "value": -2081917,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 6864,
+   "value": -2418779,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 4829,
+   "value": -1696451,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 2683,
+   "value": -939288,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-07",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 3619,
+   "value": -1263280,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -839,11 +1046,11 @@
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-01",
-   "ticker": "SO",
-   "insider_role": "Kim Matthew M.",
-   "shares": 100,
-   "value": -8273,
+   "filing_date": "2026-10-05",
+   "ticker": "CDNS",
+   "insider_role": "SANGIOVANNI VINCENTELLI ALBERTO",
+   "shares": 1250,
+   "value": -437590,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -939,6 +1146,15 @@
   },
   {
    "filing_date": "2026-09-23",
+   "ticker": "NET",
+   "insider_role": "Ledbetter Carl",
+   "shares": 5000,
+   "value": -1765751,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-23",
    "ticker": "META",
    "insider_role": "Cox Christopher K",
    "shares": 20000,
@@ -1002,6 +1218,114 @@
   },
   {
    "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 100,
+   "value": -33651,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 600,
+   "value": -201192,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 1868,
+   "value": -625015,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 2632,
+   "value": -878080,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 1604,
+   "value": -533330,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 1196,
+   "value": -396581,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 700,
+   "value": -231159,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 700,
+   "value": -230561,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 300,
+   "value": -98412,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 100,
+   "value": -32656,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 100,
+   "value": -32089,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 100,
+   "value": -31890,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
    "ticker": "KR",
    "insider_role": "Adcock Mary Ellen",
    "shares": 24095,
@@ -1028,110 +1352,11 @@
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 638,
-   "value": -160623,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 9978,
-   "value": -2504714,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 17595,
-   "value": -4402037,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 10313,
-   "value": -2569708,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 7168,
-   "value": -1778687,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 3430,
-   "value": -848443,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 1378,
-   "value": -339107,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 930,
-   "value": -235882,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 11495,
-   "value": -2908922,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 20716,
-   "value": -5221027,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 33001,
-   "value": -8284350,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-18",
-   "ticker": "ADBE",
-   "insider_role": "NARAYEN SHANTANU",
-   "shares": 8358,
-   "value": -2091376,
+   "filing_date": "2026-09-17",
+   "ticker": "CDNS",
+   "insider_role": "Cunningham Paul",
+   "shares": 2000,
+   "value": -554240,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1190,6 +1415,96 @@
    "filing_url": null
   },
   {
+   "filing_date": "2026-09-15",
+   "ticker": "NET",
+   "insider_role": "Ledbetter Carl",
+   "shares": 1200,
+   "value": -376452,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-15",
+   "ticker": "NET",
+   "insider_role": "Ledbetter Carl",
+   "shares": 2400,
+   "value": -750864,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-15",
+   "ticker": "NET",
+   "insider_role": "Ledbetter Carl",
+   "shares": 440,
+   "value": -136638,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-15",
+   "ticker": "NET",
+   "insider_role": "Ledbetter Carl",
+   "shares": 960,
+   "value": -297126,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-14",
+   "ticker": "CDNS",
+   "insider_role": "Brennan Ita M",
+   "shares": 6,
+   "value": -1727,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-14",
+   "ticker": "CDNS",
+   "insider_role": "Brennan Ita M",
+   "shares": 14,
+   "value": -4011,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-14",
+   "ticker": "CDNS",
+   "insider_role": "Brennan Ita M",
+   "shares": 127,
+   "value": -36268,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-14",
+   "ticker": "CDNS",
+   "insider_role": "Brennan Ita M",
+   "shares": 33,
+   "value": -9386,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-14",
+   "ticker": "AEE",
+   "insider_role": "Flores Rafael",
+   "shares": 248,
+   "value": -26171,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-11",
+   "ticker": "EW",
+   "insider_role": "Lippis Daniel J.",
+   "shares": 619,
+   "value": -54169,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
    "filing_date": "2026-09-11",
    "ticker": "META",
    "insider_role": "Cox Christopher K",
@@ -1204,6 +1519,15 @@
    "insider_role": "Cox Christopher K",
    "shares": 18578,
    "value": -12079640,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-11",
+   "ticker": "VMRK",
+   "insider_role": "Carr Chris",
+   "shares": 1130,
+   "value": -73766,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1398,19 +1722,181 @@
   },
   {
    "filing_date": "2026-09-09",
-   "ticker": "GEN",
-   "insider_role": "KO BRYAN SEUK",
-   "shares": 28248,
-   "value": -866451,
+   "ticker": "ONON",
+   "insider_role": "Maguire Scott Andrew",
+   "shares": 1475,
+   "value": -40919,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-09-09",
-   "ticker": "IDXX",
-   "insider_role": "Kingsley Lawrence D",
-   "shares": 2203,
-   "value": -1172178,
+   "ticker": "ONON",
+   "insider_role": "Sluis Frank",
+   "shares": 687,
+   "value": -19059,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 5489,
+   "value": -1533681,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 14961,
+   "value": -4166339,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 4823,
+   "value": -1338527,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 1387,
+   "value": -383616,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 2202,
+   "value": -604207,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 2428,
+   "value": -663063,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 1713,
+   "value": -466638,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 4804,
+   "value": -1358907,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 17603,
+   "value": -4962814,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 7843,
+   "value": -2204040,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 2753,
+   "value": -770097,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 2210,
+   "value": -622623,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 6177,
+   "value": -1736169,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 4744,
+   "value": -1327229,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 5396,
+   "value": -1505052,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 7273,
+   "value": -2020367,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 7203,
+   "value": -1993718,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-08",
+   "ticker": "TSN",
+   "insider_role": "Schomburger Jeffrey K",
+   "shares": 19450,
+   "value": 1001617,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1425,24 +1911,6 @@
   },
   {
    "filing_date": "2026-09-04",
-   "ticker": "SO",
-   "insider_role": "Kim Matthew M.",
-   "shares": 1400,
-   "value": -124418,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-04",
-   "ticker": "SO",
-   "insider_role": "Sena Peter P III",
-   "shares": 4266,
-   "value": -377925,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-04",
    "ticker": "PDD",
    "insider_role": "Kam Anthony Ping Leung",
    "shares": 1705,
@@ -1452,82 +1920,442 @@
   },
   {
    "filing_date": "2026-09-03",
-   "ticker": "SO",
-   "insider_role": "Kim Matthew M.",
-   "shares": 100,
-   "value": -8845,
+   "ticker": "REGN",
+   "insider_role": "McCourt Marion",
+   "shares": 1131,
+   "value": -969708,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-01",
-   "ticker": "TYL",
-   "insider_role": "MOORE H LYNN JR",
-   "shares": 9250,
-   "value": -3448280,
+   "filing_date": "2026-09-03",
+   "ticker": "REGN",
+   "insider_role": "Guarini Kathryn",
+   "shares": 400,
+   "value": -340000,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-03",
+   "ticker": "REGN",
+   "insider_role": "McCourt Marion",
+   "shares": 1215,
+   "value": -1032750,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-31",
+   "ticker": "EW",
+   "insider_role": "Dahl Andrew M.",
+   "shares": 544,
+   "value": -49534,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-28",
-   "ticker": "GEN",
-   "insider_role": "Vlcek Ondrej",
-   "shares": 200000,
-   "value": -6000000,
+   "ticker": "EW",
+   "insider_role": "Bruls Annette",
+   "shares": 2644,
+   "value": -237907,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-27",
-   "ticker": "GEN",
-   "insider_role": "Vlcek Ondrej",
-   "shares": 152358,
-   "value": -4418397,
+   "ticker": "CDNS",
+   "insider_role": "Scannell Paul",
+   "shares": 280,
+   "value": -94920,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "CDNS",
+   "insider_role": "SANGIOVANNI VINCENTELLI ALBERTO",
+   "shares": 41,
+   "value": -13311,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "CDNS",
+   "insider_role": "SANGIOVANNI VINCENTELLI ALBERTO",
+   "shares": 309,
+   "value": -99974,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "CDNS",
+   "insider_role": "SANGIOVANNI VINCENTELLI ALBERTO",
+   "shares": 380,
+   "value": -122042,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "CDNS",
+   "insider_role": "SANGIOVANNI VINCENTELLI ALBERTO",
+   "shares": 240,
+   "value": -76634,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "CDNS",
+   "insider_role": "SANGIOVANNI VINCENTELLI ALBERTO",
+   "shares": 280,
+   "value": -89133,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-26",
-   "ticker": "TYL",
-   "insider_role": "Puckett Jeffrey David",
-   "shares": 8500,
-   "value": -3029698,
+   "ticker": "EW",
+   "insider_role": "Chopra Daveen",
+   "shares": 30646,
+   "value": -2788547,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-26",
+   "ticker": "EW",
+   "insider_role": "Chopra Daveen",
+   "shares": 1154,
+   "value": -105893,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-26",
+   "ticker": "EW",
+   "insider_role": "Markowitz Wayne",
+   "shares": 1240,
+   "value": -113417,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-25",
-   "ticker": "GEN",
-   "insider_role": "Vlcek Ondrej",
-   "shares": 47462,
-   "value": -1376407,
+   "ticker": "CDNS",
+   "insider_role": "TENG CHIN-CHI",
+   "shares": 4732,
+   "value": -1488167,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-25",
-   "ticker": "AMT",
-   "insider_role": "Kalathur Rajesh",
-   "shares": 2829,
-   "value": 500733,
+   "ticker": "VMC",
+   "insider_role": "Hill J Thomas",
+   "shares": 4000,
+   "value": -1106800,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-25",
-   "ticker": "LYV",
-   "insider_role": "Capo Brian",
-   "shares": 2900,
-   "value": -533600,
+   "ticker": "VMC",
+   "insider_role": "Hill J Thomas",
+   "shares": 542,
+   "value": -150183,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-25",
+   "ticker": "VMC",
+   "insider_role": "Hill J Thomas",
+   "shares": 3762,
+   "value": -1040231,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-25",
+   "ticker": "VMC",
+   "insider_role": "Hill J Thomas",
+   "shares": 5696,
+   "value": -1569191,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-24",
+   "ticker": "VMRK",
+   "insider_role": "Willson Sean Thomas",
+   "shares": 300,
+   "value": -19893,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-21",
-   "ticker": "GEN",
-   "insider_role": "Vlcek Ondrej",
-   "shares": 100000,
-   "value": -2800000,
+   "ticker": "MOS",
+   "insider_role": "Precourt Walter F. III",
+   "shares": 23000,
+   "value": -508760,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 90,
+   "value": -25318,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 956,
+   "value": -268080,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 5259,
+   "value": -1471040,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 5624,
+   "value": -1567873,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 5642,
+   "value": -1568175,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 4236,
+   "value": -1171955,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 8990,
+   "value": -2478197,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 2206,
+   "value": -605485,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 759,
+   "value": -221477,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 136,
+   "value": -39345,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 2544,
+   "value": -732699,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 2335,
+   "value": -670149,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 3109,
+   "value": -889477,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 8467,
+   "value": -2414429,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 8646,
+   "value": -2455901,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 7007,
+   "value": -1984470,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 3,
+   "value": -903,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 1217,
+   "value": -363865,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 824,
+   "value": -245545,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 1554,
+   "value": -461692,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 7566,
+   "value": -2241899,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 10604,
+   "value": -3131503,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 1420,
+   "value": -416663,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 1546,
+   "value": -452771,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 3971,
+   "value": -1158639,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "NET",
+   "insider_role": "Zatlyn Michelle",
+   "shares": 4298,
+   "value": -1250135,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "AEE",
+   "insider_role": "Martin Ryan J",
+   "shares": 500,
+   "value": -54940,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "AEE",
+   "insider_role": "Martin Ryan J",
+   "shares": 471,
+   "value": -51749,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1668,28 +2496,307 @@
   },
   {
    "filing_date": "2026-08-19",
-   "ticker": "GEN",
-   "insider_role": "Witteveen Travis Michael",
-   "shares": 440,
-   "value": -12346,
+   "ticker": "CDNS",
+   "insider_role": "Cunningham Paul",
+   "shares": 2000,
+   "value": -646640,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-19",
-   "ticker": "SBAC",
-   "insider_role": "Krouse George R Jr",
-   "shares": 300,
-   "value": -54802,
+   "ticker": "NET",
+   "insider_role": "Starzak Alissa Michelle",
+   "shares": 2538,
+   "value": -773278,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-08-18",
-   "ticker": "NI",
-   "insider_role": "BIRMINGHAM MELODY",
-   "shares": 37509,
-   "value": -1590382,
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 500,
+   "value": -154460,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 600,
+   "value": -183947,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 1216,
+   "value": -370595,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 898,
+   "value": -272823,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 267,
+   "value": -80800,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Starzak Alissa Michelle",
+   "shares": 399,
+   "value": -125482,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Starzak Alissa Michelle",
+   "shares": 300,
+   "value": -94079,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Starzak Alissa Michelle",
+   "shares": 460,
+   "value": -143391,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Starzak Alissa Michelle",
+   "shares": 274,
+   "value": -85109,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Starzak Alissa Michelle",
+   "shares": 350,
+   "value": -108327,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Starzak Alissa Michelle",
+   "shares": 585,
+   "value": -180565,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Starzak Alissa Michelle",
+   "shares": 965,
+   "value": -296784,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 270,
+   "value": -84893,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 160,
+   "value": -50145,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 190,
+   "value": -59211,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 180,
+   "value": -55947,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 140,
+   "value": -43350,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 332,
+   "value": -102408,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "Riley Janel",
+   "shares": 395,
+   "value": -121416,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 100,
+   "value": -31461,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 200,
+   "value": -62464,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 300,
+   "value": -92721,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 3100,
+   "value": -955512,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 2456,
+   "value": -754715,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 2944,
+   "value": -901579,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "NET",
+   "insider_role": "SEIFERT THOMAS J",
+   "shares": 900,
+   "value": -274724,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "VMRK",
+   "insider_role": "Willson Sean Thomas",
+   "shares": 250,
+   "value": -16080,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "VMRK",
+   "insider_role": "Howard Christopher B.",
+   "shares": 8486,
+   "value": -543104,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "VMRK",
+   "insider_role": "Swanezy Susan",
+   "shares": 15700,
+   "value": -1001660,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "VMRK",
+   "insider_role": "SCHULMAN EDWARD M",
+   "shares": 16595,
+   "value": -1066893,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "VMRK",
+   "insider_role": "MUELLER CHARLES E JR",
+   "shares": 8000,
+   "value": -511200,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "VMRK",
+   "insider_role": "Manelis Michael L",
+   "shares": 7825,
+   "value": -503226,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1704,19 +2811,46 @@
   },
   {
    "filing_date": "2026-08-17",
-   "ticker": "ACN",
-   "insider_role": "Clifford Katherine Lee",
-   "shares": 68,
-   "value": -11966,
+   "ticker": "ONON",
+   "insider_role": "Coppetti Caspar Felix",
+   "shares": 65000,
+   "value": 1993791,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-17",
+   "ticker": "ONON",
+   "insider_role": "Bernhard Olivier",
+   "shares": 65000,
+   "value": 1993791,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-17",
+   "ticker": "AEE",
+   "insider_role": "Shaw Theresa A",
+   "shares": 325,
+   "value": -35402,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-12",
-   "ticker": "GEN",
-   "insider_role": "Witteveen Travis Michael",
-   "shares": 30000,
-   "value": -882558,
+   "ticker": "REGN",
+   "insider_role": "Guarini Kathryn",
+   "shares": 400,
+   "value": -320000,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-12",
+   "ticker": "REGN",
+   "insider_role": "Zoghbi Huda Y",
+   "shares": 800,
+   "value": -640000,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1825,6 +2959,168 @@
    "insider_role": "WARE WILLIAM JAMES",
    "shares": 300,
    "value": 50278,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "EW",
+   "insider_role": "Lippis Daniel J.",
+   "shares": 619,
+   "value": -56967,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 25,
+   "value": -7797,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 146,
+   "value": -45456,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 173,
+   "value": -53601,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 186,
+   "value": -57478,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 85,
+   "value": -26145,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 108,
+   "value": -33066,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 365,
+   "value": -111376,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 199,
+   "value": -60488,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 404,
+   "value": -122459,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 309,
+   "value": -93335,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 97,
+   "value": -29194,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 96,
+   "value": -28781,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 81,
+   "value": -24190,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 68,
+   "value": -20243,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 36,
+   "value": -10643,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 78,
+   "value": -23009,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "NET",
+   "insider_role": "Graham-Cumming John",
+   "shares": 64,
+   "value": -18736,
    "is_10b5_1": false,
    "filing_url": null
   }
