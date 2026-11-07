@@ -24,13 +24,14 @@ export function mapSector(name) {
 }
 
 /** One ticker → stock record (same shape as mockData.stocks). `base` supplies text fields if we have them. */
-export async function buildLiveStock(ticker, P, base) {
+export async function buildLiveStock(ticker, P, base, pre) {
+  // `pre` (optional): { candles, price, name } already fetched by the market scan — saves quota.
   // `base` (optional) only supplies the sector bucket for tickers we already know.
   const errors = [];
   const { fmp, finnhub, alpha } = P;
   const fhQuote = await safe(finnhub && (() => finnhub.quote(ticker)), errors, "finnhub quote");
-  const fq = fhQuote ? null : await safe(fmp && (() => fmp.quote(ticker)), errors, "fmp quote");
-  const price = pick(fhQuote && fhQuote.price, fq && fq.price);
+  const fq = fhQuote || (pre && pre.price) ? null : await safe(fmp && (() => fmp.quote(ticker)), errors, "fmp quote");
+  const price = pick(fhQuote && fhQuote.price, pre && pre.price, fq && fq.price);
   if (!price) return { ticker, error: errors.join("; ") || "no quote" };
 
   const [profile, dcf, pt, gc, ratios, rec, metric] = await Promise.all([
@@ -46,7 +47,7 @@ export async function buildLiveStock(ticker, P, base) {
   const needsAv = !(ratios && (ratios.priceToEarningsGrowthRatioTTM != null || ratios.pegRatioTTM != null))
     || !(pt && pt.targetConsensus) || !(gc && gc.strongBuy != null) && !(rec && rec.strongBuy != null);
   const ov = needsAv ? await safe(alpha && (() => alpha.overview(ticker)), errors, "alpha vantage overview") : null;
-  let daily = await safe(fmp && (() => fmp.daily(ticker)), errors, "fmp candles");
+  let daily = pre && pre.candles && pre.candles.length >= 30 ? pre.candles : await safe(fmp && (() => fmp.daily(ticker)), errors, "fmp candles");
   if (!daily || daily.length < 30) daily = await safe(alpha && (() => alpha.daily(ticker)), errors, "alpha vantage candles");
   daily = (daily || []).slice(-260);
 
@@ -61,7 +62,7 @@ export async function buildLiveStock(ticker, P, base) {
 
   const stock = {
     ticker,
-    name: (fq && fq.name) || (profile && profile.companyName) || (ov && ov.Name) || (base && base.name) || ticker,
+    name: (fq && fq.name) || (profile && profile.companyName) || (ov && ov.Name) || (pre && pre.name) || (base && base.name) || ticker,
     sector: base ? base.sector : mapSector((profile && profile.sector) || (ov && ov.Sector)),
     price,
     beta: pick(profile && profile.beta, ov && ov.Beta, metric && metric.beta, 1),
@@ -97,10 +98,10 @@ export async function buildLiveStock(ticker, P, base) {
   return stock;
 }
 
-export async function buildLiveUniverse(tickers, P, baseByTicker = {}, onProgress) {
+export async function buildLiveUniverse(tickers, P, baseByTicker = {}, onProgress, preByTicker = {}) {
   let done = 0;
   const res = await mapLimit(tickers, 3, async (t) => {
-    const s = await buildLiveStock(t, P, baseByTicker[t]);
+    const s = await buildLiveStock(t, P, baseByTicker[t], preByTicker[t]);
     done++; if (onProgress) onProgress(done, tickers.length);
     return s;
   });

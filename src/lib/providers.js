@@ -9,6 +9,7 @@
  */
 
 const FMP = "https://financialmodelingprep.com/stable";
+const YAHOO = "https://query1.finance.yahoo.com/v8/finance/chart";
 const FINNHUB = "https://finnhub.io/api/v1";
 const AV = "https://www.alphavantage.co/query";
 
@@ -75,26 +76,28 @@ export function createProviders(keys, opts = {}) {
   const signal = opts.signal;
   const o = (key, ttlMs) => ({ cache, cacheKey: key, ttlMs, signal });
 
+  const dash = (t) => t.replace(".", "-"); // FMP and Yahoo write BRK.B as BRK-B
+
   const fmp = keys.fmpKey && {
-    quote: async (t) => first(await getJSON(`${FMP}/quote?symbol=${t}&apikey=${keys.fmpKey}`, o("fmp:q:" + t, qTtl))),
-    profile: async (t) => first(await getJSON(`${FMP}/profile?symbol=${t}&apikey=${keys.fmpKey}`, o("fmp:p:" + t, fTtl * 7))),
-    dcf: async (t) => first(await getJSON(`${FMP}/discounted-cash-flow?symbol=${t}&apikey=${keys.fmpKey}`, o("fmp:dcf:" + t, fTtl))),
-    priceTarget: async (t) => first(await getJSON(`${FMP}/price-target-consensus?symbol=${t}&apikey=${keys.fmpKey}`, o("fmp:pt:" + t, fTtl))),
-    gradesConsensus: async (t) => first(await getJSON(`${FMP}/grades-consensus?symbol=${t}&apikey=${keys.fmpKey}`, o("fmp:gc:" + t, fTtl))),
-    grades: async (t) => (await getJSON(`${FMP}/grades?symbol=${t}&apikey=${keys.fmpKey}`, o("fmp:g:" + t, fTtl / 2))) || [],
-    ratiosTtm: async (t) => first(await getJSON(`${FMP}/ratios-ttm?symbol=${t}&apikey=${keys.fmpKey}`, o("fmp:r:" + t, fTtl))),
+    quote: async (t) => first(await getJSON(`${FMP}/quote?symbol=${dash(t)}&apikey=${keys.fmpKey}`, o("fmp:q:" + t, qTtl))),
+    profile: async (t) => first(await getJSON(`${FMP}/profile?symbol=${dash(t)}&apikey=${keys.fmpKey}`, o("fmp:p:" + t, fTtl * 7))),
+    dcf: async (t) => first(await getJSON(`${FMP}/discounted-cash-flow?symbol=${dash(t)}&apikey=${keys.fmpKey}`, o("fmp:dcf:" + t, fTtl))),
+    priceTarget: async (t) => first(await getJSON(`${FMP}/price-target-consensus?symbol=${dash(t)}&apikey=${keys.fmpKey}`, o("fmp:pt:" + t, fTtl))),
+    gradesConsensus: async (t) => first(await getJSON(`${FMP}/grades-consensus?symbol=${dash(t)}&apikey=${keys.fmpKey}`, o("fmp:gc:" + t, fTtl))),
+    grades: async (t) => (await getJSON(`${FMP}/grades?symbol=${dash(t)}&apikey=${keys.fmpKey}`, o("fmp:g:" + t, fTtl / 2))) || [],
+    ratiosTtm: async (t) => first(await getJSON(`${FMP}/ratios-ttm?symbol=${dash(t)}&apikey=${keys.fmpKey}`, o("fmp:r:" + t, fTtl))),
     daily: async (t) => {
       const from = new Date(Date.now() - 400 * 864e5).toISOString().slice(0, 10);
-      const d = await getJSON(`${FMP}/historical-price-eod/full?symbol=${t}&from=${from}&apikey=${keys.fmpKey}`, o("fmp:d:" + t, fTtl / 2));
+      const d = await getJSON(`${FMP}/historical-price-eod/full?symbol=${dash(t)}&from=${from}&apikey=${keys.fmpKey}`, o("fmp:d:" + t, fTtl / 2));
       const rows = Array.isArray(d) ? d : d && d.historical ? d.historical : [];
-      return rows.map((r) => ({ date: r.date, open: +r.open, high: +r.high, low: +r.low, close: +r.close }))
+      return rows.map((r) => ({ date: r.date, open: +r.open, high: +r.high, low: +r.low, close: +r.close, volume: +r.volume || 0 }))
         .sort((a, b) => a.date.localeCompare(b.date));
     },
   };
 
   const finnhub = keys.finnhubKey && {
     quote: async (t) => {
-      const q = await getJSON(`${FINNHUB}/quote?symbol=${t}&token=${keys.finnhubKey}`, o("fh:q:" + t, qTtl));
+      const q = await getJSON(`${FINNHUB}/quote?symbol=${dash(t)}&token=${keys.finnhubKey}`, o("fh:q:" + t, qTtl));
       return q && q.c ? { price: q.c, changePct: q.dp } : null;
     },
     recommendation: async (t) => first(await getJSON(`${FINNHUB}/stock/recommendation?symbol=${t}&token=${keys.finnhubKey}`, o("fh:rec:" + t, fTtl))),
@@ -141,7 +144,44 @@ export function createProviders(keys, opts = {}) {
     },
   };
 
-  return { fmp, finnhub, alpha, cache, num };
+  /**
+   * Yahoo Finance chart feed: daily candles with no key (unofficial; can change or throttle without notice).
+   * Used by the daily job's wide market scan. Only enabled when opts.yahoo is true (Node), since browsers block it (CORS).
+   */
+  let yLast = 0;
+  const yahoo = opts.yahoo && {
+    daily: async (t) => {
+      const key = "y:d:" + t;
+      const hit = cache.get(key);
+      if (hit !== undefined) return hit;
+      const wait = (opts.yahooGapMs ?? 350) - (Date.now() - yLast);
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+      yLast = Date.now();
+      let res;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        res = await fetch(`${YAHOO}/${encodeURIComponent(dash(t))}?range=1y&interval=1d`, {
+          signal, headers: { "User-Agent": "Mozilla/5.0 (compatible; wealth-engine-screener/1.0)", Accept: "application/json" },
+        });
+        if (res.status !== 429) break;
+        await new Promise((r) => setTimeout(r, 5000 * (attempt + 1)));
+      }
+      if (!res.ok) throw new ProviderError("yahoo HTTP " + res.status);
+      const j = await res.json();
+      const r = j && j.chart && j.chart.result && j.chart.result[0];
+      if (!r || !r.timestamp) throw new ProviderError("yahoo: no data");
+      const q = r.indicators.quote[0];
+      const rows = [];
+      r.timestamp.forEach((ts, i) => {
+        if (q.open[i] == null || q.high[i] == null || q.low[i] == null || q.close[i] == null) return;
+        rows.push({ date: new Date(ts * 1000).toISOString().slice(0, 10), open: q.open[i], high: q.high[i], low: q.low[i], close: q.close[i], volume: q.volume[i] || 0 });
+      });
+      const out = { candles: rows, price: r.meta && r.meta.regularMarketPrice, name: r.meta && (r.meta.longName || r.meta.shortName) };
+      cache.set(key, out, fTtl / 2);
+      return out;
+    },
+  };
+
+  return { fmp, finnhub, alpha, yahoo, cache, num };
 }
 
 /** Run `fn` over items with limited concurrency; never throws, collects errors. */

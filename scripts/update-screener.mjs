@@ -2,7 +2,10 @@
 /**
  * update-screener.mjs — background job (run by .github/workflows/deploy.yml on a schedule).
  *
- *  1. Pulls quotes, DCF, price targets, analyst consensus/grades, ratios and daily candles for the watchlist
+ *  0. Market scan: daily charts for the whole universe (S&P 500 + Nasdaq-100 extras + popular names, ~550 stocks)
+ *     from Yahoo's free chart feed → momentum + FVG setup for each → public/data/scan.json. The best setups and the
+ *     strongest movers (DEEP_N, default 30) go on to step 1.
+ *  1. Deep check: quotes, DCF, price targets, analyst consensus/grades, ratios for those stocks
  *     from FMP / Finnhub / Alpha Vantage (whichever keys are set).
  *  2. Detects bullish FVGs, Fib depth and support, and derives stops, 1-mo / 6-mo targets and DCA zones.
  *  3. Scores everything with the same scorer the UI uses.
@@ -10,7 +13,8 @@
  *     upserts into Supabase too if SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY are set.
  *
  *  3b. Optional: asks a free-tier AI (Groq or Gemini) for a short analyst-style take on the top-scored stocks.
- * Env: FMP_API_KEY, FINNHUB_API_KEY, ALPHA_VANTAGE_API_KEY, WATCHLIST (comma list, optional),
+ * Env: FMP_API_KEY, FINNHUB_API_KEY, ALPHA_VANTAGE_API_KEY, WATCHLIST (always deep-checked), EXTRA_TICKERS (added to the scan),
+ *      DEEP_N (default 30), SCAN (set to "off" to skip the market scan),
  *      GROQ_API_KEY or GEMINI_API_KEY, AI_PROVIDER (groq|gemini), AI_MODEL, AI_MAX_STOCKS (default 15), AI_DELAY_MS,
  *      SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (optional), OUT_DIR (default public/data)
  * Node 18+ (global fetch). No npm dependencies.
@@ -23,6 +27,9 @@ import { buildLiveUniverse, buildLiveAnalystFeed, buildLiveInsider } from "../sr
 import { scoreUniverse } from "../src/scoring.js";
 import { stockToRow, rowToStock, actionToRow, insiderToRow } from "../src/lib/schema.js";
 import { analyzeMany, buildPrompt } from "../src/lib/ai.js";
+import { loadUniverse } from "../src/lib/universe.js";
+import { scanRow, pickDeepSet } from "../src/lib/scan.js";
+import { mapLimit } from "../src/lib/providers.js";
 
 const env = process.env;
 const keys = { fmpKey: env.FMP_API_KEY || "", finnhubKey: env.FINNHUB_API_KEY || "", alphaVantageKey: env.ALPHA_VANTAGE_API_KEY || "" };
@@ -33,8 +40,8 @@ if (!keys.fmpKey && !keys.finnhubKey && !keys.alphaVantageKey) {
   process.exit(0);
 }
 
-const tickers = (env.WATCHLIST || mockData.stocks.map((s) => s.ticker).join(","))
-  .split(/[\s,]+/).map((t) => t.trim().toUpperCase()).filter(Boolean);
+const list = (v) => String(v || "").split(/[\s,]+/).map((t) => t.trim().toUpperCase()).filter(Boolean);
+const watchlist = list(env.WATCHLIST);
 const baseByTicker = Object.fromEntries(mockData.stocks.map((s) => [s.ticker, s]));
 // Small, slow-changing API results persist in cache/api-cache.json (committed by the workflow), so a second run
 // the same day costs almost no quota and Alpha Vantage's 25 calls/day refresh each ticker about every 3 days.
@@ -56,10 +63,41 @@ const fileCache = {
 const P = createProviders(keys, {
   cache: fileCache, avCache: fileCache, quoteTtlMin: 5, fundamentalsTtlHours: 20,
   avMaxCalls: Number(env.AV_MAX_CALLS || 22), avMinGapMs: Number(env.AV_MIN_GAP_MS || 13000),
+  yahoo: env.SCAN !== "off", yahooGapMs: Number(env.YAHOO_GAP_MS || 350),
 });
 
+/* ------------------------------- 0. Market scan ------------------------------- */
+let tickers = watchlist.length ? watchlist : mockData.stocks.map((s) => s.ticker);
+const pre = {};
+let scanRows = [];
+let universe = [];
+if (P.yahoo) {
+  universe = await loadUniverse({ extra: [...watchlist, ...list(env.EXTRA_TICKERS)], fallback: mockData.stocks });
+  universe.forEach((u) => { if (!baseByTicker[u.ticker]) baseByTicker[u.ticker] = { name: u.name, sector: u.sector }; });
+  console.log(`Market scan: ${universe.length} stocks…`);
+  let done = 0, failedScan = 0;
+  const rows = await mapLimit(universe, 2, async (u) => {
+    try {
+      const d = await P.yahoo.daily(u.ticker);
+      pre[u.ticker] = d;
+      return scanRow(u, d);
+    } catch (e) { failedScan++; return null; }
+    finally { if (++done % 50 === 0 || done === universe.length) process.stdout.write(`\r  ${done}/${universe.length}`); }
+  });
+  process.stdout.write("\n");
+  scanRows = rows.filter((r) => r && r.ticker);
+  console.log(`Scanned ${scanRows.length} (${failedScan} failed). Live FVG entries: ${scanRows.filter((r) => r.entryLive).length}, any bullish FVG: ${scanRows.filter((r) => r.fvgStatus !== "None").length}`);
+  if (scanRows.length >= 20) {
+    tickers = pickDeepSet(scanRows, { deepN: Number(env.DEEP_N || 30), watchlist });
+    console.log("Deep check:", tickers.join(", "));
+  } else {
+    console.warn("Market scan returned too little data; deep-checking the watchlist / default list instead.");
+  }
+}
+
+/* ------------------------------- 1. Deep check ------------------------------- */
 console.log(`Updating ${tickers.length} tickers with: ${Object.entries(keys).filter(([, v]) => v).map(([k]) => k).join(", ")}`);
-const { stocks, failed } = await buildLiveUniverse(tickers, P, baseByTicker, (d, t) => process.stdout.write(`\r  ${d}/${t}`));
+const { stocks, failed } = await buildLiveUniverse(tickers, P, baseByTicker, (d, t) => process.stdout.write(`\r  ${d}/${t}`), pre);
 process.stdout.write("\n");
 if (failed.length) console.warn("No data for:", failed.join("; "));
 if (!stocks.length) { console.error("No stocks returned — check API keys / plan limits."); process.exit(1); }
@@ -144,6 +182,11 @@ const generatedAt = new Date().toISOString();
 fs.mkdirSync(OUT_DIR, { recursive: true });
 const write = (f, obj) => fs.writeFileSync(path.join(OUT_DIR, f), JSON.stringify(obj, null, 1));
 write("screener.json", { generatedAt, stocks: rows });
+if (scanRows.length) {
+  const deepSet = new Set(stocks.map((s) => s.ticker));
+  write("scan.json", { generatedAt, universeSize: universe.length, scanned: scanRows.length,
+    items: scanRows.map((r) => ({ ...r, deep: deepSet.has(r.ticker) })) });
+}
 if (analyst.length) write("analyst.json", { generatedAt, items: analyst.map(actionToRow) });
 if (insider.length) write("insider.json", { generatedAt, items: insider.map(insiderToRow) });
 console.log(`Wrote ${rows.length} stocks, ${analyst.length} analyst actions, ${insider.length} insider trades to ${OUT_DIR}/`);

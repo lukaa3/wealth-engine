@@ -3,12 +3,14 @@
  *   HTF Technical Setup        35  (bullish FVG rejection, Fib 0.618+ confluence, structural support)
  *   Fundamental Value          35  (DCF discount, PEG, forward P/E vs sector)
  *   Wall Street & Insiders     30  (buy consensus, 12-mo price-target upside, net insider buying)
- * Linear partial credit between thresholds.
+ * Linear partial credit between thresholds. A metric we couldn't get (free-plan gap) counts as neutral — half credit —
+ * instead of zero, and the stock is flagged "partial data". Insider *buying* earns points; routine selling doesn't cost any.
  */
 
 export const LIMITS = {
   HIGH_CONVICTION: 85,
   RECOMMEND: 70,
+  WATCH: 55,
   REVIEW_SCORE: 50,
   CONCENTRATION_LIMIT: 0.35,
   UNDERWEIGHT_FLOOR: 0.15,
@@ -34,11 +36,11 @@ export function insiderNetByTicker(transactions) {
   });
   return m;
 }
-function insiderPoints(net) {
-  if (net >= 1e6) return 8;
-  if (net > 0) return 5;
-  if (net >= -5e5) return 2;
-  return 0;
+/** Open-market purchases are a real signal; sales are mostly routine (pay, taxes, 10b5-1 plans), so they're neutral. */
+function insiderPoints(ins) {
+  if (ins.buys >= 1e6) return 8;
+  if (ins.buys > 0) return 6;
+  return 3;
 }
 
 /** Swing trade plan from the FVG: entry = FVG zone, risk to stop, reward to the 1-month target. */
@@ -74,15 +76,16 @@ export function scoreStock(s, sectorPE, insider) {
   const technical = tFvg + tFib + tSup;
 
   // Fundamental Value — 35
-  const fDcf = dcfUpside == null ? 0 : lin(dcfUpside, 0, 0.2, 15);
-  const fPeg = s.peg == null || s.peg <= 0 ? 0 : s.peg < 1 ? 10 : lin(2 - s.peg, 0, 1, 10);
-  const fPe = peDiscount == null ? 0 : lin(peDiscount, 0, 0.2, 10);
+  const partial = [];
+  const fDcf = dcfUpside == null ? (partial.push("DCF"), 7.5) : lin(dcfUpside, 0, 0.2, 15);
+  const fPeg = s.peg == null ? (partial.push("PEG"), 5) : s.peg <= 0 ? 0 : s.peg < 1 ? 10 : lin(2 - s.peg, 0, 1, 10);
+  const fPe = peDiscount == null ? (partial.push("P/E"), 5) : lin(peDiscount, 0, 0.2, 10);
   const fundamental = fDcf + fPeg + fPe;
 
   // Wall Street & Insider Sentiment — 30
-  const sBuy = s.buyPct == null ? 0 : lin(s.buyPct, 0.5, 0.75, 10);
-  const sPt = upside12m == null ? 0 : lin(upside12m, 0, 0.25, 12);
-  const sIns = insiderPoints(ins.net);
+  const sBuy = s.buyPct == null ? (partial.push("analyst ratings"), 5) : lin(s.buyPct, 0.5, 0.75, 10);
+  const sPt = upside12m == null ? (partial.push("price target"), 6) : lin(upside12m, 0, 0.25, 12);
+  const sIns = insiderPoints(ins);
   const sentiment = sBuy + sPt + sIns;
 
   const composite = Math.round(technical + fundamental + sentiment);
@@ -97,7 +100,7 @@ export function scoreStock(s, sectorPE, insider) {
 
   return {
     ...s,
-    sectorPE: pe, dcfUpside, peDiscount, upside1m, upside6m, upside12m, insider: ins, plan, zoneStatus, swingReady, positionReady,
+    partial, sectorPE: pe, dcfUpside, peDiscount, upside1m, upside6m, upside12m, insider: ins, plan, zoneStatus, swingReady, positionReady,
     invalidationAll: techStop ? [techStop, ...s.invalidation] : s.invalidation,
     technical: r1(technical), fundamental: r1(fundamental), sentiment: r1(sentiment), composite,
     breakdown: {
@@ -114,7 +117,7 @@ export function scoreStock(s, sectorPE, insider) {
       sentiment: [
         { label: "Buy consensus", value: s.buyPct == null ? "n/a" : Math.round(s.buyPct * 100) + "% of " + s.analystCount, rule: "≥75% Buy = full, 0 at 50%", pts: r1(sBuy), max: 10 },
         { label: "12-mo PT upside", value: s.target12m == null ? "n/a" : sp(upside12m) + " to $" + s.target12m, rule: "≥25% = full", pts: r1(sPt), max: 12 },
-        { label: "Net insider buying (90d)", value: ins.net === 0 ? "No filings" : money(ins.net), rule: "≥$1M net buy = 8, net sell = 0", pts: sIns, max: 8 },
+        { label: "Insider buying (90d)", value: ins.buys > 0 ? money(ins.buys) + " bought" + (ins.sells ? ", " + money(-ins.sells) + " sold" : "") : ins.sells ? "Selling only (" + money(-ins.sells) + ")" : "No filings", rule: "≥$1M bought = 8, any buying = 6, none = 3 (selling not penalized)", pts: sIns, max: 8 },
       ],
     },
   };

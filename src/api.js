@@ -118,6 +118,16 @@ export async function fetchInsiderActivity(settings, { signal, tickers } = {}) {
   return { items: mockData.insiderTransactions, source: "mock", notes };
 }
 
+/** Market scan (~550 stocks, chart-only) written by the daily job. Static JSON only; null when not deployed yet. */
+export async function fetchScan(settings, { signal } = {}) {
+  if (settings.mode === "mock") return { data: null, source: "mock" };
+  try {
+    const j = await staticJson(settings, "scan.json", signal);
+    if (j && j.items && j.items.length) return { data: j, source: "static-json" };
+  } catch (e) { if (e.name === "AbortError") throw e; }
+  return { data: null, source: "mock" };
+}
+
 /* -------------------------------------- Hooks -------------------------------------- */
 /** Async resource with optional polling. Re-runs when `depKey` (e.g. the settings) changes. */
 function useResource(fetcher, fallback, depKey, { pollMs = 0 } = {}) {
@@ -161,6 +171,12 @@ export function useAnalystFeed(settings) {
 export function useInsiderActivity(settings) {
   const f = useCallback((o) => fetchInsiderActivity(settings, o), [settings]);
   return useResource(f, INSIDER_FALLBACK, settings);
+}
+
+export function useScan(settings) {
+  const f = useCallback((o) => fetchScan(settings, o), [settings]);
+  const r = useResource(f, { data: null, source: "mock" }, settings);
+  return { ...r, data: r.data && r.data.data };
 }
 
 /** Settings drawer state (persisted per browser). */

@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import * as LucideIcons from "lucide-react";
 import { SECTORS, SECTOR_COLORS, SOURCE_URLS, insiderSourceUrl } from "./mockData.js";
 import { LIMITS, scoreUniverse, analyzePortfolio } from "./scoring.js";
-import { useScreenerData, useAnalystFeed, useInsiderActivity, usePortfolio, useSettings, clearLiveCache } from "./api.js";
+import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
 import { ruleSummary } from "./lib/ai.js";
 
@@ -284,6 +284,11 @@ function InvestmentCard({ s, onOpen }) {
         <FvgPill fvg={s.fvg} />
         {s.fib != null && s.fib >= 0.618 && <span className="rounded-md bg-slate-700/60 px-2 py-0.5 text-xs text-slate-300 ring-1 ring-slate-600/50">Fib {s.fib.toFixed(3)}</span>}
         {s.support && <span className="rounded-md bg-slate-700/60 px-2 py-0.5 text-xs text-slate-300 ring-1 ring-slate-600/50">Support</span>}
+        {s.partial && s.partial.length > 0 && (
+          <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-xs text-amber-300 ring-1 ring-amber-500/30" title={"Not available on the free data plan, scored as neutral: " + s.partial.join(", ")}>
+            Partial data
+          </span>
+        )}
       </div>
 
       <div className="mt-3"><AiTake s={s} /></div>
@@ -319,7 +324,7 @@ function Methodology() {
   const rows = [
     ["35%", "HTF Technical Setup", "Bullish FVG: Weekly rejection 20 / Daily rejection 16 / testing 8–10 · Fib 0.618+ confluence 10 (0.5 = 4) · key structural support 5"],
     ["35%", "Fundamental Value", "DCF ≥20% below fair value (15) · PEG < 1.0 (10, fades to 0 at 2.0) · forward P/E ≥20% below sector (10)"],
-    ["30%", "Wall Street & Insiders", "Buy consensus ≥75% (10) · 12-month price-target upside ≥25% (12) · net open-market insider buying over 90 days (8)"],
+    ["30%", "Wall Street & Insiders", "Buy consensus ≥75% (10) · 12-month price-target upside ≥25% (12) · insider open-market buying over 90 days (8; routine selling isn't penalized)"],
   ];
   return (
     <Card className="overflow-hidden">
@@ -339,14 +344,100 @@ function Methodology() {
             <span className="font-medium text-slate-200">Swing plan:</span> entry is the bullish FVG, the stop sits under it, the target is the ~1-month objective. Reward:risk is measured from the middle of the FVG. <span className="text-emerald-300">Entry live</span> = FVG rejected and price no more than {pct(L.ENTRY_TOLERANCE, 0)} above it, with at least {L.MIN_RR}:1 reward:risk.
             <br /><span className="font-medium text-slate-200">Position fit:</span> 6-month target at least 15% above price. The DCA zone is for building a longer hold in pieces.
           </div>
-          <p className="text-xs text-slate-500">Linear partial credit between thresholds. Composite ≥ {L.RECOMMEND} = Recommended Buy; ≥ {L.HIGH_CONVICTION} = High Conviction; holdings below {L.REVIEW_SCORE} get a review flag.</p>
+          <p className="text-xs text-slate-500">Linear partial credit between thresholds. A metric the free data plans don't provide counts as neutral (half credit) and the card is tagged "Partial data". Composite ≥ {L.RECOMMEND} = Recommended Buy; ≥ {L.HIGH_CONVICTION} = High Conviction; {L.WATCH}–{L.RECOMMEND - 1} = Watchlist; holdings below {L.REVIEW_SCORE} get a review flag.</p>
+          <p className="text-xs text-slate-500">How stocks are found: every weekday the job scans ~550 stocks (S&amp;P 500, Nasdaq-100 and popular momentum names) on daily charts, then gives the best FVG setups and biggest movers the full check.</p>
         </div>
       )}
     </Card>
   );
 }
 
-function Picks({ scored, onOpen }) {
+function WatchRow({ s, onOpen }) {
+  return (
+    <tr onClick={() => onOpen(s.ticker)} className="cursor-pointer border-b border-slate-700/40 last:border-0 hover:bg-slate-700/30">
+      <td className="px-4 py-2.5"><div className="font-semibold text-white">{s.ticker}</div><SectorChip sector={s.sector} /></td>
+      <td className="px-3 py-2.5"><ScoreBadge score={s.composite} size="sm" /></td>
+      <td className="px-3 py-2.5 text-right tabular-nums text-slate-200">{px(s.price)}</td>
+      <td className="px-3 py-2.5"><PlanPill s={s} /></td>
+      <td className={"px-3 py-2.5 text-right tabular-nums " + tone(s.upside1m)}>{spct(s.upside1m)}</td>
+      <td className={"px-3 py-2.5 text-right tabular-nums " + tone(s.upside6m)}>{spct(s.upside6m)}</td>
+      <td className="px-3 py-2.5 text-xs text-slate-400">{s.partial && s.partial.length ? "Partial data" : ""}</td>
+    </tr>
+  );
+}
+
+function MarketScan({ scan, byTicker, onOpen }) {
+  const [view, setView] = useState("movers");
+  const [more, setMore] = useState(false);
+  if (!scan) {
+    return (
+      <Card className="p-4 text-sm text-slate-400">
+        <div className="flex items-center gap-2 font-semibold text-white"><Icon name="Radar" size={16} className="text-indigo-300" />Market scan</div>
+        <p className="mt-1">The daily job scans about 550 stocks (S&amp;P 500, Nasdaq-100 and popular momentum names) for FVG setups and big movers. Results show here after the first run.</p>
+      </Card>
+    );
+  }
+  const items = scan.items || [];
+  const list = view === "movers"
+    ? items.filter((r) => r.ret20 != null && r.price >= 5).sort((a, b) => b.ret20 - a.ret20)
+    : items.filter((r) => r.fvgStatus !== "None").sort((a, b) => (b.entryLive - a.entryLive) || (b.tech - a.tech) || ((b.ret20 || 0) - (a.ret20 || 0)));
+  const rows = list.slice(0, more ? 75 : 15);
+  const live = items.filter((r) => r.entryLive).length;
+  return (
+    <div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-white"><Icon name="Radar" size={18} className="text-indigo-400" />Market scan</h2>
+          <p className="text-sm text-slate-400">{scan.scanned} stocks scanned on {fmtDate((scan.generatedAt || "").slice(0, 10))} · {items.filter((r) => r.fvgStatus !== "None").length} with a bullish FVG · {live} live entries. Highlighted rows got the full check above.</p>
+        </div>
+        <Segmented label="Scan view" value={view} onChange={(v) => { setView(v); setMore(false); }}
+          options={[{ value: "movers", label: "Top movers (1 mo)", icon: "Rocket" }, { value: "setups", label: "FVG setups", icon: "Crosshair" }]} />
+      </div>
+      <Card className="mt-3 overflow-x-auto">
+        <table className="w-full min-w-[760px] text-sm">
+          <thead><tr className="border-b border-slate-700/60 text-left text-xs uppercase tracking-wide text-slate-400">
+            <th className="px-4 py-2.5 font-medium">Ticker</th><th className="px-3 py-2.5 text-right font-medium">Price</th>
+            <th className="px-3 py-2.5 text-right font-medium">1 week</th><th className="px-3 py-2.5 text-right font-medium">1 month</th>
+            <th className="px-3 py-2.5 text-right font-medium">3 months</th><th className="px-3 py-2.5 text-right font-medium">Volume vs avg</th>
+            <th className="px-3 py-2.5 text-right font-medium">From 52w high</th><th className="px-3 py-2.5 font-medium">Setup</th><th className="px-3 py-2.5 font-medium">Score</th>
+          </tr></thead>
+          <tbody>
+            {rows.map((r) => {
+              const s = byTicker[r.ticker];
+              return (
+                <tr key={r.ticker} onClick={s ? () => onOpen(r.ticker) : undefined}
+                  className={"border-b border-slate-700/40 last:border-0 " + (s ? "cursor-pointer bg-indigo-500/5 hover:bg-indigo-500/10" : "")}>
+                  <td className="px-4 py-2.5"><div className="font-semibold text-white">{r.ticker}</div><div className="max-w-[12rem] truncate text-xs text-slate-500">{r.name}</div></td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-200">{px(r.price)}</td>
+                  <td className={"px-3 py-2.5 text-right tabular-nums " + tone(r.ret5)}>{spct(r.ret5)}</td>
+                  <td className={"px-3 py-2.5 text-right font-medium tabular-nums " + tone(r.ret20)}>{spct(r.ret20)}</td>
+                  <td className={"px-3 py-2.5 text-right tabular-nums " + tone(r.ret60)}>{spct(r.ret60)}</td>
+                  <td className={"px-3 py-2.5 text-right tabular-nums " + (r.volRatio >= 1.5 ? "text-emerald-300" : "text-slate-300")}>{r.volRatio != null ? r.volRatio.toFixed(1) + "x" : "—"}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">{spct(r.fromHigh)}</td>
+                  <td className="px-3 py-2.5">
+                    {r.fvgStatus === "None" ? <span className="text-xs text-slate-500">—</span>
+                      : <span className={"rounded px-1.5 py-0.5 text-xs font-medium " + (r.entryLive ? "bg-emerald-500 text-slate-900" : r.fvgStatus === "Rejected" ? "bg-emerald-500/15 text-emerald-300" : "bg-amber-500/15 text-amber-300")}>
+                          {r.entryLive ? "Entry live" : r.fvgTf + " " + r.fvgStatus.toLowerCase()}
+                        </span>}
+                  </td>
+                  <td className="px-3 py-2.5">{s ? <ScoreBadge score={s.composite} size="sm" /> : <span className="text-xs text-slate-500">chart only</span>}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {rows.length === 0 && <div className="p-6 text-center text-sm text-slate-400">Nothing to show for this view today.</div>}
+      </Card>
+      {list.length > 15 && (
+        <button type="button" onClick={() => setMore(!more)} className="mt-2 text-xs font-medium text-indigo-300 hover:text-indigo-200">
+          {more ? "Show fewer" : "Show " + Math.min(75, list.length) + " of " + list.length}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Picks({ scored, byTicker, scan, onOpen }) {
   const [sort, setSort] = useState("composite");
   const [horizon, setHorizon] = useState("all");
   const qualified = scored.filter((s) => s.composite >= L.RECOMMEND);
@@ -357,11 +448,12 @@ function Picks({ scored, onOpen }) {
   const swing = qualified.filter((s) => s.swingReady);
   const avg1m = swing.reduce((a, s) => a + s.upside1m, 0) / (swing.length || 1);
   const avg6m = qualified.reduce((a, s) => a + s.upside6m, 0) / (qualified.length || 1);
+  const watch = sortBy(scored.filter((s) => s.composite >= L.WATCH && s.composite < L.RECOMMEND).filter(fits), sort);
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Recommended" value={qualified.length} sub={"score ≥ " + L.RECOMMEND + " of " + scored.length + " screened"} icon="ShieldCheck" />
+        <Stat label="Recommended" value={qualified.length} sub={"score ≥ " + L.RECOMMEND + " · " + scored.length + " fully checked" + (scan ? " of " + scan.scanned + " scanned" : "")} icon="ShieldCheck" />
         <Stat label="High conviction" value={qualified.filter((s) => s.composite >= L.HIGH_CONVICTION).length} sub={"score ≥ " + L.HIGH_CONVICTION} icon="Award" />
         <Stat label="Swing entries live" value={swing.length} sub={"avg 1-mo target " + spct(avg1m)} valueTone="up" icon="Zap" />
         <Stat label="Avg 6-mo upside" value={spct(avg6m)} sub="across recommended picks" valueTone="up" icon="CalendarRange" />
@@ -388,8 +480,26 @@ function Picks({ scored, onOpen }) {
           {mid.map((s) => <InvestmentCard key={s.ticker} s={s} onOpen={onOpen} />)}
         </div>
         {mid.length === 0 && <Card className="p-6 text-center text-sm text-slate-400">Nothing in this band matches this horizon.</Card>}
-        <p className="mt-3 text-xs text-slate-500">{scored.length - qualified.length} stocks scored below {L.RECOMMEND} and are hidden from this view.</p>
       </div>
+
+      <div>
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-white"><Icon name="Eye" size={18} className="text-amber-300" />Watchlist<span className="rounded bg-slate-700 px-1.5 py-0.5 text-xs font-semibold text-slate-300">{L.WATCH}–{L.RECOMMEND - 1}</span></h2>
+        <p className="mb-3 text-sm text-slate-400">Close, but not there yet. Click a row for the full breakdown.</p>
+        {watch.length > 0 ? (
+          <Card className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead><tr className="border-b border-slate-700/60 text-left text-xs uppercase tracking-wide text-slate-400">
+                <th className="px-4 py-2.5 font-medium">Ticker</th><th className="px-3 py-2.5 font-medium">Score</th><th className="px-3 py-2.5 text-right font-medium">Price</th>
+                <th className="px-3 py-2.5 font-medium">Setup</th><th className="px-3 py-2.5 text-right font-medium">1-mo target</th><th className="px-3 py-2.5 text-right font-medium">6-mo target</th><th className="px-3 py-2.5" />
+              </tr></thead>
+              <tbody>{watch.map((s) => <WatchRow key={s.ticker} s={s} onOpen={onOpen} />)}</tbody>
+            </table>
+          </Card>
+        ) : <Card className="p-6 text-center text-sm text-slate-400">No stocks in this band right now.</Card>}
+        <p className="mt-3 text-xs text-slate-500">{scored.filter((s) => s.composite < L.WATCH).length} fully-checked stocks scored below {L.WATCH} and are hidden.</p>
+      </div>
+
+      <MarketScan scan={scan} byTicker={byTicker} onOpen={onOpen} />
       <Methodology />
     </div>
   );
@@ -1045,6 +1155,7 @@ export default function App() {
   const screener = useScreenerData(settings);
   const feedRaw = useAnalystFeed(settings);
   const insiderRaw = useInsiderActivity(settings);
+  const scanRes = useScan(settings);
   // Never blend sample analyst/insider rows into real stock data: if the screener is live but a feed fell back to samples, show it empty.
   const liveScreener = screener.source !== "mock";
   const blank = (r, msg) => ({ ...r, data: { ...r.data, items: [] }, notes: [msg, ...(r.notes || [])] });
@@ -1112,7 +1223,7 @@ export default function App() {
       )}
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        {tab === "picks" && <Picks scored={scored} onOpen={setOpen} />}
+        {tab === "picks" && <Picks scored={scored} byTicker={byTicker} scan={screener.source !== "mock" ? scanRes.data : null} onOpen={setOpen} />}
         {tab === "intelligence" && <Intelligence scored={scored} byTicker={byTicker} feedRes={feed} txRes={insider} onOpen={setOpen} />}
         {tab === "portfolio" && <PortfolioTab scored={scored} byTicker={byTicker} onOpen={setOpen} />}
       </main>

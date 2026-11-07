@@ -6,6 +6,16 @@ React + Tailwind CSS v4 + Lucide React, built with Vite, hosted free on **GitHub
 It always works out of the box on sample data (`src/mockData.js`). Add free API keys and/or a scheduled
 GitHub Action to switch to live data.
 
+## How stocks are found
+
+Every weekday after the close, the job **scans ~550 stocks** (S&P 500 + Nasdaq-100 extras + popular momentum names,
+see `src/lib/universe.js`) on daily charts from Yahoo's free chart feed (unofficial, no key; it can change or throttle).
+For each one it measures momentum (1-week / 1-month / 3-month returns, volume vs average, distance from the 52-week high)
+and looks for a bullish FVG setup. The best setups plus the biggest movers (`DEEP_N`, default 30) get the **full check**:
+valuation, analyst ratings and targets, insider buying, and the AI take. Everything scanned appears in the site's
+**Market scan** table; fully-checked stocks get a score. Repo variables: `WATCHLIST` (always fully checked),
+`EXTRA_TICKERS` (added to the scan), `DEEP_N`.
+
 ## How data reaches the page
 
 ```
