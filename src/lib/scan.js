@@ -47,11 +47,12 @@ export function scanRow(meta, data) {
  *   2. the strongest chart setups (live FVG entries first, then technical score, then 1-month momentum),
  *   3. the top momentum runners (biggest 1-month gains on rising volume), so big movers get a look too.
  */
-export function pickDeepSet(rows, { deepN = 30, momentumN = 6, watchlist = [] } = {}) {
+export function pickDeepSet(rows, { deepN = 30, momentumN = 10, watchlist = [] } = {}) {
   const chosen = new Set(watchlist.filter((t) => rows.some((r) => r.ticker === t)));
   const liquid = rows.filter((r) => r.price >= 5);
   const movers = liquid.filter((r) => r.ret20 != null && (r.volRatio || 0) >= 1).sort((a, b) => b.ret20 - a.ret20).slice(0, momentumN);
-  const setups = liquid.slice().sort((a, b) => (b.entryLive - a.entryLive) || (b.tech - a.tech) || ((b.ret20 || 0) - (a.ret20 || 0)));
+  // Prefer live entries, then technical score, then the stronger 3-month trend (leaders pulling back beat laggards).
+  const setups = liquid.slice().sort((a, b) => (b.entryLive - a.entryLive) || (b.tech - a.tech) || ((b.ret60 || 0) - (a.ret60 || 0)));
   for (const r of movers) if (chosen.size < deepN) chosen.add(r.ticker);
   for (const r of setups) { if (chosen.size >= deepN) break; chosen.add(r.ticker); }
   return Array.from(chosen);

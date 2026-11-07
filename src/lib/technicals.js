@@ -31,33 +31,40 @@ export function toWeekly(daily) {
 }
 
 /**
- * Most recent valid bullish FVG below price.
+ * Most recent *meaningful, active* bullish FVG near price.
  * Bullish FVG (3-candle): candle[i].low > candle[i-2].high → zone [candle[i-2].high, candle[i].low].
- * Invalid once any later candle closes below the zone.
- * "Testing"  = latest candle has traded into the zone and has not closed back above it.
- * "Rejected" = price traded into the zone and a later candle closed back above it.
+ * To count, it has to be:
+ *   - a real displacement: gap ≥ minGapPct of price and the middle candle's range ≥ 1.3× the prior 10-bar average range
+ *   - still valid: no close below the zone since it formed
+ *   - near price: price no more than maxDistance above the zone top
+ *   - reacting NOW: "Testing" = the latest bar is trading in the zone; "Rejected" = price dipped into the zone within
+ *     the last `recentBars` bars and closed back above it. Old touches don't count.
  */
-export function findBullishFVG(c, { lookback = 60, maxDistance = 0.15 } = {}) {
+export function findBullishFVG(c, { lookback = 60, maxDistance = 0.06, minGapPct = 0.005, recentBars = 5 } = {}) {
   const n = c.length;
-  if (n < 5) return null;
+  if (n < 15) return null;
   const last = c[n - 1];
-  for (let i = n - 1; i >= Math.max(2, n - lookback); i--) {
-    const a = c[i - 2], b = c[i];
+  const range = (x) => x.high - x.low;
+  for (let i = n - 1; i >= Math.max(12, n - lookback); i--) {
+    const a = c[i - 2], mid = c[i - 1], b = c[i];
     if (!(b.low > a.high)) continue;
     const lo = a.high, hi = b.low;
+    if ((hi - lo) / hi < minGapPct) continue; // too small to matter
+    const prior = c.slice(i - 12, i - 2);
+    const avgRange = prior.reduce((s, x) => s + range(x), 0) / prior.length;
+    if (range(mid) < 1.3 * avgRange) continue; // no real displacement
     if (lo > last.close) continue;
-    if ((last.close - hi) / last.close > maxDistance) continue;
-    let invalid = false, rejected = false;
-    for (let j = i + 1; j < n; j++) {
-      if (c[j].close < lo) { invalid = true; break; }
-      if (c[j].low <= hi) {
-        for (let k = j; k < n; k++) if (c[k].close > hi) { rejected = true; break; }
-      }
-    }
+    if ((last.close - hi) / last.close > maxDistance) continue; // price has left the zone behind
+    let invalid = false;
+    for (let j = i + 1; j < n; j++) if (c[j].close < lo) { invalid = true; break; }
     if (invalid) continue;
     const testingNow = last.low <= hi && last.close <= hi;
+    let rejected = false;
+    for (let j = Math.max(i + 1, n - recentBars); j < n && !rejected; j++) {
+      if (c[j].low <= hi) for (let k = j; k < n; k++) if (c[k].close > hi) { rejected = true; break; }
+    }
     const status = testingNow ? "Testing" : rejected ? "Rejected" : null;
-    if (!status) continue; // untested gap: no signal yet
+    if (!status) continue;
     return { status, lo: round(lo), hi: round(hi), index: i };
   }
   return null;
@@ -104,9 +111,9 @@ export function hasStructuralSupport(daily, levelLo, levelHi, { window = 160, k 
 export function deriveSetup({ daily, price, ptConsensus }) {
   if (!daily || daily.length < 30 || !price) return null;
   const weekly = toWeekly(daily);
-  let fvg = findBullishFVG(weekly, { lookback: 30, maxDistance: 0.2 });
+  let fvg = findBullishFVG(weekly, { lookback: 26, maxDistance: 0.08, minGapPct: 0.01, recentBars: 3 });
   let tf = "Weekly";
-  if (!fvg) { fvg = findBullishFVG(daily, { lookback: 60, maxDistance: 0.12 }); tf = "Daily"; }
+  if (!fvg) { fvg = findBullishFVG(daily, { lookback: 60, maxDistance: 0.05, minGapPct: 0.005, recentBars: 5 }); tf = "Daily"; }
   const sw = swingAndFib(daily);
   const zone = fvg ? [fvg.lo, fvg.hi] : sw.pullbackLow ? [sw.pullbackLow, sw.pullbackLow] : [null, null];
   const support = hasStructuralSupport(daily, zone[0], zone[1]);
