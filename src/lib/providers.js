@@ -46,7 +46,11 @@ async function getJSON(url, { cache, cacheKey, ttlMs, signal }) {
   }
   const res = await fetch(url, { signal, headers: { Accept: "application/json" } });
   if (res.status === 429) throw new ProviderError("rate limited");
-  if (!res.ok) throw new ProviderError("HTTP " + res.status);
+  if (!res.ok) {
+    let detail = "";
+    try { const t = await res.text(); const j = JSON.parse(t); detail = j["Error Message"] || j.error || j.message || t; } catch (e) {}
+    throw new ProviderError("HTTP " + res.status + (detail ? " " + String(detail).replace(/\s+/g, " ").slice(0, 110) : ""));
+  }
   const data = await res.json();
   // Vendors report plan/limit problems inside 200 responses:
   if (data && !Array.isArray(data) && typeof data === "object") {

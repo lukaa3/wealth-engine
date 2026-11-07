@@ -17,6 +17,7 @@ export function stockToRow(s) {
     composite_score: s.composite ?? null, technical_score: s.technical ?? null,
     fundamental_score: s.fundamental ?? null, sentiment_score: s.sentiment ?? null,
     ai_take: s.ai || null,
+    stale_fields: s.staleFields && Object.keys(s.staleFields).length ? s.staleFields : null,
     updated_at: new Date().toISOString(),
   };
 }
@@ -32,6 +33,7 @@ export function rowToStock(r) {
     buyZone: [toNum(r.buy_zone_low), toNum(r.buy_zone_high)],
     catalysts: r.catalysts || [], invalidation: r.invalidation_triggers || [],
     ai: r.ai_take || null,
+    staleFields: r.stale_fields || null,
     updatedAt: r.updated_at || null,
   };
 }

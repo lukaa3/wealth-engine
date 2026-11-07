@@ -35,6 +35,7 @@ create table if not exists public.screener_metrics (
   updated_at          timestamptz default now()
 );
 alter table public.screener_metrics add column if not exists ai_take jsonb;
+alter table public.screener_metrics add column if not exists stale_fields jsonb; -- { field: "YYYY-MM-DD" } values carried from an earlier run
 
 create table if not exists public.analyst_actions (
   id           bigint generated always as identity primary key,

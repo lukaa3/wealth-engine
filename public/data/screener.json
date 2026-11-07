@@ -659,7 +659,7 @@
    "stop_price": null,
    "target_1m": 320.44,
    "target_6m": 335.01,
-   "target_12m": null,
+   "target_12m": 308.88,
    "buy_pct": 0.7045454545454546,
    "analyst_count": 44,
    "buy_zone_low": 262.18,
@@ -694,7 +694,10 @@
     "source": "ai",
     "generatedAt": "2026-11-07T00:44:04.413Z"
    },
-   "updated_at": "2026-11-07T00:43:17.605Z"
+   "updated_at": "2026-11-07T00:43:17.605Z",
+   "stale_fields": {
+    "target12m": "2026-11-06"
+   }
   },
   {
    "ticker": "LLY",
@@ -740,8 +743,8 @@
    "sector": "Healthcare",
    "price": 394.15,
    "beta": 0.4912386,
-   "dcf_value": null,
-   "peg_ratio": null,
+   "dcf_value": 263.9380933163461,
+   "peg_ratio": -2.5161422240155686,
    "forward_pe": 22.9787,
    "fvg_timeframe": null,
    "fvg_status": "None",
@@ -752,7 +755,7 @@
    "stop_price": null,
    "target_1m": 433.57,
    "target_6m": 453.27,
-   "target_12m": null,
+   "target_12m": 478.68,
    "buy_pct": 0.84375,
    "analyst_count": 32,
    "buy_zone_low": 354.74,
@@ -786,7 +789,12 @@
     "source": "ai",
     "generatedAt": "2026-11-07T00:44:04.413Z"
    },
-   "updated_at": "2026-11-07T00:43:17.605Z"
+   "updated_at": "2026-11-07T00:43:17.605Z",
+   "stale_fields": {
+    "dcfValue": "2026-11-06",
+    "peg": "2026-11-06",
+    "target12m": "2026-11-06"
+   }
   },
   {
    "ticker": "ISRG",
@@ -832,8 +840,8 @@
    "sector": "Healthcare",
    "price": 29.39,
    "beta": 0.27043253,
-   "dcf_value": null,
-   "peg_ratio": null,
+   "dcf_value": 37.829210784967174,
+   "peg_ratio": -0.7026199274276774,
    "forward_pe": 41.4376,
    "fvg_timeframe": null,
    "fvg_status": "None",
@@ -844,7 +852,7 @@
    "stop_price": null,
    "target_1m": 32.33,
    "target_6m": 33.8,
-   "target_12m": null,
+   "target_12m": 31.13,
    "buy_pct": 0.38235294117647056,
    "analyst_count": 34,
    "buy_zone_low": 26.45,
@@ -881,7 +889,12 @@
     "generatedAt": "2026-11-06T20:54:27.402Z",
     "stale": true
    },
-   "updated_at": "2026-11-07T00:43:17.605Z"
+   "updated_at": "2026-11-07T00:43:17.605Z",
+   "stale_fields": {
+    "dcfValue": "2026-11-06",
+    "peg": "2026-11-06",
+    "target12m": "2026-11-06"
+   }
   },
   {
    "ticker": "MNST",
@@ -927,8 +940,8 @@
    "sector": "Consumer",
    "price": 141.34,
    "beta": 0.29012865,
-   "dcf_value": null,
-   "peg_ratio": null,
+   "dcf_value": 192.4026748984577,
+   "peg_ratio": 0.3456394116826985,
    "forward_pe": 17.6458,
    "fvg_timeframe": null,
    "fvg_status": "None",
@@ -939,7 +952,7 @@
    "stop_price": null,
    "target_1m": 155.47,
    "target_6m": 162.54,
-   "target_12m": null,
+   "target_12m": 142.38,
    "buy_pct": 0.3793103448275862,
    "analyst_count": 29,
    "buy_zone_low": 127.21,
@@ -973,7 +986,12 @@
     "source": "ai",
     "generatedAt": "2026-11-07T00:44:04.413Z"
    },
-   "updated_at": "2026-11-07T00:43:17.605Z"
+   "updated_at": "2026-11-07T00:43:17.605Z",
+   "stale_fields": {
+    "dcfValue": "2026-11-06",
+    "peg": "2026-11-06",
+    "target12m": "2026-11-06"
+   }
   },
   {
    "ticker": "PG",
@@ -1019,8 +1037,8 @@
    "sector": "Consumer",
    "price": 1053.56,
    "beta": 0.8407755,
-   "dcf_value": null,
-   "peg_ratio": null,
+   "dcf_value": 294.3410536467889,
+   "peg_ratio": 3.66007382060129,
    "forward_pe": 51.1808,
    "fvg_timeframe": null,
    "fvg_status": "None",
@@ -1031,7 +1049,7 @@
    "stop_price": null,
    "target_1m": 1158.92,
    "target_6m": 1211.59,
-   "target_12m": null,
+   "target_12m": 1111.55,
    "buy_pct": 0.6808510638297872,
    "analyst_count": 47,
    "buy_zone_low": 948.2,
@@ -1068,7 +1086,12 @@
     "generatedAt": "2026-11-06T20:54:27.402Z",
     "stale": true
    },
-   "updated_at": "2026-11-07T00:43:17.605Z"
+   "updated_at": "2026-11-07T00:43:17.605Z",
+   "stale_fields": {
+    "dcfValue": "2026-11-06",
+    "peg": "2026-11-06",
+    "target12m": "2026-11-06"
+   }
   },
   {
    "ticker": "FANG",
@@ -1152,8 +1175,8 @@
    "sector": "Energy",
    "price": 165.87,
    "beta": 0.19732325,
-   "dcf_value": null,
-   "peg_ratio": null,
+   "dcf_value": 119.24856672417177,
+   "peg_ratio": 0.4112543228575033,
    "forward_pe": 17.4374,
    "fvg_timeframe": null,
    "fvg_status": "None",
@@ -1164,7 +1187,7 @@
    "stop_price": null,
    "target_1m": 182.46,
    "target_6m": 190.75,
-   "target_12m": null,
+   "target_12m": 171.11,
    "buy_pct": 0.40625,
    "analyst_count": 32,
    "buy_zone_low": 149.28,
@@ -1201,7 +1224,12 @@
     "generatedAt": "2026-11-06T20:54:27.402Z",
     "stale": true
    },
-   "updated_at": "2026-11-07T00:43:17.605Z"
+   "updated_at": "2026-11-07T00:43:17.605Z",
+   "stale_fields": {
+    "dcfValue": "2026-11-06",
+    "peg": "2026-11-06",
+    "target12m": "2026-11-06"
+   }
   },
   {
    "ticker": "OXY",

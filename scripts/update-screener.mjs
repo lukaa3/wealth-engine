@@ -21,7 +21,7 @@ import { mockData } from "../src/mockData.js";
 import { createProviders, createCache } from "../src/lib/providers.js";
 import { buildLiveUniverse, buildLiveAnalystFeed, buildLiveInsider } from "../src/lib/liveData.js";
 import { scoreUniverse } from "../src/scoring.js";
-import { stockToRow, actionToRow, insiderToRow } from "../src/lib/schema.js";
+import { stockToRow, rowToStock, actionToRow, insiderToRow } from "../src/lib/schema.js";
 import { analyzeMany, buildPrompt } from "../src/lib/ai.js";
 
 const env = process.env;
@@ -36,18 +36,25 @@ if (!keys.fmpKey && !keys.finnhubKey && !keys.alphaVantageKey) {
 const tickers = (env.WATCHLIST || mockData.stocks.map((s) => s.ticker).join(","))
   .split(/[\s,]+/).map((t) => t.trim().toUpperCase()).filter(Boolean);
 const baseByTicker = Object.fromEntries(mockData.stocks.map((s) => [s.ticker, s]));
-// Alpha Vantage results persist in cache/alpha-vantage.json (committed by the workflow) so the
-// 25-calls/day free quota refreshes each ticker roughly every 3 days instead of all at once.
-const AV_CACHE_FILE = "cache/alpha-vantage.json";
-let avStore = {};
-try { avStore = JSON.parse(fs.readFileSync(AV_CACHE_FILE, "utf8")); } catch (e) {}
-const avCache = {
-  get: (k) => { const r = avStore[k]; return r && Date.now() - r.t < r.ttl ? r.v : undefined; },
-  set: (k, v, ttl) => { avStore[k] = { t: Date.now(), ttl, v }; },
-  clear: () => { avStore = {}; },
+// Small, slow-changing API results persist in cache/api-cache.json (committed by the workflow), so a second run
+// the same day costs almost no quota and Alpha Vantage's 25 calls/day refresh each ticker about every 3 days.
+// Big payloads (candles, news, insider lists) stay in memory only, to keep the repo small.
+const CACHE_FILE = "cache/api-cache.json";
+const PERSIST = /^(fmp:(p|dcf|pt|gc|r):|fh:rec:|av:o:)/;
+let store = {};
+try { store = JSON.parse(fs.readFileSync(CACHE_FILE, "utf8")); } catch (e) {}
+try { Object.assign(store, JSON.parse(fs.readFileSync("cache/alpha-vantage.json", "utf8"))); } catch (e) {} // older file name
+const mem = createCache();
+const fileCache = {
+  get: (k) => {
+    if (!PERSIST.test(k)) return mem.get(k);
+    const r = store[k]; return r && Date.now() - r.t < r.ttl ? r.v : undefined;
+  },
+  set: (k, v, ttl) => (PERSIST.test(k) ? (store[k] = { t: Date.now(), ttl, v }) : mem.set(k, v, ttl)),
+  clear: () => { store = {}; mem.clear(); },
 };
 const P = createProviders(keys, {
-  cache: createCache(), avCache, quoteTtlMin: 5, fundamentalsTtlHours: 24,
+  cache: fileCache, avCache: fileCache, quoteTtlMin: 5, fundamentalsTtlHours: 20,
   avMaxCalls: Number(env.AV_MAX_CALLS || 22), avMinGapMs: Number(env.AV_MIN_GAP_MS || 13000),
 });
 
@@ -56,13 +63,40 @@ const { stocks, failed } = await buildLiveUniverse(tickers, P, baseByTicker, (d,
 process.stdout.write("\n");
 if (failed.length) console.warn("No data for:", failed.join("; "));
 if (!stocks.length) { console.error("No stocks returned — check API keys / plan limits."); process.exit(1); }
-if (P.alpha) {
+{
   const now = Date.now();
-  for (const k of Object.keys(avStore)) if (now - avStore[k].t > avStore[k].ttl) delete avStore[k];
-  fs.mkdirSync(path.dirname(AV_CACHE_FILE), { recursive: true });
-  fs.writeFileSync(AV_CACHE_FILE, JSON.stringify(avStore));
-  console.log(`Alpha Vantage: ${P.alpha.stats.used} live call(s) this run${P.alpha.stats.exhausted ? " (hit the daily limit)" : ""}, ${Object.keys(avStore).length} cached`);
+  for (const k of Object.keys(store)) if (now - store[k].t > store[k].ttl) delete store[k];
+  fs.mkdirSync(path.dirname(CACHE_FILE), { recursive: true });
+  fs.writeFileSync(CACHE_FILE, JSON.stringify(store));
+  try { fs.unlinkSync("cache/alpha-vantage.json"); } catch (e) {}
+  console.log(`API cache: ${Object.keys(store).length} entries saved to ${CACHE_FILE}`);
+  if (P.alpha) console.log(`Alpha Vantage: ${P.alpha.stats.used} live call(s) this run${P.alpha.stats.exhausted ? " (stopped: limit reply)" : ""}, ${Object.keys(store).filter((k) => k.startsWith("av:")).length} cached`);
 }
+
+/* ---------------- Last known good: don't let a failed call wipe yesterday's value ---------------- */
+const CARRY = ["dcfValue", "peg", "fwdPE", "target12m", "buyPct", "analystCount"];
+const MAX_CARRY_DAYS = 7;
+let prevRows = {};
+try {
+  const old = JSON.parse(fs.readFileSync(path.join(OUT_DIR, "screener.json"), "utf8"));
+  prevRows = Object.fromEntries((old.stocks || []).map((r) => [r.ticker, r]));
+} catch (e) {}
+let carried = 0;
+const today = new Date().toISOString().slice(0, 10);
+for (const s of stocks) {
+  const r = prevRows[s.ticker];
+  if (!r) continue;
+  const prev = rowToStock(r);
+  const prevStale = r.stale_fields || {};
+  s.staleFields = {};
+  for (const f of CARRY) {
+    if (s[f] != null || prev[f] == null) continue;
+    const since = prevStale[f] || String(r.updated_at || today).slice(0, 10);
+    if ((Date.parse(today) - Date.parse(since)) / 864e5 > MAX_CARRY_DAYS) continue;
+    s[f] = prev[f]; s.staleFields[f] = since; carried++;
+  }
+}
+if (carried) console.log(`Kept ${carried} last-known-good value(s) where today's call failed (max ${MAX_CARRY_DAYS} days)`);
 
 const names = Object.fromEntries(stocks.map((s) => [s.ticker, s.name]));
 const analyst = await buildLiveAnalystFeed(tickers, P, { names }).catch((e) => (console.warn("analyst feed:", e.message), []));
@@ -114,8 +148,18 @@ if (analyst.length) write("analyst.json", { generatedAt, items: analyst.map(acti
 if (insider.length) write("insider.json", { generatedAt, items: insider.map(insiderToRow) });
 console.log(`Wrote ${rows.length} stocks, ${analyst.length} analyst actions, ${insider.length} insider trades to ${OUT_DIR}/`);
 
-const notes = stocks.flatMap((s) => (s.dataNotes || []).map((n) => s.ticker + " " + n));
-if (notes.length) console.log(`${notes.length} field(s) unavailable on this plan, e.g.:\n  ` + notes.slice(0, 6).join("\n  "));
+// Group failures by endpoint + reply so the log shows exactly what each provider said.
+const groups = {};
+for (const s of stocks) for (const n of s.dataNotes || []) {
+  const [label, ...rest] = n.split(": ");
+  const key = label + ": " + rest.join(": ").slice(0, 160);
+  (groups[key] = groups[key] || []).push(s.ticker);
+}
+const keysSorted = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length);
+if (keysSorted.length) {
+  console.log(`Unavailable fields (${keysSorted.reduce((a, k) => a + groups[k].length, 0)} total):`);
+  for (const k of keysSorted) console.log(`  [${groups[k].length}] ${k}  (${groups[k].slice(0, 6).join(", ")}${groups[k].length > 6 ? ", …" : ""})`);
+}
 
 /* ------------------------------- Supabase upsert ------------------------------- */
 async function upsert(table, data, onConflict) {
