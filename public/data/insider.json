@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-07T01:15:17.957Z",
+ "generatedAt": "2026-11-07T01:21:23.485Z",
  "items": [
   {
    "filing_date": "2026-11-05",
@@ -201,19 +201,10 @@
   },
   {
    "filing_date": "2026-11-05",
-   "ticker": "ORLY",
-   "insider_role": "GRAY LARRY DEAN",
-   "shares": 7750,
-   "value": -699244,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-11-05",
-   "ticker": "SYY",
-   "insider_role": "Ondrof Thomas Gerard",
-   "shares": 2500,
-   "value": 191550,
+   "ticker": "ACN",
+   "insider_role": "Egawa Atsushi",
+   "shares": 10000,
+   "value": -2700000,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -237,55 +228,118 @@
   },
   {
    "filing_date": "2026-11-04",
-   "ticker": "HIG",
-   "insider_role": "Costello Beth Ann",
-   "shares": 31597,
-   "value": -4289293,
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 408,
+   "value": -250573,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-04",
-   "ticker": "STLD",
-   "insider_role": "SCHNEIDER BARRY",
-   "shares": 1300,
-   "value": -326430,
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -50360,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-04",
-   "ticker": "STLD",
-   "insider_role": "SCHNEIDER BARRY",
-   "shares": 9819,
-   "value": -2452393,
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 57,
+   "value": -35007,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-04",
-   "ticker": "STLD",
-   "insider_role": "SCHNEIDER BARRY",
-   "shares": 24202,
-   "value": -6027508,
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -50360,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-04",
-   "ticker": "STLD",
-   "insider_role": "SCHNEIDER BARRY",
-   "shares": 12563,
-   "value": -3116503,
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 946,
+   "value": -580986,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-11-04",
-   "ticker": "STLD",
-   "insider_role": "SCHNEIDER BARRY",
-   "shares": 2116,
-   "value": -522631,
+   "ticker": "META",
+   "insider_role": "Andreessen Marc L",
+   "shares": 64,
+   "value": -39288,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "META",
+   "insider_role": "Andreessen Marc L",
+   "shares": 1292,
+   "value": -792125,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "META",
+   "insider_role": "Andreessen Marc L",
+   "shares": 1986,
+   "value": -1215670,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "META",
+   "insider_role": "Andreessen Marc L",
+   "shares": 4571,
+   "value": -2793521,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "META",
+   "insider_role": "Andreessen Marc L",
+   "shares": 4629,
+   "value": -2824940,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "META",
+   "insider_role": "Andreessen Marc L",
+   "shares": 1964,
+   "value": -1196724,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "META",
+   "insider_role": "Andreessen Marc L",
+   "shares": 872,
+   "value": -530403,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-04",
+   "ticker": "META",
+   "insider_role": "Andreessen Marc L",
+   "shares": 5573,
+   "value": -3381975,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -381,6 +435,33 @@
   },
   {
    "filing_date": "2026-11-03",
+   "ticker": "AMT",
+   "insider_role": "Font Juan",
+   "shares": 592,
+   "value": -112261,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-03",
+   "ticker": "NI",
+   "insider_role": "Anderson Shawn",
+   "shares": 6500,
+   "value": -292500,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-03",
+   "ticker": "NI",
+   "insider_role": "Jefferson William Jr.",
+   "shares": 40000,
+   "value": -1782400,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-03",
    "ticker": "SO",
    "insider_role": "Kim Matthew M.",
    "shares": 100,
@@ -390,19 +471,19 @@
   },
   {
    "filing_date": "2026-10-30",
-   "ticker": "TXN",
-   "insider_role": "KIRK RONALD",
-   "shares": 6065,
-   "value": -1882515,
+   "ticker": "AMT",
+   "insider_role": "Dowling Ruth T",
+   "shares": 952,
+   "value": -176891,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-10-30",
-   "ticker": "UPS",
-   "insider_role": "Guffey Matthew W",
-   "shares": 8318,
-   "value": -876634,
+   "ticker": "AMT",
+   "insider_role": "Dowling Ruth T",
+   "shares": 626,
+   "value": -113932,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -416,83 +497,92 @@
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-29",
-   "ticker": "COF",
-   "insider_role": "FAIRBANK RICHARD D",
-   "shares": 6873,
-   "value": -1403398,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-29",
-   "ticker": "COF",
-   "insider_role": "FAIRBANK RICHARD D",
-   "shares": 37025,
-   "value": -7526812,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-29",
-   "ticker": "COF",
-   "insider_role": "FAIRBANK RICHARD D",
-   "shares": 46845,
-   "value": -9477680,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-29",
-   "ticker": "TXN",
-   "insider_role": "SANCHEZ ROBERT E",
-   "shares": 477,
-   "value": -144564,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-29",
-   "ticker": "TXN",
-   "insider_role": "SANCHEZ ROBERT E",
-   "shares": 5588,
-   "value": -1688358,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-29",
-   "ticker": "TXN",
-   "insider_role": "CLARK JANET F",
-   "shares": 350,
-   "value": -106110,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-29",
-   "ticker": "TXN",
-   "insider_role": "CLARK JANET F",
-   "shares": 3956,
-   "value": -1196294,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-29",
-   "ticker": "TXN",
-   "insider_role": "PATSLEY PAMELA H",
-   "shares": 4532,
-   "value": -1366670,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
    "filing_date": "2026-10-28",
    "ticker": "ROP",
    "insider_role": "Stipancich John K",
    "shares": 3500,
    "value": -1571640,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-28",
+   "ticker": "ACN",
+   "insider_role": "Sweet Julie Spellman",
+   "shares": 10100,
+   "value": 2486318,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-28",
+   "ticker": "ACN",
+   "insider_role": "Sweet Julie Spellman",
+   "shares": 2100,
+   "value": 514723,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-28",
+   "ticker": "ACN",
+   "insider_role": "Price Paula A",
+   "shares": 800,
+   "value": 199848,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-28",
+   "ticker": "META",
+   "insider_role": "Alford Peggy",
+   "shares": 390,
+   "value": -249600,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-28",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 408,
+   "value": -261120,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-28",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -52480,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-28",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 57,
+   "value": -36480,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-28",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -52480,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-28",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 946,
+   "value": -605440,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -524,164 +614,227 @@
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-20",
-   "ticker": "MTB",
-   "insider_role": "PEARSON KEVIN J",
-   "shares": 2000,
-   "value": -441500,
+   "filing_date": "2026-10-22",
+   "ticker": "ACN",
+   "insider_role": "Sekido Ryoji",
+   "shares": 1102,
+   "value": -270297,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-22",
+   "ticker": "ACN",
+   "insider_role": "Sekido Ryoji",
+   "shares": 4742,
+   "value": -1160529,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-22",
+   "ticker": "ACN",
+   "insider_role": "Burgum Melissa A",
+   "shares": 811,
+   "value": -202750,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-22",
+   "ticker": "AMT",
+   "insider_role": "Clarke Teresa Hillary",
+   "shares": 43,
+   "value": 7878,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-21",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 408,
+   "value": -288538,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-21",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -57990,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-21",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 57,
+   "value": -40310,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-21",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -57990,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-21",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 946,
+   "value": -669011,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-10-14",
-   "ticker": "AFRM",
-   "insider_role": "O'Hare Robert",
-   "shares": 65591,
-   "value": -5248592,
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 408,
+   "value": -297065,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-14",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -59704,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-14",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 57,
+   "value": -41502,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-14",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -59704,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-14",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 946,
+   "value": -688783,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-13",
+   "ticker": "ACN",
+   "insider_role": "Hogan Catherine Kiernan",
+   "shares": 32,
+   "value": -6924,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-13",
+   "ticker": "ACN",
+   "insider_role": "Hogan Catherine Kiernan",
+   "shares": 206,
+   "value": -44317,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-13",
+   "ticker": "ACN",
+   "insider_role": "Hogan Catherine Kiernan",
+   "shares": 242,
+   "value": -51822,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-13",
+   "ticker": "ACN",
+   "insider_role": "Hogan Catherine Kiernan",
+   "shares": 219,
+   "value": -46692,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-13",
+   "ticker": "ACN",
+   "insider_role": "Hogan Catherine Kiernan",
+   "shares": 1,
+   "value": -211,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-09",
+   "ticker": "ACN",
+   "insider_role": "Hogan Catherine Kiernan",
+   "shares": 1320,
+   "value": -264000,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-10-07",
-   "ticker": "COF",
-   "insider_role": "Cooper Matthew W",
-   "shares": 3500,
-   "value": -686770,
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 408,
+   "value": -297057,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 299,
-   "value": 23842,
+   "filing_date": "2026-10-07",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -59703,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 5135,
-   "value": 404484,
+   "filing_date": "2026-10-07",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 57,
+   "value": -41501,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 2452,
-   "value": 191084,
+   "filing_date": "2026-10-07",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -59703,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 2290,
-   "value": 176605,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 20200,
-   "value": 1654380,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 44300,
-   "value": 3594502,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 842753,
-   "value": 67453950,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 342553,
-   "value": 27071964,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 448113,
-   "value": 35118616,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 100,
-   "value": 8000,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 950,
-   "value": 75535,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 3802,
-   "value": 297545,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 186991,
-   "value": 15232287,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 92830,
-   "value": 7479313,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-10-05",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 425869,
-   "value": 33852327,
+   "filing_date": "2026-10-07",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 946,
+   "value": -688764,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -695,146 +848,551 @@
    "filing_url": null
   },
   {
-   "filing_date": "2026-10-01",
-   "ticker": "PCG",
-   "insider_role": "LARSEN JOHN O",
-   "shares": 7500,
-   "value": 91500,
+   "filing_date": "2026-09-28",
+   "ticker": "META",
+   "insider_role": "Zuckerberg Mark",
+   "shares": 476,
+   "value": -370936,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-25",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 7022,
-   "value": 558460,
+   "filing_date": "2026-09-28",
+   "ticker": "META",
+   "insider_role": "Zuckerberg Mark",
+   "shares": 2146,
+   "value": -1670445,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-25",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 171723,
-   "value": 14012597,
+   "filing_date": "2026-09-28",
+   "ticker": "META",
+   "insider_role": "Zuckerberg Mark",
+   "shares": 4810,
+   "value": -3740552,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-25",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 313379,
-   "value": 25352361,
+   "filing_date": "2026-09-28",
+   "ticker": "META",
+   "insider_role": "Zuckerberg Mark",
+   "shares": 1769,
+   "value": -1373739,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-25",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 2975,
-   "value": 237732,
+   "filing_date": "2026-09-28",
+   "ticker": "META",
+   "insider_role": "Zuckerberg Mark",
+   "shares": 1133,
+   "value": -878436,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-25",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 9415,
-   "value": 747739,
+   "filing_date": "2026-09-28",
+   "ticker": "META",
+   "insider_role": "Zuckerberg Mark",
+   "shares": 600,
+   "value": -467596,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-25",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 241692,
-   "value": 19683396,
+   "filing_date": "2026-09-28",
+   "ticker": "META",
+   "insider_role": "Zuckerberg Mark",
+   "shares": 4324,
+   "value": -3365609,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-25",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 399238,
-   "value": 32170598,
+   "filing_date": "2026-09-28",
+   "ticker": "META",
+   "insider_role": "Zuckerberg Mark",
+   "shares": 7607,
+   "value": -5915434,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-25",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 1263,
-   "value": 101027,
+   "filing_date": "2026-09-28",
+   "ticker": "META",
+   "insider_role": "Zuckerberg Mark",
+   "shares": 2516,
+   "value": -1953816,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-25",
-   "ticker": "LEN",
-   "insider_role": "BERKSHIRE HATHAWAY INC",
-   "shares": 532993,
-   "value": 43518878,
+   "filing_date": "2026-09-28",
+   "ticker": "META",
+   "insider_role": "Zuckerberg Mark",
+   "shares": 2093,
+   "value": -1622893,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-16",
-   "ticker": "COF",
-   "insider_role": "Karam Celia",
-   "shares": 2017,
-   "value": -415643,
+   "filing_date": "2026-09-23",
+   "ticker": "META",
+   "insider_role": "Cox Christopher K",
+   "shares": 20000,
+   "value": -14500328,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-16",
-   "ticker": "COF",
-   "insider_role": "Dean Lia",
-   "shares": 2066,
-   "value": -425741,
+   "filing_date": "2026-09-23",
+   "ticker": "META",
+   "insider_role": "Cox Christopher K",
+   "shares": 20000,
+   "value": -14009932,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-16",
-   "ticker": "MTB",
-   "insider_role": "JONES RENE F",
-   "shares": 19396,
-   "value": -4642433,
+   "filing_date": "2026-09-23",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 408,
+   "value": -277550,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-16",
-   "ticker": "AFRM",
-   "insider_role": "Jiyane Siphelele",
-   "shares": 26980,
-   "value": -1947686,
+   "filing_date": "2026-09-23",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -55782,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-15",
-   "ticker": "SYY",
-   "insider_role": "Phillips Ronald L",
+   "filing_date": "2026-09-23",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
    "shares": 57,
-   "value": -4806,
+   "value": -38775,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-15",
-   "ticker": "SYY",
-   "insider_role": "Phillips Ronald L",
-   "shares": 960,
-   "value": -79680,
+   "filing_date": "2026-09-23",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -55782,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-23",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 946,
+   "value": -643535,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "KR",
+   "insider_role": "Adcock Mary Ellen",
+   "shares": 24095,
+   "value": -1462109,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "KR",
+   "insider_role": "Adcock Mary Ellen",
+   "shares": 10846,
+   "value": -657723,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-21",
+   "ticker": "KR",
+   "insider_role": "Adcock Mary Ellen",
+   "shares": 37960,
+   "value": -2305501,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 638,
+   "value": -160623,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 9978,
+   "value": -2504714,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 17595,
+   "value": -4402037,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 10313,
+   "value": -2569708,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 7168,
+   "value": -1778687,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 3430,
+   "value": -848443,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 1378,
+   "value": -339107,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 930,
+   "value": -235882,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 11495,
+   "value": -2908922,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 20716,
+   "value": -5221027,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 33001,
+   "value": -8284350,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-18",
+   "ticker": "ADBE",
+   "insider_role": "NARAYEN SHANTANU",
+   "shares": 8358,
+   "value": -2091376,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-17",
+   "ticker": "META",
+   "insider_role": "Cox Christopher K",
+   "shares": 20000,
+   "value": -13504556,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-16",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 408,
+   "value": -268354,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-16",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -53934,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-16",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 57,
+   "value": -37491,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-16",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 82,
+   "value": -53934,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-16",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 946,
+   "value": -622213,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-11",
+   "ticker": "META",
+   "insider_role": "Cox Christopher K",
+   "shares": 1422,
+   "value": -925935,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-11",
+   "ticker": "META",
+   "insider_role": "Cox Christopher K",
+   "shares": 18578,
+   "value": -12079640,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 52,
+   "value": -32254,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 157,
+   "value": -97200,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 304,
+   "value": -187873,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 473,
+   "value": -291740,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 354,
+   "value": -218021,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 200,
+   "value": -122898,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 40,
+   "value": -24532,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 52,
+   "value": -31835,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 328,
+   "value": -202068,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 228,
+   "value": -140462,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 328,
+   "value": -202068,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 24,
+   "value": -14952,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 40,
+   "value": -24841,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 78,
+   "value": -48389,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 120,
+   "value": -74272,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 529,
+   "value": -327019,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 555,
+   "value": -342592,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 855,
+   "value": -526955,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 262,
+   "value": -161191,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 117,
+   "value": -71863,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-10",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 258,
+   "value": -158151,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -857,29 +1415,11 @@
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-09",
-   "ticker": "PCG",
-   "insider_role": "Fugate William Craig",
-   "shares": 6500,
-   "value": -89440,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-09",
-   "ticker": "AEP",
-   "insider_role": "Dixon Kate",
-   "shares": 2000,
-   "value": -250000,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-09",
-   "ticker": "AFRM",
-   "insider_role": "Jiyane Siphelele",
-   "shares": 25000,
-   "value": -1810250,
+   "filing_date": "2026-09-08",
+   "ticker": "META",
+   "insider_role": "Anderson Aaron",
+   "shares": 3240,
+   "value": -2002508,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -902,6 +1442,15 @@
    "filing_url": null
   },
   {
+   "filing_date": "2026-09-04",
+   "ticker": "PDD",
+   "insider_role": "Kam Anthony Ping Leung",
+   "shares": 1705,
+   "value": -140151,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
    "filing_date": "2026-09-03",
    "ticker": "SO",
    "insider_role": "Kim Matthew M.",
@@ -911,119 +1460,11 @@
    "filing_url": null
   },
   {
-   "filing_date": "2026-09-03",
-   "ticker": "AFRM",
-   "insider_role": "Adkins Katherine",
-   "shares": 41664,
-   "value": -3146882,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-03",
-   "ticker": "AFRM",
-   "insider_role": "O'Hare Robert",
-   "shares": 5886,
-   "value": -435682,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-03",
-   "ticker": "AFRM",
-   "insider_role": "Adkins Katherine",
-   "shares": 2300,
-   "value": -165301,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-03",
-   "ticker": "AFRM",
-   "insider_role": "Adkins Katherine",
-   "shares": 15599,
-   "value": -1107529,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-03",
-   "ticker": "AFRM",
-   "insider_role": "Adkins Katherine",
-   "shares": 23765,
-   "value": -1666639,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-03",
-   "ticker": "AFRM",
-   "insider_role": "O'Hare Robert",
-   "shares": 200,
-   "value": -14502,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-03",
-   "ticker": "AFRM",
-   "insider_role": "O'Hare Robert",
-   "shares": 15545,
-   "value": -1112867,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-02",
-   "ticker": "COF",
-   "insider_role": "Cooper Matthew W",
-   "shares": 3500,
-   "value": -749350,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
    "filing_date": "2026-09-01",
    "ticker": "TYL",
    "insider_role": "MOORE H LYNN JR",
    "shares": 9250,
    "value": -3448280,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-01",
-   "ticker": "ORLY",
-   "insider_role": "HENDRICKSON THOMAS",
-   "shares": 1000,
-   "value": -87831,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-09-01",
-   "ticker": "AFRM",
-   "insider_role": "Linford Michael",
-   "shares": 79219,
-   "value": -7130502,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-31",
-   "ticker": "TXN",
-   "insider_role": "Abraham Tsedeniya",
-   "shares": 592,
-   "value": -156856,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-31",
-   "ticker": "TXN",
-   "insider_role": "Abraham Tsedeniya",
-   "shares": 6408,
-   "value": -1695557,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1065,37 +1506,19 @@
   },
   {
    "filing_date": "2026-08-25",
-   "ticker": "MTB",
-   "insider_role": "Seseri Rudina",
-   "shares": 623,
-   "value": -150171,
+   "ticker": "AMT",
+   "insider_role": "Kalathur Rajesh",
+   "shares": 2829,
+   "value": 500733,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-25",
-   "ticker": "EXPE",
-   "insider_role": "Dzielak Robert J",
-   "shares": 1004,
-   "value": -336340,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-25",
-   "ticker": "SYY",
-   "insider_role": "Phillips Ronald L",
-   "shares": 506,
-   "value": -42550,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-25",
-   "ticker": "SYY",
-   "insider_role": "Phillips Ronald L",
-   "shares": 7350,
-   "value": -614534,
+   "ticker": "LYV",
+   "insider_role": "Capo Brian",
+   "shares": 2900,
+   "value": -533600,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1110,10 +1533,136 @@
   },
   {
    "filing_date": "2026-08-20",
-   "ticker": "EXPE",
-   "insider_role": "Soliday Lance A",
-   "shares": 2810,
-   "value": -909456,
+   "ticker": "META",
+   "insider_role": "Mahoney Curtis J.",
+   "shares": 1559,
+   "value": -869922,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 120,
+   "value": -67276,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 40,
+   "value": -22384,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 120,
+   "value": -66975,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 720,
+   "value": -401449,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 40,
+   "value": -22233,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 160,
+   "value": -88702,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 768,
+   "value": -425025,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 561,
+   "value": -309935,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 1031,
+   "value": -568336,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 708,
+   "value": -389540,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 1219,
+   "value": -669535,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 1864,
+   "value": -1021836,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 1845,
+   "value": -1010164,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "META",
+   "insider_role": "Bosworth Andrew",
+   "shares": 7848,
+   "value": -4379184,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1128,118 +1677,37 @@
   },
   {
    "filing_date": "2026-08-19",
-   "ticker": "MTB",
-   "insider_role": "Taylor John R.",
-   "shares": 1217,
-   "value": -308923,
+   "ticker": "SBAC",
+   "insider_role": "Krouse George R Jr",
+   "shares": 300,
+   "value": -54802,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-18",
-   "ticker": "COF",
-   "insider_role": "Karam Celia",
-   "shares": 1,
-   "value": -226,
+   "ticker": "NI",
+   "insider_role": "BIRMINGHAM MELODY",
+   "shares": 37509,
+   "value": -1590382,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-18",
-   "ticker": "COF",
-   "insider_role": "Karam Celia",
-   "shares": 1887,
-   "value": -425556,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-18",
-   "ticker": "COF",
-   "insider_role": "Dean Lia",
-   "shares": 1,
-   "value": -226,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-18",
-   "ticker": "COF",
-   "insider_role": "Dean Lia",
-   "shares": 2192,
-   "value": -494340,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-18",
-   "ticker": "EXPE",
-   "insider_role": "Dzielak Robert J",
-   "shares": 2000,
-   "value": -661000,
+   "ticker": "META",
+   "insider_role": "LI SUSAN J",
+   "shares": 2127,
+   "value": -1467311,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-17",
-   "ticker": "COF",
-   "insider_role": "Mouadeb Mark Daniel",
-   "shares": 1199,
-   "value": -269775,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-17",
-   "ticker": "EXPE",
-   "insider_role": "Jacobson Craig A",
-   "shares": 3133,
-   "value": -1029250,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-17",
-   "ticker": "SYF",
-   "insider_role": "Casellas Alberto",
-   "shares": 5456,
-   "value": -436480,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-14",
-   "ticker": "ORLY",
-   "insider_role": "MANCINI CHRISTOPHER ANDREW",
-   "shares": 3000,
-   "value": -279000,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-14",
-   "ticker": "ORLY",
-   "insider_role": "SASTRE MARIA",
-   "shares": 2000,
-   "value": -183707,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-14",
-   "ticker": "AFRM",
-   "insider_role": "Watson Noel Bertram",
-   "shares": 2000,
-   "value": -155720,
-   "is_10b5_1": false,
-   "filing_url": null
-  },
-  {
-   "filing_date": "2026-08-13",
-   "ticker": "EXPE",
-   "insider_role": "Dzielak Robert J",
-   "shares": 3003,
-   "value": -945945,
+   "ticker": "ACN",
+   "insider_role": "Clifford Katherine Lee",
+   "shares": 68,
+   "value": -11966,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1263,28 +1731,100 @@
   },
   {
    "filing_date": "2026-08-12",
-   "ticker": "SYY",
-   "insider_role": "Phillips Ronald L",
-   "shares": 367,
-   "value": -30604,
+   "ticker": "LNT",
+   "insider_role": "DURIAN ROBERT J",
+   "shares": 0,
+   "value": 0,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
    "filing_date": "2026-08-12",
-   "ticker": "SYY",
-   "insider_role": "Phillips Ronald L",
-   "shares": 6285,
-   "value": -527563,
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 816,
+   "value": -489600,
    "is_10b5_1": false,
    "filing_url": null
   },
   {
-   "filing_date": "2026-08-11",
-   "ticker": "COF",
-   "insider_role": "Zamsky Michael",
-   "shares": 5473,
-   "value": -1193223,
+   "filing_date": "2026-08-12",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 164,
+   "value": -98400,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-12",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 114,
+   "value": -68400,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-12",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 164,
+   "value": -98400,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-12",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 40,
+   "value": -24286,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-12",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 40,
+   "value": -24239,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-12",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 92,
+   "value": -55576,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-12",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 113,
+   "value": -68073,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-12",
+   "ticker": "META",
+   "insider_role": "Olivan Javier",
+   "shares": 149,
+   "value": -89400,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-12",
+   "ticker": "ATO",
+   "insider_role": "WARE WILLIAM JAMES",
+   "shares": 300,
+   "value": 50278,
    "is_10b5_1": false,
    "filing_url": null
   }
