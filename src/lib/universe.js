@@ -15,6 +15,7 @@ export const EXTRA_TICKERS = [
   "SOFI", "RKLB", "IONQ", "SMCI", "HOOD", "COIN", "PLTR", "CRWD", "NET", "SNOW", "DDOG", "U", "RBLX", "AFRM", "UPST",
   "CELH", "ONON", "DKNG", "CVNA", "TSM", "NU", "SE", "SPOT", "UBER", "ABNB", "DASH", "AXON", "VRT", "ANET", "CEG",
   "VST", "OKLO", "SMR", "HIMS", "ALAB", "CRDO", "NBIS", "TEM", "RDDT", "DUOL", "CAVA", "ELF", "TOST", "SOUN", "ACHR",
+  "RVII",
 ];
 
 function parseCsv(text) {
