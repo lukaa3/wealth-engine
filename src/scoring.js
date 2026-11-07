@@ -129,6 +129,9 @@ export function scoreUniverse(stocks, sectorPE, insiderTransactions) {
 }
 
 /** Portfolio math + rebalancing signals. holdings: [{id, ticker, shares, cost}], byTicker: scored map. */
+/** Sectors the rebalancer leaves alone (no concentration or underweight alerts). */
+export const UNMANAGED_SECTORS = ["Cash", "Other", "Index Funds"];
+
 export function analyzePortfolio(holdings, byTicker, sectors, sectorColors, priceBook = {}) {
   const rows = holdings
     .map((h) => {
@@ -173,7 +176,7 @@ export function analyzePortfolio(holdings, byTicker, sectors, sectorColors, pric
     .forEach((r) => feed.push({ type: "stop", ticker: r.ticker, price: r.price, stop: r.stock.stop, weight: r.weight }));
 
   let trimProceeds = 0;
-  sectorRows.filter((s) => s.sector !== "Cash" && s.sector !== "Other" && s.weight > LIMITS.CONCENTRATION_LIMIT).forEach((s) => {
+  sectorRows.filter((s) => !UNMANAGED_SECTORS.includes(s.sector) && s.weight > LIMITS.CONCENTRATION_LIMIT).forEach((s) => {
     const excess = s.value - LIMITS.CONCENTRATION_LIMIT * total;
     trimProceeds += excess;
     const trimFirst = rows.filter((r) => r.sector === s.sector).sort((a, b) => (a.score || 0) - (b.score || 0)).slice(0, 2).map((r) => r.ticker);
@@ -184,7 +187,7 @@ export function analyzePortfolio(holdings, byTicker, sectors, sectorColors, pric
 
   const held = new Set(rows.map((r) => r.ticker));
   const needs = sectorRows
-    .filter((s) => s.sector !== "Cash" && s.sector !== "Other" && s.weight < LIMITS.UNDERWEIGHT_FLOOR)
+    .filter((s) => !UNMANAGED_SECTORS.includes(s.sector) && s.weight < LIMITS.UNDERWEIGHT_FLOOR)
     .map((s) => {
       const pick = Object.values(byTicker)
         .filter((x) => x.sector === s.sector && x.composite >= LIMITS.HIGH_CONVICTION && !held.has(x.ticker))

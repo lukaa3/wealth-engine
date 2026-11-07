@@ -15,8 +15,28 @@ export const EXTRA_TICKERS = [
   "SOFI", "RKLB", "IONQ", "SMCI", "HOOD", "COIN", "PLTR", "CRWD", "NET", "SNOW", "DDOG", "U", "RBLX", "AFRM", "UPST",
   "CELH", "ONON", "DKNG", "CVNA", "TSM", "NU", "SE", "SPOT", "UBER", "ABNB", "DASH", "AXON", "VRT", "ANET", "CEG",
   "VST", "OKLO", "SMR", "HIMS", "ALAB", "CRDO", "NBIS", "TEM", "RDDT", "DUOL", "CAVA", "ELF", "TOST", "SOUN", "ACHR",
-  "RVII",
 ];
+
+/**
+ * Tickers Yur owns that aren't in the S&P 500 list, plus sector fixes for ones that land in the wrong bucket.
+ * [sector, name, fund?] — funds/ETFs are priced every day but never treated as picks.
+ */
+export const KNOWN = {
+  RVII: ["Technology", "Robinhood Ventures Fund II", true],
+  SPY: ["Index Funds", "SPDR S&P 500 ETF", true],
+  QQQ: ["Index Funds", "Invesco QQQ (Nasdaq-100)", true],
+  IWM: ["Index Funds", "iShares Russell 2000 ETF", true],
+  XLV: ["Healthcare", "Health Care Select Sector SPDR ETF", true],
+  VFH: ["Financials", "Vanguard Financials ETF", true],
+  VDC: ["Consumer", "Vanguard Consumer Staples ETF", true],
+  XLY: ["Consumer", "Consumer Discretionary Select Sector SPDR ETF", true],
+  XLU: ["Other", "Utilities Select Sector SPDR ETF", true],
+  SPCX: ["Technology", "SpaceX"],
+  ONDS: ["Technology", "Ondas Inc."],
+  IREN: ["Technology", "IREN Limited"],
+  AAL: ["Other", "American Airlines"],
+  BE: ["Energy", "Bloom Energy"],
+};
 
 function parseCsv(text) {
   const lines = text.trim().split(/\r?\n/);
@@ -47,12 +67,19 @@ export async function loadUniverse({ fetchImpl = fetch, extra = [], fallback = [
   } catch (e) {
     console.warn("S&P 500 list unavailable (" + e.message + "); using the built-in list only.");
   }
-  for (const t of [...EXTRA_TICKERS, ...extra, ...fallback.map((f) => f.ticker || f)]) {
+  for (const t of [...EXTRA_TICKERS, ...Object.keys(KNOWN), ...extra, ...fallback.map((f) => f.ticker || f)]) {
     const k = String(t).trim().toUpperCase();
     if (k && !out.has(k)) {
       const fb = fallback.find((f) => f.ticker === k);
       out.set(k, { ticker: k, name: fb ? fb.name : k, sector: fb ? fb.sector : "Other" });
     }
+  }
+  for (const [t, [sector, name, fund]] of Object.entries(KNOWN)) {
+    const u = out.get(t);
+    if (!u) continue;
+    u.sector = sector;
+    if (u.name === t) u.name = name;
+    if (fund) u.fund = true;
   }
   return Array.from(out.values());
 }

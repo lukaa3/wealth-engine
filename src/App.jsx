@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import * as LucideIcons from "lucide-react";
 import { SECTORS, SECTOR_COLORS, SOURCE_URLS, insiderSourceUrl } from "./mockData.js";
-import { LIMITS, scoreUniverse, analyzePortfolio } from "./scoring.js";
+import { LIMITS, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio } from "./scoring.js";
 import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
 import { ruleSummary } from "./lib/ai.js";
@@ -379,8 +379,8 @@ function MarketScan({ scan, byTicker, onOpen }) {
   }
   const items = scan.items || [];
   const list = view === "movers"
-    ? items.filter((r) => r.ret20 != null && r.price >= 5).sort((a, b) => b.ret20 - a.ret20)
-    : items.filter((r) => r.fvgStatus !== "None").sort((a, b) => (b.entryLive - a.entryLive) || (b.tech - a.tech) || ((b.ret20 || 0) - (a.ret20 || 0)));
+    ? items.filter((r) => !r.fund && r.ret20 != null && r.price >= 5).sort((a, b) => b.ret20 - a.ret20)
+    : items.filter((r) => !r.fund && r.fvgStatus !== "None").sort((a, b) => (b.entryLive - a.entryLive) || (b.tech - a.tech) || ((b.ret20 || 0) - (a.ret20 || 0)));
   const rows = list.slice(0, more ? 75 : 15);
   const live = items.filter((r) => r.entryLive).length;
   return (
@@ -805,7 +805,7 @@ function HoldingForm({ byTicker, scored, priceBook, onAdd }) {
 function AllocationChart({ sectors, total }) {
   const [hover, setHover] = useState(null);
   const visible = sectors.filter((s) => s.weight > 0);
-  const listed = sectors.filter((s) => s.sector !== "Other" || s.weight > 0);
+  const listed = sectors.filter((s) => (s.sector !== "Other" && s.sector !== "Index Funds") || s.weight > 0);
   const h = hover && sectors.find((x) => x.sector === hover);
   return (
     <Card className="p-4">
@@ -826,8 +826,8 @@ function AllocationChart({ sectors, total }) {
       </div>
       <div className="mt-4 space-y-2.5">
         {listed.map((s) => {
-          const over = s.sector !== "Cash" && s.weight > L.CONCENTRATION_LIMIT;
-          const under = s.sector !== "Cash" && s.weight < L.UNDERWEIGHT_FLOOR;
+          const over = !UNMANAGED_SECTORS.includes(s.sector) && s.weight > L.CONCENTRATION_LIMIT;
+          const under = !UNMANAGED_SECTORS.includes(s.sector) && s.weight < L.UNDERWEIGHT_FLOOR;
           return (
             <div key={s.sector} className="grid grid-cols-[minmax(0,7.5rem)_1fr_auto] items-center gap-3 text-sm" onMouseEnter={() => setHover(s.sector)} onMouseLeave={() => setHover(null)}>
               <span className="flex min-w-0 items-center gap-2 text-slate-200"><span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: s.color }} /><span className="truncate">{s.sector}</span></span>

@@ -4,7 +4,7 @@
  * Shapes here are the same shapes api.js normalizes live database rows into.
  */
 
-export const SECTORS = ["Technology", "Financials", "Healthcare", "Consumer", "Energy", "Other", "Cash"];
+export const SECTORS = ["Technology", "Financials", "Healthcare", "Consumer", "Energy", "Index Funds", "Other", "Cash"];
 
 export const SECTOR_COLORS = {
   Technology: "#3987e5",
@@ -12,6 +12,7 @@ export const SECTOR_COLORS = {
   Healthcare: "#199e70",
   Consumer: "#c98500",
   Energy: "#d55181",
+  "Index Funds": "#2fb8c4", // SPY, QQQ, IWM — already diversified
   Other: "#9085e9", // live tickers outside the five core sectors
   Cash: "#94a3b8",
 };

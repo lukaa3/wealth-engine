@@ -30,7 +30,7 @@ export function scanRow(meta, data) {
     entryLive = price <= setup.fvg.hi * 1.03 && rr >= 2;
   }
   return {
-    ticker: meta.ticker, name: data.name || meta.name, sector: meta.sector, price: r3(price),
+    ticker: meta.ticker, name: data.name || meta.name, sector: meta.sector, fund: !!meta.fund, price: r3(price),
     ret5: r3(ret(c, 5)), ret20: r3(ret(c, 20)), ret60: r3(ret(c, 60)),
     volRatio: avgVol ? r3((last.volume || 0) / avgVol) : null,
     fromHigh: r3(price / hi52 - 1),
@@ -49,7 +49,7 @@ export function scanRow(meta, data) {
  */
 export function pickDeepSet(rows, { deepN = 30, momentumN = 10, watchlist = [] } = {}) {
   const chosen = new Set(watchlist.filter((t) => rows.some((r) => r.ticker === t)));
-  const liquid = rows.filter((r) => r.price >= 5);
+  const liquid = rows.filter((r) => r.price >= 5 && !r.fund); // funds/ETFs are held, not picked
   const movers = liquid.filter((r) => r.ret20 != null && (r.volRatio || 0) >= 1).sort((a, b) => b.ret20 - a.ret20).slice(0, momentumN);
   // Prefer live entries, then technical score, then the stronger 3-month trend (leaders pulling back beat laggards).
   const setups = liquid.slice().sort((a, b) => (b.entryLive - a.entryLive) || (b.tech - a.tech) || ((b.ret60 || 0) - (a.ret60 || 0)));
