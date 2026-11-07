@@ -36,13 +36,33 @@ if (!keys.fmpKey && !keys.finnhubKey && !keys.alphaVantageKey) {
 const tickers = (env.WATCHLIST || mockData.stocks.map((s) => s.ticker).join(","))
   .split(/[\s,]+/).map((t) => t.trim().toUpperCase()).filter(Boolean);
 const baseByTicker = Object.fromEntries(mockData.stocks.map((s) => [s.ticker, s]));
-const P = createProviders(keys, { cache: createCache(), quoteTtlMin: 5, fundamentalsTtlHours: 24 });
+// Alpha Vantage results persist in cache/alpha-vantage.json (committed by the workflow) so the
+// 25-calls/day free quota refreshes each ticker roughly every 3 days instead of all at once.
+const AV_CACHE_FILE = "cache/alpha-vantage.json";
+let avStore = {};
+try { avStore = JSON.parse(fs.readFileSync(AV_CACHE_FILE, "utf8")); } catch (e) {}
+const avCache = {
+  get: (k) => { const r = avStore[k]; return r && Date.now() - r.t < r.ttl ? r.v : undefined; },
+  set: (k, v, ttl) => { avStore[k] = { t: Date.now(), ttl, v }; },
+  clear: () => { avStore = {}; },
+};
+const P = createProviders(keys, {
+  cache: createCache(), avCache, quoteTtlMin: 5, fundamentalsTtlHours: 24,
+  avMaxCalls: Number(env.AV_MAX_CALLS || 22), avMinGapMs: Number(env.AV_MIN_GAP_MS || 13000),
+});
 
 console.log(`Updating ${tickers.length} tickers with: ${Object.entries(keys).filter(([, v]) => v).map(([k]) => k).join(", ")}`);
 const { stocks, failed } = await buildLiveUniverse(tickers, P, baseByTicker, (d, t) => process.stdout.write(`\r  ${d}/${t}`));
 process.stdout.write("\n");
 if (failed.length) console.warn("No data for:", failed.join("; "));
 if (!stocks.length) { console.error("No stocks returned — check API keys / plan limits."); process.exit(1); }
+if (P.alpha) {
+  const now = Date.now();
+  for (const k of Object.keys(avStore)) if (now - avStore[k].t > avStore[k].ttl) delete avStore[k];
+  fs.mkdirSync(path.dirname(AV_CACHE_FILE), { recursive: true });
+  fs.writeFileSync(AV_CACHE_FILE, JSON.stringify(avStore));
+  console.log(`Alpha Vantage: ${P.alpha.stats.used} live call(s) this run${P.alpha.stats.exhausted ? " (hit the daily limit)" : ""}, ${Object.keys(avStore).length} cached`);
+}
 
 const names = Object.fromEntries(stocks.map((s) => [s.ticker, s.name]));
 const analyst = await buildLiveAnalystFeed(tickers, P, { names }).catch((e) => (console.warn("analyst feed:", e.message), []));

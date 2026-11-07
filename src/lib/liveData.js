@@ -33,16 +33,19 @@ export async function buildLiveStock(ticker, P, base) {
   const price = pick(fhQuote && fhQuote.price, fq && fq.price);
   if (!price) return { ticker, error: errors.join("; ") || "no quote" };
 
-  const [profile, dcf, pt, gc, ratios, ov, rec, metric] = await Promise.all([
+  const [profile, dcf, pt, gc, ratios, rec, metric] = await Promise.all([
     safe(fmp && (() => fmp.profile(ticker)), errors, "fmp profile"),
     safe(fmp && (() => fmp.dcf(ticker)), errors, "fmp dcf"),
     safe(fmp && (() => fmp.priceTarget(ticker)), errors, "fmp price target"),
     safe(fmp && (() => fmp.gradesConsensus(ticker)), errors, "fmp grades consensus"),
     safe(fmp && (() => fmp.ratiosTtm(ticker)), errors, "fmp ratios"),
-    safe(alpha && (() => alpha.overview(ticker)), errors, "alpha vantage overview"),
     safe(finnhub && (() => finnhub.recommendation(ticker)), errors, "finnhub recommendation"),
     safe(finnhub && (() => finnhub.metric(ticker)), errors, "finnhub metric"),
   ]);
+  // Alpha Vantage only fills gaps (PEG, P/E, price target, analyst ratings) — it has a tiny free quota.
+  const needsAv = !(ratios && (ratios.priceToEarningsGrowthRatioTTM != null || ratios.pegRatioTTM != null))
+    || !(pt && pt.targetConsensus) || !(gc && gc.strongBuy != null) && !(rec && rec.strongBuy != null);
+  const ov = needsAv ? await safe(alpha && (() => alpha.overview(ticker)), errors, "alpha vantage overview") : null;
   let daily = await safe(fmp && (() => fmp.daily(ticker)), errors, "fmp candles");
   if (!daily || daily.length < 30) daily = await safe(alpha && (() => alpha.daily(ticker)), errors, "alpha vantage candles");
   daily = (daily || []).slice(-260);

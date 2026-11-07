@@ -107,13 +107,30 @@ export function createProviders(keys, opts = {}) {
     },
   };
 
+  // Alpha Vantage free = 25 calls/day: cap calls per run and stop once it reports a limit.
+  const avCache = opts.avCache || cache;
+  const av = { budget: opts.avMaxCalls ?? 20, used: 0, exhausted: false };
+  const gap = opts.avMinGapMs ?? 1500; // spacing between live calls (per-minute limit)
+  let chain = Promise.resolve();
+  const avGet = async (url, key, ttl) => {
+    const hit = avCache.get(key);
+    if (hit !== undefined) return hit;
+    if (av.exhausted || av.used >= av.budget) throw new ProviderError("Alpha Vantage daily budget used");
+    av.used++;
+    const turn = chain.then(() => new Promise((r) => setTimeout(r, av.used > 1 ? gap : 0)));
+    chain = turn;
+    await turn;
+    try { return await getJSON(url, { cache: avCache, cacheKey: key, ttlMs: ttl, signal }); }
+    catch (e) { if (/rate limit|requests per day|premium|frequency|25 requests/i.test(e.message)) av.exhausted = true; throw e; }
+  };
   const alpha = keys.alphaVantageKey && {
+    stats: av,
     overview: async (t) => {
-      const d = await getJSON(`${AV}?function=OVERVIEW&symbol=${t}&apikey=${keys.alphaVantageKey}`, o("av:o:" + t, fTtl * 3));
+      const d = await avGet(`${AV}?function=OVERVIEW&symbol=${t}&apikey=${keys.alphaVantageKey}`, "av:o:" + t, fTtl * 3);
       return d && d.Symbol ? d : null;
     },
     daily: async (t) => {
-      const d = await getJSON(`${AV}?function=TIME_SERIES_DAILY&symbol=${t}&outputsize=compact&apikey=${keys.alphaVantageKey}`, o("av:d:" + t, fTtl / 2));
+      const d = await avGet(`${AV}?function=TIME_SERIES_DAILY&symbol=${t}&outputsize=compact&apikey=${keys.alphaVantageKey}`, "av:d:" + t, fTtl / 2);
       const s = (d && d["Time Series (Daily)"]) || {};
       return Object.entries(s).map(([date, r]) => ({ date, open: +r["1. open"], high: +r["2. high"], low: +r["3. low"], close: +r["4. close"] }))
         .sort((a, b) => a.date.localeCompare(b.date));
