@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-07T21:33:52.872Z",
+ "generatedAt": "2026-11-07T21:47:34.174Z",
  "items": [
   {
    "action_date": "2026-11-07",
@@ -1666,76 +1666,6 @@
    "source_name": "Benzinga",
    "source_url": "https://finnhub.io/api/news?id=41de645585c4ce1204a66e2f629e683c7d84b6ab8655d383e0510ded72509bed",
    "headline": "HSBC Initiates Coverage On Xcel Energy with Buy Rating, Announces Price Target of $89"
-  },
-  {
-   "action_date": "2026-10-22",
-   "ticker": "META",
-   "firm": "Cantor Fitzgerald",
-   "action": "Reiterate",
-   "from_rating": "Overweight",
-   "to_rating": "Overweight",
-   "old_target": null,
-   "new_target": null,
-   "rationale": "Rating Overweight → Overweight.",
-   "source_name": "Yahoo Finance",
-   "source_url": null,
-   "headline": null
-  },
-  {
-   "action_date": "2026-10-22",
-   "ticker": "META",
-   "firm": "Pivotal Research",
-   "action": "Reiterate",
-   "from_rating": "Buy",
-   "to_rating": "Buy",
-   "old_target": null,
-   "new_target": null,
-   "rationale": "Rating Buy → Buy.",
-   "source_name": "Yahoo Finance",
-   "source_url": null,
-   "headline": null
-  },
-  {
-   "action_date": "2026-10-22",
-   "ticker": "META",
-   "firm": "UBS",
-   "action": "Reiterate",
-   "from_rating": "Buy",
-   "to_rating": "Buy",
-   "old_target": null,
-   "new_target": null,
-   "rationale": "Rating Buy → Buy.",
-   "source_name": "Yahoo Finance",
-   "source_url": null,
-   "headline": null
-  },
-  {
-   "action_date": "2026-10-22",
-   "ticker": "META",
-   "firm": "Citigroup",
-   "action": "Reiterate",
-   "from_rating": "Buy",
-   "to_rating": "Buy",
-   "old_target": null,
-   "new_target": null,
-   "rationale": "Rating Buy → Buy.",
-   "source_name": "Yahoo Finance",
-   "source_url": null,
-   "headline": null
-  },
-  {
-   "action_date": "2026-10-22",
-   "ticker": "META",
-   "firm": "DA Davidson",
-   "action": "Reiterate",
-   "from_rating": "Buy",
-   "to_rating": "Buy",
-   "old_target": null,
-   "new_target": null,
-   "rationale": "Rating Buy → Buy.",
-   "source_name": "Yahoo Finance",
-   "source_url": null,
-   "headline": null
   },
   {
    "action_date": "2026-10-21",
