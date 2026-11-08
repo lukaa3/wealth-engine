@@ -1,6 +1,222 @@
 {
- "generatedAt": "2026-11-07T21:47:34.174Z",
+ "generatedAt": "2026-11-08T20:12:15.555Z",
  "items": [
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "REGN",
+   "insider_role": "Pitofsky Jason",
+   "shares": 179,
+   "value": -170186,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "REGN",
+   "insider_role": "Pitofsky Jason",
+   "shares": 35,
+   "value": -33096,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "REGN",
+   "insider_role": "Pitofsky Jason",
+   "shares": 108,
+   "value": -101976,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "REGN",
+   "insider_role": "Pitofsky Jason",
+   "shares": 529,
+   "value": -499127,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "REGN",
+   "insider_role": "Pitofsky Jason",
+   "shares": 1215,
+   "value": -1144907,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "REGN",
+   "insider_role": "Pitofsky Jason",
+   "shares": 982,
+   "value": -924632,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "REGN",
+   "insider_role": "Pitofsky Jason",
+   "shares": 575,
+   "value": -540765,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "REGN",
+   "insider_role": "Pitofsky Jason",
+   "shares": 439,
+   "value": -412471,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "IR",
+   "insider_role": "Schiesl Andrew R",
+   "shares": 9782,
+   "value": -831470,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 7798,
+   "value": -1673529,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 4929,
+   "value": -1053130,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 1500,
+   "value": -316890,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 3773,
+   "value": -793915,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 2502,
+   "value": -522868,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 700,
+   "value": -145593,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 2900,
+   "value": -599952,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 2101,
+   "value": -432197,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 400,
+   "value": -81668,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 24613,
+   "value": -5008499,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 9942,
+   "value": -2013156,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 18816,
+   "value": -3793494,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 5315,
+   "value": -1066189,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 5454,
+   "value": -1088346,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-06",
+   "ticker": "NXPI",
+   "insider_role": "Foxx Anthony R",
+   "shares": 400,
+   "value": -105440,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
   {
    "filing_date": "2026-11-05",
    "ticker": "REGN",
@@ -61,6 +277,150 @@
    "insider_role": "Hill J Thomas",
    "shares": 11490,
    "value": -3266492,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "CRH",
+   "insider_role": "Talbot Siobhan",
+   "shares": 2000,
+   "value": 189260,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "UDR",
+   "insider_role": "Lacy Michael D",
+   "shares": 10000,
+   "value": -364800,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "CLX",
+   "insider_role": "Breber Pierre R",
+   "shares": 4000,
+   "value": 400251,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 520,
+   "value": -123812,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 1620,
+   "value": -376877,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 5000,
+   "value": -1147050,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 1029,
+   "value": -234293,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 29000,
+   "value": -6577490,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 10911,
+   "value": -2466650,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 1920,
+   "value": -432230,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 2908,
+   "value": -702049,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 9611,
+   "value": -2310388,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 42655,
+   "value": -10220138,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 106926,
+   "value": -25500782,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 52455,
+   "value": -12468029,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-11-05",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 16878,
+   "value": -4000424,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -335,6 +695,15 @@
    "filing_url": null
   },
   {
+   "filing_date": "2026-11-04",
+   "ticker": "DPZ",
+   "insider_role": "JORDAN JOSEPH HUGH",
+   "shares": 4870,
+   "value": -1541355,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
    "filing_date": "2026-11-03",
    "ticker": "REGN",
    "insider_role": "Guarini Kathryn",
@@ -389,6 +758,15 @@
    "filing_url": null
   },
   {
+   "filing_date": "2026-11-03",
+   "ticker": "RTX",
+   "insider_role": "Williams Dantaya M",
+   "shares": 9071,
+   "value": -1829576,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
    "filing_date": "2026-11-02",
    "ticker": "ROL",
    "insider_role": "R. Randall Rollins Voting Trust U/A dated August 25, 1994",
@@ -403,6 +781,33 @@
    "insider_role": "LOR INC",
    "shares": 1444402,
    "value": 49956665,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-29",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 6873,
+   "value": -1403398,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-29",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 37025,
+   "value": -7526812,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-29",
+   "ticker": "COF",
+   "insider_role": "FAIRBANK RICHARD D",
+   "shares": 46845,
+   "value": -9477680,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1046,11 +1451,29 @@
    "filing_url": null
   },
   {
+   "filing_date": "2026-10-07",
+   "ticker": "COF",
+   "insider_role": "Cooper Matthew W",
+   "shares": 3500,
+   "value": -686770,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
    "filing_date": "2026-10-05",
    "ticker": "CDNS",
    "insider_role": "SANGIOVANNI VINCENTELLI ALBERTO",
    "shares": 1250,
    "value": -437590,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-10-05",
+   "ticker": "NXPI",
+   "insider_role": "Jensen Christopher L",
+   "shares": 3355,
+   "value": -805200,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1370,6 +1793,15 @@
    "filing_url": null
   },
   {
+   "filing_date": "2026-09-17",
+   "ticker": "NXPI",
+   "insider_role": "Micallef Andrew",
+   "shares": 1000,
+   "value": -226040,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
    "filing_date": "2026-09-16",
    "ticker": "META",
    "insider_role": "Olivan Javier",
@@ -1415,6 +1847,33 @@
    "filing_url": null
   },
   {
+   "filing_date": "2026-09-16",
+   "ticker": "COF",
+   "insider_role": "Karam Celia",
+   "shares": 2017,
+   "value": -415643,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-16",
+   "ticker": "COF",
+   "insider_role": "Dean Lia",
+   "shares": 2066,
+   "value": -425741,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-16",
+   "ticker": "CAVA",
+   "insider_role": "KADOW JOSEPH JOHN",
+   "shares": 1000,
+   "value": 49960,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
    "filing_date": "2026-09-15",
    "ticker": "NET",
    "insider_role": "Ledbetter Carl",
@@ -1447,6 +1906,24 @@
    "insider_role": "Ledbetter Carl",
    "shares": 960,
    "value": -297126,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-15",
+   "ticker": "ARE",
+   "insider_role": "Fukuzaki-Carlson Kristina",
+   "shares": 16810,
+   "value": -849073,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-15",
+   "ticker": "ARE",
+   "insider_role": "MARCUS JOEL S",
+   "shares": 5000,
+   "value": 248400,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -1919,6 +2396,114 @@
    "filing_url": null
   },
   {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 11351,
+   "value": -2487912,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 100650,
+   "value": -21980954,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 7500,
+   "value": -1629600,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 9961,
+   "value": -2206860,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 6656,
+   "value": -1465452,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 13717,
+   "value": -3009647,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 9721,
+   "value": -2122386,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 14196,
+   "value": -3084649,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 13261,
+   "value": -2869415,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 8439,
+   "value": -1816073,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 10620,
+   "value": -2269813,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-04",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 57488,
+   "value": -12256442,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
    "filing_date": "2026-09-03",
    "ticker": "REGN",
    "insider_role": "McCourt Marion",
@@ -1942,6 +2527,42 @@
    "insider_role": "McCourt Marion",
    "shares": 1215,
    "value": -1032750,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-03",
+   "ticker": "DTE",
+   "insider_role": "Lauer Trevor F",
+   "shares": 5000,
+   "value": -678560,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-02",
+   "ticker": "ARE",
+   "insider_role": "Gavinet Andres",
+   "shares": 10000,
+   "value": -509300,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-02",
+   "ticker": "COF",
+   "insider_role": "Cooper Matthew W",
+   "shares": 3500,
+   "value": -749350,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-09-02",
+   "ticker": "CAVA",
+   "insider_role": "Thompson Douglas W.",
+   "shares": 6500,
+   "value": 432380,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -2018,6 +2639,123 @@
    "filing_url": null
   },
   {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 9405,
+   "value": -2174718,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 28439,
+   "value": -6556327,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 16990,
+   "value": -3902943,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 24363,
+   "value": -5570356,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 54309,
+   "value": -12364530,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 4873,
+   "value": -1104904,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 425,
+   "value": -96569,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 14782,
+   "value": -3348123,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 53123,
+   "value": -11989330,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 38213,
+   "value": -8587225,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 42,
+   "value": -9525,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 38201,
+   "value": -8638392,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-27",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 92776,
+   "value": -20898722,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
    "filing_date": "2026-08-26",
    "ticker": "EW",
    "insider_role": "Chopra Daveen",
@@ -2041,6 +2779,15 @@
    "insider_role": "Markowitz Wayne",
    "shares": 1240,
    "value": -113417,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-26",
+   "ticker": "TROW",
+   "insider_role": "Nelson Joshua B",
+   "shares": 10000,
+   "value": -1118203,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -2342,6 +3089,258 @@
    "filing_url": null
   },
   {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 3883,
+   "value": -854765,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 133256,
+   "value": -29245694,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 86825,
+   "value": -18979945,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 8187,
+   "value": -1783456,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 12602,
+   "value": -2727577,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 9365,
+   "value": -2019188,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 13668,
+   "value": -2933700,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 6821,
+   "value": -1458398,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 13050,
+   "value": -2775083,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 7151,
+   "value": -1512723,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 4528,
+   "value": -952918,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 9348,
+   "value": -2054877,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 5693,
+   "value": -1243693,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 21147,
+   "value": -4604125,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 15263,
+   "value": -3310239,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 18405,
+   "value": -3968486,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 42218,
+   "value": -9058716,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 71939,
+   "value": -15348905,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 29805,
+   "value": -6343398,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 34009,
+   "value": -7206507,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 23638,
+   "value": -4979581,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 9078,
+   "value": -1903475,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 3563,
+   "value": -743064,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 1132,
+   "value": -235060,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 12813,
+   "value": -2626665,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 4759,
+   "value": -971597,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 57544,
+   "value": -11690639,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-21",
+   "ticker": "ILMN",
+   "insider_role": "Meister Keith A.",
+   "shares": 19884,
+   "value": -4023925,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
    "filing_date": "2026-08-20",
    "ticker": "AEE",
    "insider_role": "Martin Ryan J",
@@ -2491,6 +3490,15 @@
    "insider_role": "Bosworth Andrew",
    "shares": 7848,
    "value": -4379184,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-20",
+   "ticker": "ILMN",
+   "insider_role": "Wedel Christensen Jakob",
+   "shares": 1033,
+   "value": -197840,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -2801,11 +3809,65 @@
    "filing_url": null
   },
   {
+   "filing_date": "2026-08-19",
+   "ticker": "ARE",
+   "insider_role": "MARCUS JOEL S",
+   "shares": 5000,
+   "value": 231400,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-19",
+   "ticker": "RTX",
+   "insider_role": "Maharajh Ramsaran",
+   "shares": 13655,
+   "value": -3057563,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
    "filing_date": "2026-08-18",
    "ticker": "META",
    "insider_role": "LI SUSAN J",
    "shares": 2127,
    "value": -1467311,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-18",
+   "ticker": "COF",
+   "insider_role": "Karam Celia",
+   "shares": 1,
+   "value": -226,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-18",
+   "ticker": "COF",
+   "insider_role": "Karam Celia",
+   "shares": 1887,
+   "value": -425556,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-18",
+   "ticker": "COF",
+   "insider_role": "Dean Lia",
+   "shares": 1,
+   "value": -226,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-18",
+   "ticker": "COF",
+   "insider_role": "Dean Lia",
+   "shares": 2192,
+   "value": -494340,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -2833,6 +3895,42 @@
    "insider_role": "Shaw Theresa A",
    "shares": 325,
    "value": -35402,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-17",
+   "ticker": "SYF",
+   "insider_role": "Casellas Alberto",
+   "shares": 5456,
+   "value": -436480,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-17",
+   "ticker": "COF",
+   "insider_role": "Mouadeb Mark Daniel",
+   "shares": 1199,
+   "value": -269775,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-14",
+   "ticker": "CBRE",
+   "insider_role": "Giamartino Emma E.",
+   "shares": 2250,
+   "value": -333653,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-14",
+   "ticker": "CBRE",
+   "insider_role": "Doellinger Chad J",
+   "shares": 228,
+   "value": -33810,
    "is_10b5_1": false,
    "filing_url": null
   },
@@ -3121,6 +4219,15 @@
    "insider_role": "Graham-Cumming John",
    "shares": 64,
    "value": -18736,
+   "is_10b5_1": false,
+   "filing_url": null
+  },
+  {
+   "filing_date": "2026-08-11",
+   "ticker": "COF",
+   "insider_role": "Zamsky Michael",
+   "shares": 5473,
+   "value": -1193223,
    "is_10b5_1": false,
    "filing_url": null
   }

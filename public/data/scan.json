@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-07T21:47:34.174Z",
+ "generatedAt": "2026-11-08T20:12:15.555Z",
  "universeSize": 558,
  "scanned": 557,
  "items": [
@@ -316,7 +316,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "ALGN",
@@ -1744,7 +1744,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "CAH",
@@ -1912,7 +1912,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "CDW",
@@ -2332,7 +2332,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "CME",
@@ -2752,7 +2752,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "CRWD",
@@ -2962,7 +2962,7 @@
    "support": false,
    "tech": 26,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "DE",
@@ -3193,7 +3193,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "DASH",
@@ -3298,7 +3298,7 @@
    "support": false,
    "tech": 26,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "DUK",
@@ -5209,7 +5209,7 @@
    "support": true,
    "tech": 29,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "INCY",
@@ -5377,7 +5377,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "INTU",
@@ -5839,7 +5839,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "KR",
@@ -5881,7 +5881,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "LH",
@@ -5944,7 +5944,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "LDOS",
@@ -7225,7 +7225,7 @@
    "support": false,
    "tech": 26,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "ORLY",
@@ -8401,7 +8401,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "SPGI",
@@ -8947,7 +8947,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "SNPS",
@@ -9031,7 +9031,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "TTWO",
@@ -9577,7 +9577,7 @@
    "support": true,
    "tech": 31,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "ULTA",
@@ -10001,7 +10001,7 @@
   },
   {
    "ticker": "VMRK",
-   "name": "Vivmark Residential",
+   "name": "AvalonBay Communities, Inc.",
    "sector": "Other",
    "fund": false,
    "price": 65.51,
@@ -10543,7 +10543,7 @@
    "support": true,
    "tech": 29,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "ASML",
@@ -11341,7 +11341,7 @@
    "support": false,
    "tech": 26,
    "entryLive": true,
-   "deep": false
+   "deep": true
   },
   {
    "ticker": "ELF",
