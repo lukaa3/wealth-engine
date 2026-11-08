@@ -47,7 +47,7 @@ const baseByTicker = Object.fromEntries(mockData.stocks.map((s) => [s.ticker, s]
 // the same day costs almost no quota and Alpha Vantage's 25 calls/day refresh each ticker about every 3 days.
 // Big payloads (candles, news, insider lists) stay in memory only, to keep the repo small.
 const CACHE_FILE = "cache/api-cache.json";
-const PERSIST = /^(fmp:(p|dcf|pt|gc|r):|fh:rec:|av:o:|y:s:)/;
+const PERSIST = /^(fmp:(p|dcf|pt|gc|r):|fh:rec:|av:o:|nq:f:)/;
 let store = {};
 try { store = JSON.parse(fs.readFileSync(CACHE_FILE, "utf8")); } catch (e) {}
 try { Object.assign(store, JSON.parse(fs.readFileSync("cache/alpha-vantage.json", "utf8"))); } catch (e) {} // older file name
@@ -64,6 +64,7 @@ const P = createProviders(keys, {
   cache: fileCache, avCache: fileCache, quoteTtlMin: 5, fundamentalsTtlHours: 20,
   avMaxCalls: Number(env.AV_MAX_CALLS || 22), avMinGapMs: Number(env.AV_MIN_GAP_MS || 13000),
   yahoo: env.SCAN !== "off", yahooGapMs: Number(env.YAHOO_GAP_MS || 350),
+  nasdaq: env.NASDAQ !== "off", nasdaqGapMs: Number(env.NASDAQ_GAP_MS || 250),
 });
 
 /* ------------------------------- 0. Market scan ------------------------------- */
@@ -128,7 +129,7 @@ for (const s of stocks) {
   const prevStale = r.stale_fields || {};
   s.staleFields = {};
   for (const f of CARRY) {
-    if (s[f] != null || prev[f] == null) continue;
+    if (s[f] != null || prev[f] == null || (f === "dcfValue" && s.dcfNm)) continue;
     const since = prevStale[f] || String(r.updated_at || today).slice(0, 10);
     if ((Date.parse(today) - Date.parse(since)) / 864e5 > MAX_CARRY_DAYS) continue;
     s[f] = prev[f]; s.staleFields[f] = since; carried++;

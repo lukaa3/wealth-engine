@@ -198,57 +198,50 @@ export function createProviders(keys, opts = {}) {
   };
 
   /**
-   * Yahoo quoteSummary: analyst targets, ratings, P/E, growth and cash-flow data — free, no key (unofficial).
-   * Needs a session cookie + "crumb", fetched once per run.
+   * Nasdaq.com data API: analyst price targets + buy/hold/sell counts, forward PEG and P/E (Zacks consensus),
+   * market cap, and annual financial statements — free, no key (unofficial; Node only, browsers are blocked by CORS).
    */
-  const YUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
-  let ySession = null;
-  const yLogin = async () => {
-    let cookie = "";
-    for (const url of ["https://fc.yahoo.com", "https://finance.yahoo.com/quote/AAPL/"]) {
-      try {
-        const r = await fetch(url, { signal, redirect: "manual", headers: { "User-Agent": YUA } });
-        const set = typeof r.headers.getSetCookie === "function" ? r.headers.getSetCookie() : [r.headers.get("set-cookie") || ""];
-        cookie = set.filter(Boolean).map((c) => c.split(";")[0]).join("; ");
-        if (cookie) break;
-      } catch { /* try next */ }
-    }
-    for (const host of ["query2", "query1"]) {
-      const r = await fetch(`https://${host}.finance.yahoo.com/v1/test/getcrumb`, { signal, headers: { "User-Agent": YUA, Cookie: cookie } });
-      const crumb = (await r.text()).trim();
-      if (r.ok && crumb && crumb.length < 40 && !/[<{]/.test(crumb)) return { cookie, crumb };
-    }
-    throw new ProviderError("yahoo: couldn't get a session (crumb)");
-  };
-  const Y_MODULES = "financialData,defaultKeyStatistics,summaryDetail,recommendationTrend,earningsTrend,price";
-  if (yahoo) yahoo.summary = async (t) => {
-    const key = "y:s:" + t;
+  let nqLast = 0;
+  const NQ_HEADERS = { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+    Accept: "application/json, text/plain, */*", Origin: "https://www.nasdaq.com", Referer: "https://www.nasdaq.com/" };
+  const nqGet = async (path, key) => {
     const hit = cache.get(key);
     if (hit !== undefined) return hit;
-    if (!ySession) ySession = yLogin();
-    let sess = await ySession;
-    const wait = (opts.yahooGapMs ?? 350) - (Date.now() - yLast);
+    const wait = (opts.nasdaqGapMs ?? 250) - (Date.now() - nqLast);
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-    yLast = Date.now();
+    nqLast = Date.now();
     let res;
     for (let attempt = 0; attempt < 3; attempt++) {
-      res = await fetch(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(dash(t))}?modules=${Y_MODULES}&crumb=${encodeURIComponent(sess.crumb)}`, {
-        signal, headers: { "User-Agent": YUA, Cookie: sess.cookie, Accept: "application/json" },
-      });
-      if (res.status === 401 && attempt === 0) { ySession = yLogin(); sess = await ySession; continue; }
-      if (res.status !== 429) break;
-      await new Promise((r) => setTimeout(r, 5000 * (attempt + 1)));
+      res = await fetch("https://api.nasdaq.com/api/" + path, { signal, headers: NQ_HEADERS });
+      if (res.status !== 429 && res.status < 500) break;
+      await new Promise((r) => setTimeout(r, 4000 * (attempt + 1)));
     }
-    if (!res.ok) throw new ProviderError("yahoo summary HTTP " + res.status);
+    if (!res.ok) throw new ProviderError("nasdaq HTTP " + res.status);
     const j = await res.json();
-    const r = j && j.quoteSummary && j.quoteSummary.result && j.quoteSummary.result[0];
-    if (!r) throw new ProviderError("yahoo summary: no data");
-    const out = parseYahooSummary(r);
-    cache.set(key, out, fTtl);
-    return out;
+    const data = j && j.data ? j.data : null; // null = "No record found" (ETFs, funds, new listings)
+    cache.set(key, data, fTtl);
+    return data;
+  };
+  const nasdaq = opts.nasdaq && {
+    /** → flat fields (see parseNasdaq); null when Nasdaq has nothing for the ticker. */
+    fundamentals: async (t) => {
+      const ck = "nq:f:" + t;
+      const hit = cache.get(ck);
+      if (hit !== undefined) return hit;
+      const s = encodeURIComponent(dash(t));
+      const [tp, peg, sum, fin] = await Promise.all([
+        nqGet(`analyst/${s}/targetprice`, "nqraw:tp:" + t),
+        nqGet(`analyst/${s}/peg-ratio`, "nqraw:peg:" + t),
+        nqGet(`quote/${s}/summary?assetclass=stocks`, "nqraw:sum:" + t),
+        nqGet(`company/${s}/financials?frequency=1`, "nqraw:fin:" + t),
+      ]);
+      const out = !tp && !peg && !sum && !fin ? null : parseNasdaq({ tp, peg, sum, fin });
+      cache.set(ck, out, fTtl);
+      return out;
+    },
   };
 
-  return { fmp, finnhub, alpha, yahoo, cache, num };
+  return { fmp, finnhub, alpha, yahoo, nasdaq, cache, num };
 }
 
 /** Run `fn` over items with limited concurrency; never throws, collects errors. */
@@ -265,56 +258,66 @@ export async function mapLimit(items, limit, fn) {
   return out;
 }
 
-/** Yahoo quoteSummary → the flat fields the screener uses. Values arrive as {raw, fmt}. */
-export function parseYahooSummary(r) {
-  const v = (o, k) => { const x = o && o[k]; const n = x && typeof x === "object" ? x.raw : x; return typeof n === "number" && isFinite(n) ? n : null; };
-  const fd = r.financialData || {}, ks = r.defaultKeyStatistics || {}, sd = r.summaryDetail || {}, pr = r.price || {};
-  const trend = ((r.recommendationTrend && r.recommendationTrend.trend) || []).find((x) => x.period === "0m") || null;
-  const et = (r.earningsTrend && r.earningsTrend.trend) || [];
-  const grow = (p) => { const x = et.find((e) => e.period === p); return x ? v(x, "growth") : null; };
+/** "$1,234,000" / "-$5" / "12.5%" / "--" → number (null when not a number). */
+export function nqNum(x) {
+  if (x == null) return null;
+  if (typeof x === "number") return isFinite(x) ? x : null;
+  const t = String(x).replace(/[$,%\s]/g, "");
+  if (!t || t === "--" || /n\/?a/i.test(t)) return null;
+  const n = Number(t);
+  return isFinite(n) ? n : null;
+}
+
+/** Nasdaq responses → { target, targetLow, targetHigh, counts, peg, forwardPE, growth, marketCap, fcf, cash, debt, revenueGrowth, sector }. */
+export function parseNasdaq({ tp, peg, sum, fin }) {
+  const co = tp && tp.consensusOverview;
+  const counts = co && (co.buy || co.hold || co.sell) ? { strongBuy: 0, buy: co.buy || 0, hold: co.hold || 0, sell: co.sell || 0, strongSell: 0 } : null;
+  const pegV = peg && peg.pegr ? nqNum(peg.pegr.pegValue) : null;
+  const perRows = (peg && peg.per && (peg.per.peRatioChart || peg.per)) || [];
+  const fwd = Array.isArray(perRows) ? perRows.find((r) => /estimate/i.test(r.x)) : null;
+  const gRows = ((peg && peg.gr && peg.gr.peGrowthChart) || []).filter((r) => r.z === "Growth").map((r) => nqNum(r.y)).filter((x) => x != null);
+  const sd = (sum && sum.summaryData) || {};
+  // Statements are in thousands of dollars; value2 = latest fiscal year, value3 = the year before.
+  const row = (table, label, col = "value2") => {
+    const r = ((fin && fin[table] && fin[table].rows) || []).find((x) => x.value1 === label);
+    return r ? nqNum(r[col]) : null;
+  };
+  const k = (x) => (x == null ? null : x * 1000);
+  const ocf = row("cashFlowTable", "Net Cash Flow-Operating"), capex = row("cashFlowTable", "Capital Expenditures");
+  const rev = row("incomeStatementTable", "Total Revenue"), revPrev = row("incomeStatementTable", "Total Revenue", "value3");
   return {
-    name: pr.longName || pr.shortName || null,
-    price: v(fd, "currentPrice") ?? v(pr, "regularMarketPrice"),
-    targetMean: v(fd, "targetMeanPrice"), targetMedian: v(fd, "targetMedianPrice"),
-    targetHigh: v(fd, "targetHighPrice"), targetLow: v(fd, "targetLowPrice"),
-    analystOpinions: v(fd, "numberOfAnalystOpinions"), recMean: v(fd, "recommendationMean"),
-    counts: trend ? { strongBuy: trend.strongBuy || 0, buy: trend.buy || 0, hold: trend.hold || 0, sell: trend.sell || 0, strongSell: trend.strongSell || 0 } : null,
-    forwardPE: v(sd, "forwardPE") ?? v(ks, "forwardPE"), trailingPE: v(sd, "trailingPE"),
-    peg: v(ks, "pegRatio"), beta: v(sd, "beta") ?? v(ks, "beta"),
-    growthNextYear: grow("+1y"), growthThisYear: grow("0y"), growth5y: grow("+5y"),
-    revenueGrowth: v(fd, "revenueGrowth"), earningsGrowth: v(fd, "earningsGrowth"),
-    freeCashflow: v(fd, "freeCashflow"), totalCash: v(fd, "totalCash"), totalDebt: v(fd, "totalDebt"),
-    shares: v(ks, "sharesOutstanding") ?? v(pr, "sharesOutstanding") ?? (v(pr, "marketCap") && v(fd, "currentPrice") ? v(pr, "marketCap") / v(fd, "currentPrice") : null),
+    target: co ? nqNum(co.priceTarget) : nqNum(sd.OneYrTarget && sd.OneYrTarget.value),
+    targetLow: co ? nqNum(co.lowPriceTarget) : null, targetHigh: co ? nqNum(co.highPriceTarget) : null,
+    counts,
+    peg: pegV && pegV > 0 ? pegV : null,
+    forwardPE: fwd ? nqNum(fwd.y) : null,          // negative = expected loss
+    growth: gRows.length ? gRows[gRows.length > 1 ? 1 : 0] / 100 : null, // next fiscal year's EPS growth
+    revenueGrowth: rev && revPrev ? rev / revPrev - 1 : null,
+    marketCap: nqNum(sd.MarketCap && sd.MarketCap.value),
+    sector: (sd.Sector && sd.Sector.value) || null,
+    fcf: ocf != null ? k(ocf + (capex || 0)) : null, // capex is reported negative
+    cash: k((row("balanceSheetTable", "Cash and Cash Equivalents") || 0) + (row("balanceSheetTable", "Short-Term Investments") || 0)),
+    debt: k((row("balanceSheetTable", "Long-Term Debt") || 0) + (row("balanceSheetTable", "Short-Term Debt / Current Portion of Long-Term Debt") || 0)),
   };
 }
 
 /**
- * Simple two-stage DCF from Yahoo's numbers: free cash flow grows at g for 5 years, fades to 3% by year 10,
- * discounted at 9%, 3% terminal growth; net cash added. g = average of next-year EPS growth and revenue growth, capped 0–20%.
- * Returns null when free cash flow is negative or data is missing (a DCF means nothing there).
+ * Simple two-stage DCF: free cash flow grows at g for 5 years, fades to 3% by year 10, discounted at 9%,
+ * 3% terminal growth, plus net cash. g = average of next-year EPS growth and last year's revenue growth, capped 0–20%.
+ * → { value } per share, { negative: true } when free cash flow is negative (no DCF support), or null if data is missing.
  */
-export function yahooDcf(y) {
-  if (!y || !(y.freeCashflow > 0) || !(y.shares > 0)) return null;
-  const gs = [y.growth5y, y.growthNextYear, y.revenueGrowth].filter((x) => x != null && isFinite(x));
-  if (!gs.length) return null;
-  const g = Math.min(0.2, Math.max(0, gs.reduce((a, b) => a + b, 0) / gs.length));
+export function simpleDcf({ fcf, shares, cash, debt, growth, revenueGrowth }) {
+  if (fcf == null || !(shares > 0)) return null;
+  if (fcf <= 0) return { negative: true };
+  const gs = [growth, revenueGrowth].filter((x) => x != null && isFinite(x));
+  const g = gs.length ? Math.min(0.2, Math.max(0, gs.reduce((a, b) => a + b, 0) / gs.length)) : 0.03;
   const r = 0.09, tg = 0.03;
-  let fcf = y.freeCashflow, pv = 0;
+  let f = fcf, pv = 0;
   for (let yr = 1; yr <= 10; yr++) {
-    const gy = yr <= 5 ? g : g + ((tg - g) * (yr - 5)) / 5;
-    fcf *= 1 + gy;
-    pv += fcf / Math.pow(1 + r, yr);
+    f *= 1 + (yr <= 5 ? g : g + ((tg - g) * (yr - 5)) / 5);
+    pv += f / Math.pow(1 + r, yr);
   }
-  pv += (fcf * (1 + tg)) / (r - tg) / Math.pow(1 + r, 10);
-  const equity = pv + (y.totalCash || 0) - (y.totalDebt || 0);
-  return equity > 0 ? Math.round((equity / y.shares) * 100) / 100 : null;
-}
-
-/** PEG: Yahoo's own if present, else forward P/E ÷ next-year EPS growth (in %). Null when growth ≤ 0. */
-export function yahooPeg(y) {
-  if (!y) return null;
-  if (y.peg != null && y.peg > 0) return Math.round(y.peg * 100) / 100;
-  const g = y.growth5y ?? y.growthNextYear ?? y.earningsGrowth;
-  if (!(y.forwardPE > 0) || !(g > 0)) return null;
-  return Math.round((y.forwardPE / (g * 100)) * 100) / 100;
+  pv += (f * (1 + tg)) / (r - tg) / Math.pow(1 + r, 10);
+  const equity = pv + (cash || 0) - (debt || 0);
+  return equity > 0 ? { value: Math.round((equity / shares) * 100) / 100 } : { negative: true };
 }

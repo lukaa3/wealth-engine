@@ -77,9 +77,10 @@ export function scoreStock(s, sectorPE, insider) {
 
   // Fundamental Value — 35
   const partial = [];
-  const fDcf = dcfUpside == null ? (partial.push("DCF"), 7.5) : lin(dcfUpside, 0, 0.2, 15);
+  // A DCF can't support a company burning cash, and an expected loss means no P/E discount: 0 pts (real data, not missing).
+  const fDcf = dcfUpside == null ? (s.dcfNm ? 0 : (partial.push("DCF"), 7.5)) : lin(dcfUpside, 0, 0.2, 15);
   const fPeg = s.peg == null ? (partial.push("PEG"), 5) : s.peg <= 0 ? 0 : s.peg < 1 ? 10 : lin(2 - s.peg, 0, 1, 10);
-  const fPe = peDiscount == null ? (partial.push("P/E"), 5) : lin(peDiscount, 0, 0.2, 10);
+  const fPe = peDiscount == null ? (s.fwdPE != null && s.fwdPE <= 0 ? 0 : (partial.push("P/E"), 5)) : lin(peDiscount, 0, 0.2, 10);
   const fundamental = fDcf + fPeg + fPe;
 
   // Wall Street & Insider Sentiment — 30
@@ -110,9 +111,9 @@ export function scoreStock(s, sectorPE, insider) {
         { label: "Structural support", value: s.support ? "Confluent" : "No", rule: "Confluence = 5", pts: tSup, max: 5 },
       ],
       fundamental: [
-        { label: "DCF discount", value: s.dcfValue == null ? "n/a" : sp(dcfUpside) + " to $" + s.dcfValue, rule: "≥20% below fair value = full", pts: r1(fDcf), max: 15 },
+        { label: "DCF discount", value: s.dcfValue == null ? (s.dcfNm ? "n/m (cash burn)" : "n/a") : sp(dcfUpside) + " to $" + s.dcfValue, rule: "≥20% below fair value = full", pts: r1(fDcf), max: 15 },
         { label: "PEG ratio", value: s.peg == null ? "n/m" : s.peg.toFixed(2), rule: "<1.0 = full, 0 at 2.0", pts: r1(fPeg), max: 10 },
-        { label: "Fwd P/E vs sector", value: s.fwdPE == null ? "n/a" : s.fwdPE.toFixed(1) + "x vs " + pe + "x", rule: "≥20% discount = full", pts: r1(fPe), max: 10 },
+        { label: "Fwd P/E vs sector", value: s.fwdPE == null ? "n/a" : s.fwdPE <= 0 ? "n/m (expected loss)" : s.fwdPE.toFixed(1) + "x vs " + pe + "x", rule: "≥20% discount = full", pts: r1(fPe), max: 10 },
       ],
       sentiment: [
         { label: "Buy consensus", value: s.buyPct == null ? "n/a" : Math.round(s.buyPct * 100) + "% of " + s.analystCount, rule: "≥75% Buy = full, 0 at 50%", pts: r1(sBuy), max: 10 },

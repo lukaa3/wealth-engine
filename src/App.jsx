@@ -949,8 +949,54 @@ function HoldingRow({ r, onOpen, onSave, onDelete }) {
   );
 }
 
+/* Phone ↔ Mac sync card */
+function SyncCard({ sync }) {
+  const [codeIn, setCodeIn] = useState("");
+  const [copied, setCopied] = useState(null);
+  const [show, setShow] = useState(false);
+  if (!sync.available) return null;
+  const copy = async (text, what) => {
+    try { await navigator.clipboard.writeText(text); setCopied(what); setTimeout(() => setCopied(null), 2000); } catch (e) { setShow(true); }
+  };
+  const when = sync.at ? sync.at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : null;
+  const badge = { off: ["Off", "bg-slate-700 text-slate-300"], syncing: ["Syncing…", "bg-indigo-500/20 text-indigo-200"],
+    synced: ["Synced" + (when ? " · " + when : ""), "bg-emerald-500/15 text-emerald-300"], error: ["Not synced", "bg-rose-500/15 text-rose-300"] }[sync.status] || ["", ""];
+  return (
+    <Card className="p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-white"><Icon name="MonitorSmartphone" size={15} className="text-indigo-300" />Sync across devices</h3>
+        <span className={"rounded-full px-2.5 py-0.5 text-xs font-medium " + badge[1]}>{badge[0]}</span>
+      </div>
+      {sync.note && <p className="mt-2 text-xs text-slate-300">{sync.note}</p>}
+      {sync.error && <p className="mt-2 text-xs text-rose-300">{sync.error}</p>}
+      {!sync.code ? (
+        <div className="mt-3 space-y-3">
+          <p className="text-sm text-slate-400">Keep the same portfolio on your phone and computer. Turn it on here, then open the link it gives you on your other device.</p>
+          <button type="button" onClick={sync.start} className="rounded-lg bg-indigo-500 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-400">Turn on sync</button>
+          <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); if (sync.join(codeIn)) setCodeIn(""); }}>
+            <input value={codeIn} onChange={(e) => setCodeIn(e.target.value)} placeholder="Already on? Paste your sync code" autoComplete="off" spellCheck={false}
+              className="min-w-0 flex-1 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400 focus:outline-none" />
+            <button type="submit" className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700">Connect</button>
+          </form>
+        </div>
+      ) : (
+        <div className="mt-3 space-y-3">
+          <p className="text-sm text-slate-400">On your other device, open this link (or paste the code there). Changes then show up on both. Keep it private: anyone with it can see and edit your portfolio.</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => copy(sync.link, "link")} className="flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-400"><Icon name={copied === "link" ? "Check" : "Link"} size={14} />{copied === "link" ? "Link copied" : "Copy sync link"}</button>
+            <button type="button" onClick={() => setShow((v) => !v)} className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700">{show ? "Hide code" : "Show code"}</button>
+            <button type="button" onClick={sync.refresh} className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-700">Sync now</button>
+            <button type="button" onClick={sync.stop} className="rounded-lg px-3 py-2 text-sm text-slate-400 hover:text-white">Turn off on this device</button>
+          </div>
+          {show && <p className="break-all rounded-lg bg-slate-900 px-3 py-2 font-mono text-sm tracking-wider text-slate-100">{sync.code}</p>}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function PortfolioTab({ scored, byTicker, scan, onOpen }) {
-  const { holdings, addHolding, updateHolding, deleteHolding, resetPortfolio } = usePortfolio();
+  const { holdings, addHolding, updateHolding, deleteHolding, resetPortfolio, sync } = usePortfolio();
   const priceBook = useMemo(() => Object.fromEntries(((scan && scan.items) || []).map((r) => [r.ticker, r])), [scan]);
   const a = useMemo(() => analyzePortfolio(holdings, byTicker, SECTORS, SECTOR_COLORS, priceBook), [holdings, byTicker, priceBook]);
   const rows = a.rows.slice().sort((x, y) => y.value - x.value);
@@ -963,6 +1009,7 @@ function PortfolioTab({ scored, byTicker, scan, onOpen }) {
         <Stat label="Overall P/L %" value={spct(a.plPct)} sub="unrealized, excludes cash" valueTone={a.plPct >= 0 ? "up" : "down"} icon="Percent" />
       </div>
       <HoldingForm byTicker={byTicker} scored={scored} priceBook={priceBook} onAdd={addHolding} />
+      <SyncCard sync={sync} />
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
         <AllocationChart sectors={a.sectors} total={a.total} />
         <RebalanceFeed a={a} onOpen={onOpen} />
@@ -1152,7 +1199,7 @@ const TABS = [
   { id: "portfolio", label: "Portfolio Tracker & Rebalancer", short: "Portfolio", icon: "Briefcase" },
 ];
 const tabFromHash = () => {
-  const h = (typeof location !== "undefined" ? location.hash : "").replace("#", "");
+  const h = (typeof location !== "undefined" ? location.hash : "").replace("#", "").split("&")[0];
   return TABS.some((t) => t.id === h) ? h : "picks";
 };
 

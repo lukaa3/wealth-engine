@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS = {
   mode: "auto", // "auto" = Supabase → static JSON → browser APIs → sample data; "mock" = sample data only
   supabaseUrl: ENV.VITE_SUPABASE_URL || "",
   supabaseAnonKey: ENV.VITE_SUPABASE_ANON_KEY || "",
+  supabaseData: ENV.VITE_SUPABASE_DATA === "on", // read screener tables from Supabase (only if the Action writes them)
   staticJsonUrl: ENV.VITE_STATIC_JSON_URL || "./data", // folder the GitHub Action writes screener.json etc. into
   fmpKey: ENV.VITE_FMP_API_KEY || "",
   finnhubKey: ENV.VITE_FINNHUB_API_KEY || "",
@@ -38,6 +39,10 @@ export function saveSettings(s) {
 }
 
 export const hasSupabase = (s) => !!(s.supabaseUrl && s.supabaseAnonKey);
+/** Screener data comes from Supabase only when switched on; the same project can be used just for portfolio sync. */
+export const hasSupabaseData = (s) => hasSupabase(s) && !!s.supabaseData;
+/** Portfolio sync settings: baked into the site at build time, so every device gets them without setup. */
+export const SYNC_CONFIG = { url: ENV.VITE_SUPABASE_URL || "", key: ENV.VITE_SUPABASE_ANON_KEY || "" };
 export const hasVendorKeys = (s) => !!(s.fmpKey || s.finnhubKey || s.alphaVantageKey);
 export const parseWatchlist = (s, fallback) => {
   const list = String(s.watchlist || "").split(/[\s,]+/).map((t) => t.trim().toUpperCase()).filter(Boolean);
