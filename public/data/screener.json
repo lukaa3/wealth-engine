@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-08T20:25:20.285Z",
+ "generatedAt": "2026-11-08T20:33:18.786Z",
  "stocks": [
   {
    "ticker": "APP",
@@ -9,6 +9,7 @@
    "beta": 2.3240004,
    "dcf_value": 526.24,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 0.86,
    "forward_pe": 24.78,
    "fvg_timeframe": null,
@@ -39,26 +40,26 @@
    "fundamental_score": 30.7,
    "sentiment_score": 21.2,
    "ai_take": {
-    "verdict": "Avoid",
-    "summary": "No active bullish FVG, plan status is 'none' and no stop is defined, with a technical score of only 10/35. Valuation and analyst support are decent, but there is no defined entry for a swing or position trade.",
+    "verdict": "Watch",
+    "summary": "There is no active bullish FVG, no structural support and no stop, so the chart gives no defined entry (technical 10/35). Valuation and Street are positive (DCF +34.5%, 74% Buy), but a downgrade headline appeared on 2026-11-07.",
     "bull": [
-     "DCF $526.24 (+34.5%); P/E 24.78 vs sector 28",
-     "74% Buy of 19; consensus target $462.74 (+18.3%)",
-     "RBC and Macquarie raised targets"
+     "DCF $526.24 and consensus target $462.74",
+     "PEG 0.86",
+     "Several brokers raised targets"
     ],
     "bear": [
-     "No HTF setup and no stop level",
-     "Technical score 10/35; beta 2.32",
-     "Wells Fargo Equal-Weight at $347 is below price; a downgrade headline on 2026-11-07"
+     "No setup or stop defined",
+     "Beta 2.32, very volatile",
+     "Wells Fargo and Goldman at neutral; a downgrade headline"
     ],
-    "watch": "A new bullish FVG setup forming; none is present now.",
-    "confidence": "medium",
+    "watch": "A new bullish FVG or structural support forming on the chart.",
+    "confidence": "low",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "FISV",
@@ -66,8 +67,9 @@
    "sector": "Financials",
    "price": 62.88,
    "beta": 0.7495197,
-   "dcf_value": 117.66,
+   "dcf_value": null,
    "dcf_nm": false,
+   "dcf_na": "not used for financial companies",
    "peg_ratio": 5.59,
    "forward_pe": 8.66,
    "fvg_timeframe": "Daily",
@@ -86,20 +88,19 @@
    "buy_zone_high": 53.87,
    "catalysts": [
     "23% of 26 analysts rate it Buy",
-    "Street target $62.10 (-1%)",
-    "DCF value $117.66 (+87% vs price)"
+    "Street target $62.10 (-1%)"
    ],
    "invalidation_triggers": [
     "Consensus slipping below 50% Buy",
     "Close below the $48.15 DCA zone low"
    ],
-   "composite_score": 49,
+   "composite_score": 42,
    "technical_score": 21,
-   "fundamental_score": 25,
+   "fundamental_score": 17.5,
    "sentiment_score": 3,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "SWK",
@@ -109,6 +110,7 @@
    "beta": 1.0994959,
    "dcf_value": 48.18,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.68,
    "forward_pe": 20.29,
    "fvg_timeframe": "Daily",
@@ -140,7 +142,7 @@
    "sentiment_score": 3,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "REGN",
@@ -150,6 +152,7 @@
    "beta": 0.11541913,
    "dcf_value": 790.05,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.2,
    "forward_pe": 15.52,
    "fvg_timeframe": "Daily",
@@ -181,7 +184,7 @@
    "sentiment_score": 12.5,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "LOW",
@@ -191,6 +194,7 @@
    "beta": 0.7758012,
    "dcf_value": 187.53,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.88,
    "forward_pe": 18.34,
    "fvg_timeframe": "Daily",
@@ -222,7 +226,7 @@
    "sentiment_score": 16.1,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "EW",
@@ -232,6 +236,7 @@
    "beta": 0.72869164,
    "dcf_value": 73.54,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 2.67,
    "forward_pe": 33.93,
    "fvg_timeframe": null,
@@ -263,7 +268,7 @@
    "sentiment_score": 18.7,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "MAS",
@@ -273,6 +278,7 @@
    "beta": 1.1953999,
    "dcf_value": 52.96,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.82,
    "forward_pe": 17.42,
    "fvg_timeframe": null,
@@ -304,7 +310,7 @@
    "sentiment_score": 3.6,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "MOS",
@@ -314,6 +320,7 @@
    "beta": 0.76048523,
    "dcf_value": null,
    "dcf_nm": true,
+   "dcf_na": null,
    "peg_ratio": 7.02,
    "forward_pe": 72.1,
    "fvg_timeframe": null,
@@ -344,7 +351,7 @@
    "sentiment_score": 6.7,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "ROL",
@@ -354,6 +361,7 @@
    "beta": 0.6861565,
    "dcf_value": 33.39,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 4.31,
    "forward_pe": 33.29,
    "fvg_timeframe": "Daily",
@@ -404,7 +412,7 @@
     "stale": true
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "GPN",
@@ -412,8 +420,9 @@
    "sector": "Financials",
    "price": 97.4,
    "beta": 0.79304737,
-   "dcf_value": 135.8,
+   "dcf_value": null,
    "dcf_nm": false,
+   "dcf_na": "not used for financial companies",
    "peg_ratio": 0.48,
    "forward_pe": 7.14,
    "fvg_timeframe": "Daily",
@@ -432,38 +441,37 @@
    "buy_zone_high": 81.24,
    "catalysts": [
     "52% of 23 analysts rate it Buy",
-    "Street target $114.09 (+17%)",
-    "DCF value $135.80 (+39% vs price)"
+    "Street target $114.09 (+17%)"
    ],
    "invalidation_triggers": [
     "Consensus slipping below 50% Buy",
     "Close below the $69.75 DCA zone low"
    ],
-   "composite_score": 68,
+   "composite_score": 61,
    "technical_score": 21,
-   "fundamental_score": 35,
+   "fundamental_score": 27.5,
    "sentiment_score": 12.1,
    "ai_take": {
     "verdict": "Watch",
-    "summary": "Price $97.40 is above a wide FVG ($86.71-$96.02) with no Fib depth and a lower 2.6:1 reward:risk, and the stop is about 12% below price. Valuation is cheap and Q3 results brought a raised synergy target, but the DCA zone ($69.75-$81.24) is far below.",
+    "summary": "Very cheap on P/E (7.14) and PEG (0.48), with fresh target raises after Q3 results. But the technical score is weak (21/35), there is no Fib depth, the FVG range is wide, and reward:risk is 2.6:1.",
     "bull": [
-     "P/E 7.14 vs sector 15, PEG 0.48",
-     "Wells Fargo, KeyBanc raised targets after Q3 results; synergy target raised to $650M",
-     "Consensus target $114.09 (+17.1%)"
+     "Worldpay synergy target raised to $650M",
+     "Wells Fargo $116, KeyBanc $112 targets",
+     "Consensus target +17.1%"
     ],
     "bear": [
-     "Technical score 21/35 and weakest reward:risk (2.6:1)",
-     "Only 52% Buy of 23; Evercore target $90 and Truist $86 are below price",
-     "Price is well above the DCA zone"
+     "Only 52% Buy; Truist Hold $86 and Evercore In-Line $90 are below price",
+     "Price is far above the DCA zone ($69.75-$81.24)",
+     "Wide FVG makes the stop $85.41 about 12% away"
     ],
-    "watch": "The $85.41 stop and whether price holds above the $96.02 FVG top.",
+    "watch": "The $85.41 stop and the $96.02 top of the FVG.",
     "confidence": "low",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "CDNS",
@@ -473,6 +481,7 @@
    "beta": 1.1141728,
    "dcf_value": 199.31,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 3.03,
    "forward_pe": 47.68,
    "fvg_timeframe": "Weekly",
@@ -523,7 +532,7 @@
     "stale": true
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "KMB",
@@ -533,6 +542,7 @@
    "beta": 0.2511334,
    "dcf_value": 27.98,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 5.78,
    "forward_pe": 14.69,
    "fvg_timeframe": "Weekly",
@@ -583,7 +593,7 @@
     "stale": true
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "PFG",
@@ -591,8 +601,9 @@
    "sector": "Financials",
    "price": 110.91,
    "beta": 0.88724387,
-   "dcf_value": 286.28,
+   "dcf_value": null,
    "dcf_nm": false,
+   "dcf_na": "not used for financial companies",
    "peg_ratio": 1.27,
    "forward_pe": 12.08,
    "fvg_timeframe": "Weekly",
@@ -611,38 +622,37 @@
    "buy_zone_high": 110.78,
    "catalysts": [
     "18% of 11 analysts rate it Buy",
-    "Street target $111.00 (+0%)",
-    "DCF value $286.28 (+158% vs price)"
+    "Street target $111.00 (+0%)"
    ],
    "invalidation_triggers": [
     "Consensus slipping below 50% Buy",
     "Close below the $104.82 DCA zone low"
    ],
-   "composite_score": 70,
+   "composite_score": 63,
    "technical_score": 35,
-   "fundamental_score": 32,
+   "fundamental_score": 24.5,
    "sentiment_score": 3,
    "ai_take": {
-    "verdict": "Avoid",
-    "summary": "Price $110.91 sits above the $104.82-$110.78 DCA zone after a weekly FVG rejection, with 4.3:1 reward:risk. Analysts are cool: 18% Buy, consensus target just +0.1%, and a run of target cuts.",
+    "verdict": "Watch",
+    "summary": "The weekly chart is strong (35/35) and valuation is fair, but the Street is cold: only 18% Buy and consensus target is +0.1% above price. Recent headlines are all target cuts, and price is above the DCA zone.",
     "bull": [
-     "Technical score 35/35 with a weekly setup",
+     "Weekly FVG with structural support, 4.3:1",
      "P/E 12.08 vs sector 15",
-     "Swing target $121.18 (+9.3%)"
+     "Beta 0.89"
     ],
     "bear": [
-     "Consensus target $111.00 offers almost no upside",
-     "Evercore, Wells Fargo, UBS, KBW and Piper all lowered targets",
-     "Street+insider score only 3/30"
+     "Consensus target $111.00 offers no upside",
+     "Five recent target cuts",
+     "No DCF; no insider buying"
     ],
-    "watch": "Whether price holds $105.56-$108.95 and the $103.98 stop.",
-    "confidence": "medium",
+    "watch": "A pullback to the $104.82-$110.78 zone or a break below $103.98.",
+    "confidence": "low",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "AMP",
@@ -650,8 +660,9 @@
    "sector": "Financials",
    "price": 501.49,
    "beta": 1.1219361,
-   "dcf_value": 2242.15,
+   "dcf_value": null,
    "dcf_nm": false,
+   "dcf_na": "not used for financial companies",
    "peg_ratio": 1.06,
    "forward_pe": 10.84,
    "fvg_timeframe": "Weekly",
@@ -670,38 +681,37 @@
    "buy_zone_high": 502.9,
    "catalysts": [
     "25% of 8 analysts rate it Buy",
-    "Street target $542.13 (+8%)",
-    "DCF value $2242.15 (+347% vs price)"
+    "Street target $542.13 (+8%)"
    ],
    "invalidation_triggers": [
     "Consensus slipping below 50% Buy",
     "Close below the $463.05 DCA zone low"
    ],
-   "composite_score": 76,
+   "composite_score": 69,
    "technical_score": 35,
-   "fundamental_score": 34.4,
+   "fundamental_score": 26.9,
    "sentiment_score": 6.9,
    "ai_take": {
     "verdict": "Watch",
-    "summary": "Price $501.49 is in the $463.05-$502.90 DCA zone after a weekly FVG rejection, with a 6.9:1 reward:risk and the strongest technical score (35/35). Analyst sentiment is poor, with a BofA downgrade to Underperform over advisor attrition.",
+    "summary": "The weekly chart setup is strong (technical 35/35, 6.9:1) and valuation is reasonable, but only 25% of 8 analysts rate it Buy, with a BofA downgrade to Underperform citing advisor attrition. Consensus upside is just +8.1%.",
     "bull": [
-     "Weekly FVG setup with structural support",
+     "Weekly FVG with structural support",
      "P/E 10.84 vs sector 15",
-     "Swing target $572.56 (+14.2%)"
+     "Price is in the DCA zone"
     ],
     "bear": [
-     "Only 25% Buy of 8; consensus target just +8.1%",
-     "BofA downgraded to Underperform ($445) and Morgan Stanley is Underweight ($483)",
-     "DCF of $2242.15 looks implausible; insiders net -$263,815"
+     "BofA double-downgrade, target $445 is below price",
+     "Morgan Stanley Underweight, target $483",
+     "Insiders net sold about $264K"
     ],
-    "watch": "The $467.55 stop and the $474.67-$487.17 weekly FVG.",
+    "watch": "Weekly hold above $467.55 stop; further analyst downgrades.",
     "confidence": "low",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "NET",
@@ -711,6 +721,7 @@
    "beta": 1.4982593,
    "dcf_value": 38.04,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 239.59,
    "forward_pe": 8956,
    "fvg_timeframe": "Weekly",
@@ -761,7 +772,7 @@
     "stale": true
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "AZN",
@@ -771,6 +782,7 @@
    "beta": 1.29512,
    "dcf_value": 176.07,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.45,
    "forward_pe": 18.24,
    "fvg_timeframe": "Daily",
@@ -802,25 +814,25 @@
    "sentiment_score": 20.7,
    "ai_take": {
     "verdict": "Wait for entry",
-    "summary": "Price $186.43 rejected a daily FVG at $175.35-$184.52, but reward:risk is only 2.3:1 and the 1-month target is +5.4%. Price is slightly above the $178.53-$185.04 DCA zone and the DCF is 5.6% below price.",
+    "summary": "Street support is solid (86% Buy) but the setup is thin: reward:risk is only 2.3:1, the swing target is +5.4%, and DCF ($176.07) is below price. Price is above the DCA zone.",
     "bull": [
-     "86% Buy of 14; consensus target $216.27 (+16.0%)",
-     "Results reassured on long-term growth; three brokers raised targets",
-     "RBC keeps Outperform ahead of the AVANZAR trial"
+     "Three brokers raised targets after results",
+     "Consensus target $216.27 is +16.0%",
+     "RBC Outperform ahead of the AVANZAR trial"
     ],
     "bear": [
-     "Low reward:risk (2.3:1)",
-     "DCF $176.07 (-5.6%); valuation score 9.9/35",
-     "Trial outcome risk (AVANZAR); the brief gives no result"
+     "DCF below price; valuation score 9.9/35",
+     "Low reward:risk",
+     "No insider buying; trial outcome is uncertain"
     ],
-    "watch": "A pullback into the $178.53-$185.04 zone or a hold above the $172.72 stop.",
-    "confidence": "medium",
+    "watch": "A pullback to the $178.53-$185.04 zone, or the AVANZAR trial readout.",
+    "confidence": "low",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "KR",
@@ -830,6 +842,7 @@
    "beta": 0.32897058,
    "dcf_value": 77,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.9,
    "forward_pe": 13.02,
    "fvg_timeframe": "Daily",
@@ -880,7 +893,7 @@
     "stale": true
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "ONON",
@@ -890,6 +903,7 @@
    "beta": 2.083006,
    "dcf_value": 28.62,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 0.74,
    "forward_pe": 24.9,
    "fvg_timeframe": "Daily",
@@ -920,26 +934,26 @@
    "fundamental_score": 10,
    "sentiment_score": 26.4,
    "ai_take": {
-    "verdict": "Watch",
-    "summary": "Price $37.36 is in the $37.27-$38.77 DCA zone after a daily FVG rejection, with 6.1:1 reward:risk and strong analyst support. Valuation is stretched, with the DCF 23.4% below price and P/E above sector.",
+    "verdict": "Wait for entry",
+    "summary": "Analysts are positive (84% Buy of 25, new Wells Fargo Overweight) and the setup is live at 6.1:1. However, valuation is stretched: P/E 24.9 vs sector 20 and DCF $28.62 is 23.4% below price.",
     "bull": [
-     "84% Buy of 25; new coverage from Wells Fargo (PT $48) and Wolfe (PT $47)",
-     "Insider net buying of about $3.9M",
-     "Consensus target $43.88 (+17.5%)"
+     "Insiders net bought about $3.9M",
+     "Several new initiations with targets $47-$60",
+     "Price is in the DCA zone"
     ],
     "bear": [
-     "DCF $28.62 (-23.4%); P/E 24.90 vs sector 20",
-     "Valuation score only 10/35",
-     "Beta 2.08 means large swings"
+     "DCF below price and valuation score 10/35",
+     "Beta 2.08, very volatile",
+     "Stop at $36.18 is only about 3% away"
     ],
-    "watch": "The $36.18 stop; the FVG at $36.73-$37.11 is very close to price.",
-    "confidence": "medium",
+    "watch": "The $36.18 stop and the $36.73-$37.11 FVG.",
+    "confidence": "low",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "TSN",
@@ -949,6 +963,7 @@
    "beta": 0.33338863,
    "dcf_value": 40.71,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.06,
    "forward_pe": 17.1,
    "fvg_timeframe": "Daily",
@@ -979,26 +994,26 @@
    "fundamental_score": 18.7,
    "sentiment_score": 20,
    "ai_take": {
-    "verdict": "Watch",
-    "summary": "Price $59.68 rejected a daily FVG at $57.20-$59.26 with 4.6:1 reward:risk, but the DCF ($40.71) is 31.8% below price. Analysts are mostly positive but consensus upside is small, and the DCA zone ($65.85-$66.27) is well above price.",
+    "verdict": "Wait for entry",
+    "summary": "The chart setup is live at 4.6:1, but the DCF ($40.71) is 31.8% below price and consensus target is only +7.2%. The swing target is ahead of what analysts imply.",
     "bull": [
-     "71% Buy of 7 analysts",
-     "Insider net buying of about $1.0M",
-     "Low beta of 0.33"
+     "Low beta of 0.33",
+     "Small insider net buying (+$1.0M)",
+     "71% Buy of 7 analysts"
     ],
     "bear": [
-     "DCF $40.71 (-31.8%) signals overvaluation",
-     "Consensus target $64.00 is only +7.2%",
-     "Valuation score 18.7/35; the 1-month target of +12.3% exceeds the consensus target"
+     "DCF well below price",
+     "Consensus target $64.00 gives limited upside; 1-month target is $67.00",
+     "Only 7 analysts and no headlines in the brief"
     ],
-    "watch": "The $56.34 stop and the $57.20-$59.26 FVG.",
+    "watch": "Reaction around the $57.20-$59.26 FVG and the $56.34 stop.",
     "confidence": "low",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "KIM",
@@ -1008,6 +1023,7 @@
    "beta": 0.90183663,
    "dcf_value": 9.53,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 2.88,
    "forward_pe": 13.79,
    "fvg_timeframe": "Daily",
@@ -1039,7 +1055,7 @@
    "sentiment_score": 3.1,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "LNT",
@@ -1049,6 +1065,7 @@
    "beta": 0.4671807,
    "dcf_value": 60.54,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 3.06,
    "forward_pe": 21.19,
    "fvg_timeframe": "Daily",
@@ -1080,7 +1097,7 @@
    "sentiment_score": 7.5,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "AEE",
@@ -1090,6 +1107,7 @@
    "beta": 0.40079287,
    "dcf_value": null,
    "dcf_nm": true,
+   "dcf_na": null,
    "peg_ratio": 3.29,
    "forward_pe": 20.86,
    "fvg_timeframe": "Daily",
@@ -1139,7 +1157,7 @@
     "stale": true
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "META",
@@ -1149,6 +1167,7 @@
    "beta": 1.278726,
    "dcf_value": 785.87,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.06,
    "forward_pe": 21.03,
    "fvg_timeframe": "Daily",
@@ -1179,26 +1198,26 @@
    "fundamental_score": 34.4,
    "sentiment_score": 25,
    "ai_take": {
-    "verdict": "Accumulate",
-    "summary": "Price $610.15 is inside the $579.13-$652.15 DCA zone after rejecting a daily FVG at $584.95-$604.35, with a 4.1:1 reward:risk. Valuation and Street support are good, but insiders were net sellers of about $115M over 90 days.",
+    "verdict": "Buy setup",
+    "summary": "Price ($610.15) sits inside the DCA zone and just above a rejected daily bullish FVG ($584.95-$604.35), with a live plan at 4.1:1 reward:risk. Valuation looks cheap (P/E 21 vs sector 28, DCF +28.8%) and 86% of 43 analysts rate Buy.",
     "bull": [
-     "86% Buy of 43 analysts, consensus target $859.32 (+40.8%)",
-     "P/E 21.03 vs sector 28; DCF $785.87 (+28.8%)",
-     "Price is in the DCA zone with structural support"
+     "Score 90/100, highest in the brief",
+     "DCF $785.87 and consensus target $859.32 are well above price",
+     "Structural support present, stop $576.18 is fairly close"
     ],
     "bear": [
-     "Insider net 90d is about -$115M",
-     "Beta 1.28 means larger swings",
-     "1-month target is only +10.0% against a stop about 5.6% below"
+     "Insiders net sold about $115M over 90 days",
+     "Beta 1.28 means larger swings than the market",
+     "1-month target $671.17 is only +10.0%"
     ],
-    "watch": "The $576.18 stop and the $584.95-$604.35 FVG; a close below would weaken the setup.",
+    "watch": "A daily close below the $576.18 stop would invalidate the setup; $671.17 is the swing target.",
     "confidence": "medium",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "ATO",
@@ -1208,6 +1227,7 @@
    "beta": 0.5152812,
    "dcf_value": 266.11,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 2.75,
    "forward_pe": 19.14,
    "fvg_timeframe": "Daily",
@@ -1239,7 +1259,7 @@
    "sentiment_score": 8.3,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "VMC",
@@ -1249,6 +1269,7 @@
    "beta": 0.98087627,
    "dcf_value": 201.33,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 2.92,
    "forward_pe": 31.81,
    "fvg_timeframe": "Daily",
@@ -1299,7 +1320,7 @@
     "stale": true
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "MCD",
@@ -1309,6 +1330,7 @@
    "beta": 0.38798788,
    "dcf_value": 138.59,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 3.15,
    "forward_pe": 21.53,
    "fvg_timeframe": "Daily",
@@ -1340,7 +1362,7 @@
    "sentiment_score": 8.9,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "XEL",
@@ -1350,6 +1372,7 @@
    "beta": 0.3395658,
    "dcf_value": null,
    "dcf_nm": true,
+   "dcf_na": null,
    "peg_ratio": 2.58,
    "forward_pe": 19.24,
    "fvg_timeframe": "Daily",
@@ -1399,16 +1422,17 @@
     "stale": true
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "VMRK",
-   "name": "Vivmark Residential",
+   "name": "AvalonBay Communities, Inc.",
    "sector": "Other",
    "price": 65.51,
    "beta": 0.6995295,
    "dcf_value": 2.16,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 3.8,
    "forward_pe": 16.09,
    "fvg_timeframe": "Daily",
@@ -1440,7 +1464,7 @@
    "sentiment_score": 7.7,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "PDD",
@@ -1448,8 +1472,9 @@
    "sector": "Other",
    "price": 83.03,
    "beta": -0.02945857,
-   "dcf_value": 441.86,
+   "dcf_value": null,
    "dcf_nm": false,
+   "dcf_na": "unreliable (statements likely in a foreign currency)",
    "peg_ratio": 0.66,
    "forward_pe": 8.29,
    "fvg_timeframe": "Daily",
@@ -1468,38 +1493,37 @@
    "buy_zone_high": 96.69,
    "catalysts": [
     "58% of 12 analysts rate it Buy",
-    "Street target $114.58 (+38%)",
-    "DCF value $441.86 (+432% vs price)"
+    "Street target $114.58 (+38%)"
    ],
    "invalidation_triggers": [
     "Consensus slipping below 50% Buy",
     "Close below the $95.7 DCA zone low"
    ],
-   "composite_score": 84,
+   "composite_score": 77,
    "technical_score": 31,
-   "fundamental_score": 35,
+   "fundamental_score": 27.5,
    "sentiment_score": 18.3,
    "ai_take": {
-    "verdict": "Wait for entry",
-    "summary": "Price $83.03 rejected a daily FVG at $79.87-$80.82 with a 10.8:1 reward:risk, but the DCA zone ($95.70-$96.69) is far above the price, which is a data oddity worth checking. Valuation scores are top-rated but only 58% of analysts say Buy.",
+    "verdict": "Accumulate",
+    "summary": "A live setup with very high 10.8:1 reward:risk, a low P/E (8.29 vs 20) and price below the DCA zone. Street support is weaker (58% Buy of 12) and no analyst headlines are in the brief.",
     "bull": [
-     "P/E 8.29 vs sector 20, PEG 0.66",
-     "Consensus target $114.58 (+38.0%)",
-     "Swing target $98.40 (+18.5%) vs stop $78.67"
+     "PEG 0.66 and P/E far below sector",
+     "Consensus target $114.58 is +38.0%",
+     "Insider activity is negligible (-$140K)"
     ],
     "bear": [
-     "DCF of $441.86 (+432%) looks unrealistic",
-     "Only 58% Buy of 12 analysts; Street+insider score 18.3/30",
-     "Small insider net selling (-$140K); no recent analyst headlines in the brief"
+     "Only 58% Buy, lowest Street+insider score among the stronger setups (18.3/30)",
+     "No DCF and no recent analyst news in the brief",
+     "Stop at $78.67 is close to the FVG, so a small dip breaks the plan"
     ],
-    "watch": "Whether price holds above $79.87-$80.82 and the $78.67 stop.",
-    "confidence": "low",
+    "watch": "Hold above $78.67 stop; the $79.87-$80.82 FVG area acts as support.",
+    "confidence": "medium",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "IR",
@@ -1509,6 +1533,7 @@
    "beta": 1.1407069,
    "dcf_value": 57.98,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 3.47,
    "forward_pe": 23.91,
    "fvg_timeframe": "Daily",
@@ -1540,7 +1565,7 @@
    "sentiment_score": 22.5,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "TROW",
@@ -1548,8 +1573,9 @@
    "sector": "Financials",
    "price": 108.41,
    "beta": 1.4456637,
-   "dcf_value": 135.43,
+   "dcf_value": null,
    "dcf_nm": false,
+   "dcf_na": "not used for financial companies",
    "peg_ratio": 4.15,
    "forward_pe": 10.54,
    "fvg_timeframe": "Daily",
@@ -1568,16 +1594,15 @@
    "buy_zone_high": 111.25,
    "catalysts": [
     "0% of 9 analysts rate it Buy",
-    "Street target $107.30 (-1%)",
-    "DCF value $135.43 (+25% vs price)"
+    "Street target $107.30 (-1%)"
    ],
    "invalidation_triggers": [
     "Consensus slipping below 50% Buy",
     "Close below the $105.1 DCA zone low"
    ],
-   "composite_score": 59,
+   "composite_score": 52,
    "technical_score": 31,
-   "fundamental_score": 25,
+   "fundamental_score": 17.5,
    "sentiment_score": 3,
    "ai_take": {
     "verdict": "Avoid",
@@ -1600,7 +1625,7 @@
     "stale": true
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "CRH",
@@ -1610,6 +1635,7 @@
    "beta": 1.304368,
    "dcf_value": 98.8,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.8,
    "forward_pe": 17.09,
    "fvg_timeframe": "Daily",
@@ -1640,26 +1666,26 @@
    "fundamental_score": 12.4,
    "sentiment_score": 28,
    "ai_take": {
-    "verdict": "Wait for entry",
-    "summary": "Price $94.81 bounced off a daily FVG at $91.68-$93.48 with a 10.7:1 reward:risk and strong analyst support. Valuation is only fair (DCF +4.2%), and price is below the listed $101.89-$107.35 DCA zone.",
+    "verdict": "Accumulate",
+    "summary": "Live setup with 10.7:1 reward:risk, price below the DCA zone, and strong Street backing (92% Buy of 13, target $122). Valuation is the weak spot: DCF is only +4.2% and PEG is 1.80.",
     "bull": [
-     "92% Buy of 13 analysts, consensus target $122.00 (+28.7%)",
-     "Several recent target raises (Truist $120, Wells Fargo $107)",
-     "Small insider net buying (+$189K)"
+     "Several brokers raised targets in early November",
+     "Small insider net buying (+$189K)",
+     "Consensus target +28.7%"
     ],
     "bear": [
      "Valuation score only 12.4/35; PEG 1.80",
-     "DCF $98.80 offers just +4.2% upside",
-     "Morgan Stanley and DA Davidson lowered targets"
+     "Morgan Stanley and DA Davidson lowered targets",
+     "Beta 1.30"
     ],
-    "watch": "The $90.30 stop and the $91.68-$93.48 FVG.",
+    "watch": "Stop at $90.30; $91.68-$93.48 FVG zone as support.",
     "confidence": "medium",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "KHC",
@@ -1669,6 +1695,7 @@
    "beta": 0.08019261,
    "dcf_value": 29.82,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 2.95,
    "forward_pe": 11.78,
    "fvg_timeframe": "Daily",
@@ -1700,7 +1727,7 @@
    "sentiment_score": 3,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "UDR",
@@ -1710,6 +1737,7 @@
    "beta": 0.6620013,
    "dcf_value": 4.99,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 8,
    "forward_pe": 14.4,
    "fvg_timeframe": "Daily",
@@ -1741,7 +1769,7 @@
    "sentiment_score": 6.6,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "DPZ",
@@ -1751,6 +1779,7 @@
    "beta": 0.9292106,
    "dcf_value": 305.57,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.54,
    "forward_pe": 17.5,
    "fvg_timeframe": "Daily",
@@ -1782,7 +1811,7 @@
    "sentiment_score": 6.6,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "CLX",
@@ -1792,6 +1821,7 @@
    "beta": 0.5247332,
    "dcf_value": 10.79,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 3.15,
    "forward_pe": 17.35,
    "fvg_timeframe": "Daily",
@@ -1823,7 +1853,7 @@
    "sentiment_score": 6,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.785Z"
   },
   {
    "ticker": "ARE",
@@ -1833,6 +1863,7 @@
    "beta": 1.1163707,
    "dcf_value": null,
    "dcf_nm": true,
+   "dcf_na": null,
    "peg_ratio": null,
    "forward_pe": 7.01,
    "fvg_timeframe": "Daily",
@@ -1863,7 +1894,7 @@
    "sentiment_score": 11.9,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "SYF",
@@ -1871,8 +1902,9 @@
    "sector": "Financials",
    "price": 73.74,
    "beta": 1.4198736,
-   "dcf_value": 574.16,
+   "dcf_value": null,
    "dcf_nm": false,
+   "dcf_na": "not used for financial companies",
    "peg_ratio": 0.91,
    "forward_pe": 7.69,
    "fvg_timeframe": "Daily",
@@ -1891,38 +1923,37 @@
    "buy_zone_high": 74.99,
    "catalysts": [
     "46% of 13 analysts rate it Buy",
-    "Street target $86.08 (+17%)",
-    "DCF value $574.16 (+679% vs price)"
+    "Street target $86.08 (+17%)"
    ],
    "invalidation_triggers": [
     "Consensus slipping below 50% Buy",
     "Close below the $71.02 DCA zone low"
    ],
-   "composite_score": 77,
+   "composite_score": 70,
    "technical_score": 31,
-   "fundamental_score": 35,
+   "fundamental_score": 27.5,
    "sentiment_score": 11,
    "ai_take": {
     "verdict": "Watch",
-    "summary": "Price $73.74 is in the $71.02-$74.99 DCA zone after a daily FVG rejection at $72.75-$73.64, with a 5.7:1 reward:risk. Valuation is cheap but analysts are split and recent target changes were mostly cuts.",
+    "summary": "Price is in the DCA zone with a live 5.7:1 setup and a low P/E (7.69 vs 15), but Street sentiment is mixed (46% Buy) with a downgrade and several target cuts recently. The stop at $71.66 is tight.",
     "bull": [
-     "P/E 7.69 vs sector 15, PEG 0.91",
-     "Price in the DCA zone; swing target $81.92 (+11.1%)",
-     "Barclays Overweight with a $94 target; one upgrade to Buy on 2026-10-22"
+     "Cheap on P/E and PEG 0.91",
+     "Barclays Overweight with $94 target; one upgrade to Buy noted",
+     "Consensus target $86.08 is +16.7%"
     ],
     "bear": [
-     "Only 46% Buy of 13; Street+insider score 11/30",
-     "Evercore downgraded to In-Line; UBS and Morgan Stanley lowered targets",
-     "Beta 1.42; DCF of $574.16 (+679%) looks implausible"
+     "Evercore downgrade to In-Line and UBS target cut to $80",
+     "Insiders net sold about $436K",
+     "Beta 1.42, and no DCF available"
     ],
-    "watch": "The $71.66 stop; the FVG at $72.75-$73.64 is close to price.",
-    "confidence": "medium",
+    "watch": "A hold above $71.66 and the $72.75-$73.64 FVG.",
+    "confidence": "low",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "COF",
@@ -1930,8 +1961,9 @@
    "sector": "Financials",
    "price": 201.87,
    "beta": 1.1053509,
-   "dcf_value": 2154.99,
+   "dcf_value": null,
    "dcf_nm": false,
+   "dcf_na": "not used for financial companies",
    "peg_ratio": 0.92,
    "forward_pe": 9.37,
    "fvg_timeframe": "Daily",
@@ -1950,38 +1982,37 @@
    "buy_zone_high": 201.19,
    "catalysts": [
     "80% of 15 analysts rate it Buy",
-    "Street target $255.73 (+27%)",
-    "DCF value $2154.99 (+968% vs price)"
+    "Street target $255.73 (+27%)"
    ],
    "invalidation_triggers": [
     "Consensus slipping below 50% Buy",
     "Close below the $185.77 DCA zone low"
    ],
-   "composite_score": 91,
+   "composite_score": 84,
    "technical_score": 31,
-   "fundamental_score": 35,
+   "fundamental_score": 27.5,
    "sentiment_score": 25,
    "ai_take": {
     "verdict": "Wait for entry",
-    "summary": "Price $201.87 bounced off a daily bullish FVG at $196.87-$200.27 with a 6.4:1 reward:risk, but it sits just above the $185.77-$201.19 DCA zone. Valuation and analyst support are strong, while insiders were net sellers of about $41.7M over 90 days.",
+    "summary": "Setup is live with 6.4:1 reward:risk and cheap valuation (P/E 9.37 vs 15), but price $201.87 is above the DCA zone ($185.77-$201.19). Analysts are mostly Buy, though recent target moves are mixed (UBS lowered to $274).",
     "bull": [
-     "P/E 9.37 vs sector 15 and 80% Buy of 15 analysts",
-     "Swing target $228.14 (+13.0%) against a stop at $193.92",
-     "Several recent price-target raises (Citigroup $285, JP Morgan $241)"
+     "80% Buy of 15 analysts, consensus target $255.73",
+     "Low P/E and PEG 0.92",
+     "Structural support and tight stop at $193.92"
     ],
     "bear": [
-     "Price is above the DCA zone, so entry is not at the preferred level",
-     "Insider net 90d is about -$41.7M",
-     "DCF of $2154.99 (+967%) looks implausible and should not be relied on; UBS lowered its target to $274"
+     "Insiders net sold about $41.7M in 90 days",
+     "Price slightly above the DCA zone",
+     "No DCF available, so valuation rests on P/E and PEG"
     ],
-    "watch": "Hold above the $196.87-$200.27 FVG and the $193.92 stop, or a pullback into the $185.77-$201.19 zone.",
+    "watch": "A pullback into the $185.77-$201.19 zone, or a hold above the FVG at $196.87-$200.27.",
     "confidence": "medium",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "LHX",
@@ -1991,6 +2022,7 @@
    "beta": 0.4794275,
    "dcf_value": 250.84,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.6,
    "forward_pe": 21.6,
    "fvg_timeframe": "Daily",
@@ -2022,7 +2054,7 @@
    "sentiment_score": 17.9,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "CBRE",
@@ -2032,6 +2064,7 @@
    "beta": 1.188851,
    "dcf_value": 111.94,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": null,
    "forward_pe": 17.46,
    "fvg_timeframe": "Daily",
@@ -2062,26 +2095,26 @@
    "fundamental_score": 11.3,
    "sentiment_score": 25,
    "ai_take": {
-    "verdict": "Watch",
-    "summary": "Price $135.51 is in the $129.15-$139.12 DCA zone after a daily FVG rejection, with 6.3:1 reward:risk. All 7 analysts say Buy, but the DCF is 17.4% below price and insiders were net sellers.",
+    "verdict": "Wait for entry",
+    "summary": "Setup is live at 6.3:1 with price in the DCA zone and 100% Buy from 7 analysts, but DCF ($111.94) is 17.4% below price. Recent target cuts (Evercore $166, KBW $164) still sit well above price.",
     "bull": [
-     "100% Buy of 7; consensus target $177.43 (+30.9%)",
-     "Price in the DCA zone with structural support",
-     "Swing target $156.55 (+15.5%)"
+     "All 7 analysts rate Buy, consensus target +30.9%",
+     "Structural support and a close stop ($129.79)",
+     "P/E 17.46 vs sector 20"
     ],
     "bear": [
-     "DCF $111.94 (-17.4%); valuation score 11.3/35",
-     "Evercore and KBW lowered targets",
-     "Insider net -$367K; only 7 analysts"
+     "DCF below price; valuation score 11.3/35",
+     "Insiders net sold about $367K",
+     "Small analyst sample and recent target cuts"
     ],
     "watch": "The $129.79 stop and the $131.77-$135.19 FVG.",
-    "confidence": "medium",
+    "confidence": "low",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "LVS",
@@ -2091,6 +2124,7 @@
    "beta": 0.7181447,
    "dcf_value": 66.35,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 0.97,
    "forward_pe": 14.5,
    "fvg_timeframe": "Daily",
@@ -2122,25 +2156,25 @@
    "sentiment_score": 10.8,
    "ai_take": {
     "verdict": "Watch",
-    "summary": "Price $40.73 rejected a daily FVG at $38.49-$40.20 with a 3.8:1 reward:risk, but analysts have been cutting targets and only 46% say Buy. The listed DCA zone ($49.37-$50.89) is well above price and looks inconsistent with the setup.",
+    "summary": "Technicals and valuation score well (DCF $66.35, P/E 14.5 vs 21), but analyst sentiment is weak at 46% Buy and the latest headlines show a run of price-target cuts. Reward:risk is 3.8:1 and the DCA zone ($49.37-$50.89) is far above price, which looks inconsistent.",
     "bull": [
-     "P/E 14.50 vs sector 21; DCF $66.35 (+62.9%)",
-     "Consensus target $47.36 (+16.3%)",
+     "DCF implies +62.9% upside",
+     "Live FVG setup with structural support",
      "Low beta of 0.72"
     ],
     "bear": [
-     "Many recent target cuts (Jefferies $37, Wells Fargo $40, Morgan Stanley $49)",
-     "Consensus target reportedly down 11.74% to $53.27 in one headline, which conflicts with the $47.36 figure",
-     "Street+insider score only 10.8/30; no insider buying"
+     "Consensus target cut 11.74% to $53.27 and several brokers lowered targets",
+     "Only 46% Buy; Jefferies target $37 is below price",
+     "No insider buying (net $0)"
     ],
-    "watch": "The $37.91 stop and whether price holds the $38.49-$40.20 FVG.",
+    "watch": "Hold above the $37.91 stop; further target cuts would be a warning.",
     "confidence": "low",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "RTX",
@@ -2150,6 +2184,7 @@
    "beta": 0.2994152,
    "dcf_value": 106.86,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 2.11,
    "forward_pe": 24.68,
    "fvg_timeframe": "Daily",
@@ -2181,7 +2216,7 @@
    "sentiment_score": 22.4,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "IP",
@@ -2191,6 +2226,7 @@
    "beta": 0.9684575,
    "dcf_value": null,
    "dcf_nm": true,
+   "dcf_na": null,
    "peg_ratio": 5.09,
    "forward_pe": 30.57,
    "fvg_timeframe": "Daily",
@@ -2240,7 +2276,7 @@
     "stale": true
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "ILMN",
@@ -2250,6 +2286,7 @@
    "beta": 1.4645647,
    "dcf_value": 129.56,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 2.89,
    "forward_pe": 39.25,
    "fvg_timeframe": "Weekly",
@@ -2281,7 +2318,7 @@
    "sentiment_score": 13.8,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "ZTS",
@@ -2291,6 +2328,7 @@
    "beta": 0.6471521,
    "dcf_value": 75.15,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.17,
    "forward_pe": 12.92,
    "fvg_timeframe": "Weekly",
@@ -2322,7 +2360,7 @@
    "sentiment_score": 8.1,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "NXPI",
@@ -2332,6 +2370,7 @@
    "beta": 1.8853518,
    "dcf_value": 207.09,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 0.84,
    "forward_pe": 17.98,
    "fvg_timeframe": "Daily",
@@ -2382,7 +2421,7 @@
     "stale": true
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "DTE",
@@ -2392,6 +2431,7 @@
    "beta": 0.33262083,
    "dcf_value": null,
    "dcf_nm": true,
+   "dcf_na": null,
    "peg_ratio": 2.77,
    "forward_pe": 17.55,
    "fvg_timeframe": "Daily",
@@ -2422,7 +2462,7 @@
    "sentiment_score": 8.4,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "DECK",
@@ -2432,6 +2472,7 @@
    "beta": 1.1472524,
    "dcf_value": 189.58,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 1.39,
    "forward_pe": 10.98,
    "fvg_timeframe": "Daily",
@@ -2463,25 +2504,25 @@
    "sentiment_score": 10.3,
    "ai_take": {
     "verdict": "Avoid",
-    "summary": "Price $86.71 rejected a daily FVG at $85.37-$86.37, but there is no structural support and the technical score is 26/35. Analysts have been cutting targets and one headline flags a sharp DTC slowdown.",
+    "summary": "The setup lacks structural support and the technical score is low (26/35). Analysts are cutting targets after a reported DTC slowdown, and only 47% rate it Buy, despite a very low P/E and a DCF of $189.58.",
     "bull": [
-     "P/E 10.98 vs sector 21; DCF $189.58 (+118.6%)",
-     "Swing target $95.38 (+10.0%) with 5.3:1 reward:risk",
-     "Consensus target $99.94 (+15.3%)"
+     "P/E 10.98 vs sector 21; DCF +118.6%",
+     "Consensus target $99.94 is +15.3%",
+     "Live plan at 5.3:1"
     ],
     "bear": [
      "No structural support",
-     "Only 47% Buy of 19; consensus target lowered 15.57%",
-     "Telsey Market Perform $90; Barclays and UBS lowered targets; DTC slowdown headline"
+     "Multiple target cuts, including a downgrade headline on DTC slowdown",
+     "DCF far above price may signal stale inputs"
     ],
-    "watch": "The $84.09 stop and whether price holds the $85.37-$86.37 FVG.",
-    "confidence": "medium",
+    "watch": "The $84.09 stop; stabilization of analyst targets.",
+    "confidence": "low",
     "model": "Claude (Pro plan)",
     "source": "ai",
-    "generatedAt": "2026-11-08T20:26:07.521Z"
+    "generatedAt": "2026-11-08T20:34:07.227Z"
    },
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   },
   {
    "ticker": "CAVA",
@@ -2491,6 +2532,7 @@
    "beta": 1.7233341,
    "dcf_value": 13.26,
    "dcf_nm": false,
+   "dcf_na": null,
    "peg_ratio": 4.67,
    "forward_pe": 107.47,
    "fvg_timeframe": "Daily",
@@ -2522,7 +2564,7 @@
    "sentiment_score": 28,
    "ai_take": null,
    "stale_fields": null,
-   "updated_at": "2026-11-08T20:25:20.285Z"
+   "updated_at": "2026-11-08T20:33:18.786Z"
   }
  ]
 }

@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-08T20:25:20.285Z",
+ "generatedAt": "2026-11-08T20:33:18.786Z",
  "items": [
   {
    "action_date": "2026-11-07",
@@ -3391,20 +3391,6 @@
   },
   {
    "action_date": "2026-10-19",
-   "ticker": "VMRK",
-   "firm": "Wells Fargo",
-   "action": "PT Cut",
-   "from_rating": "Overweight",
-   "to_rating": "Overweight",
-   "old_target": 72,
-   "new_target": 68,
-   "rationale": "Wells Fargo analyst James Feldman maintains Vivmark Residential (NYSE:VMRK) with a Overweight and lowers the price target from $72 to $68.",
-   "source_name": "Benzinga",
-   "source_url": "https://finnhub.io/api/news?id=a453cf271af0496b8c9851de719cdd9d5f0f88b6c683f0c6326758252fe63ace",
-   "headline": "Wells Fargo Maintains Overweight on Vivmark Residential, Lowers Price Target to $68"
-  },
-  {
-   "action_date": "2026-10-19",
    "ticker": "CRH",
    "firm": "Barclays",
    "action": "PT Cut",
@@ -3909,34 +3895,6 @@
   },
   {
    "action_date": "2026-10-14",
-   "ticker": "VMRK",
-   "firm": "UBS",
-   "action": "PT Cut",
-   "from_rating": "Buy",
-   "to_rating": "Buy",
-   "old_target": 75,
-   "new_target": 71,
-   "rationale": "UBS analyst Ami Probandt maintains Vivmark Residential (NYSE:VMRK) with a Buy and lowers the price target from $75 to $71.",
-   "source_name": "Benzinga",
-   "source_url": "https://finnhub.io/api/news?id=de87f58f73619d92d4d38bb2d218210454626c8c25ccefad7d51a035cf51ed57",
-   "headline": "UBS Maintains Buy on Vivmark Residential, Lowers Price Target to $71"
-  },
-  {
-   "action_date": "2026-10-14",
-   "ticker": "VMRK",
-   "firm": "Barclays",
-   "action": "PT Cut",
-   "from_rating": "Equal-Weight",
-   "to_rating": "Equal-Weight",
-   "old_target": 75,
-   "new_target": 74,
-   "rationale": "Barclays analyst Rich Hightower maintains Vivmark Residential (NYSE:VMRK) with a Equal-Weight and lowers the price target from $75 to $74.",
-   "source_name": "Benzinga",
-   "source_url": "https://finnhub.io/api/news?id=7f405b49bdaa109cf5d8e19d6dce18c78461e04e5d8bfe666928c41b61c13bbd",
-   "headline": "Barclays Maintains Equal-Weight on Vivmark Residential, Lowers Price Target to $74"
-  },
-  {
-   "action_date": "2026-10-14",
    "ticker": "TROW",
    "firm": "Barclays",
    "action": "PT Cut",
@@ -4161,20 +4119,6 @@
   },
   {
    "action_date": "2026-10-13",
-   "ticker": "VMRK",
-   "firm": "RBC Capital",
-   "action": "PT Cut",
-   "from_rating": "Sector Perform",
-   "to_rating": "Sector Perform",
-   "old_target": 71,
-   "new_target": 67,
-   "rationale": "RBC Capital analyst Brad Heffern maintains Vivmark Residential (NYSE:VMRK) with a Sector Perform and lowers the price target from $71 to $67.",
-   "source_name": "Benzinga",
-   "source_url": "https://finnhub.io/api/news?id=f94435d2dafcedf3c6b0b3874649f000664ced1a2447010bdc6ac4fe5dd24d3f",
-   "headline": "RBC Capital Maintains Sector Perform on Vivmark Residential, Lowers Price Target to $67"
-  },
-  {
-   "action_date": "2026-10-13",
    "ticker": "TROW",
    "firm": "Analyst",
    "action": "PT Cut",
@@ -4284,20 +4228,6 @@
    "source_name": "Benzinga",
    "source_url": "https://finnhub.io/api/news?id=8561138bbade4037653fddd149b0e0f9e92b42b1c71c6d2db4af2e94c7e99208",
    "headline": "Piper Sandler Maintains Overweight on Kimco Realty, Lowers Price Target to $27"
-  },
-  {
-   "action_date": "2026-10-12",
-   "ticker": "VMRK",
-   "firm": "Piper Sandler",
-   "action": "PT Cut",
-   "from_rating": "Neutral",
-   "to_rating": "Neutral",
-   "old_target": 76,
-   "new_target": 67,
-   "rationale": "Piper Sandler analyst Alexander Goldfarb maintains Vivmark Residential (NYSE:VMRK) with a Neutral and lowers the price target from $76 to $67.",
-   "source_name": "Benzinga",
-   "source_url": "https://finnhub.io/api/news?id=32379701d7c13dd3524d329a16cc2303c36344a247f82eac31ce50f1f6bc882d",
-   "headline": "Piper Sandler Maintains Neutral on Vivmark Residential, Lowers Price Target to $67"
   },
   {
    "action_date": "2026-10-12",
