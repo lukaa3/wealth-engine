@@ -4,7 +4,7 @@
  * Missing fields stay null; the scorer gives them 0 points and the UI shows "n/a".
  */
 import { deriveSetup } from "./technicals.js";
-import { mapLimit } from "./providers.js";
+import { mapLimit, yahooDcf, yahooPeg } from "./providers.js";
 
 const safe = async (p, errors, label) => {
   if (!p) return null;
@@ -34,41 +34,46 @@ export async function buildLiveStock(ticker, P, base, pre) {
   const price = pick(fhQuote && fhQuote.price, pre && pre.price, fq && fq.price);
   if (!price) return { ticker, error: errors.join("; ") || "no quote" };
 
+  // Yahoo first (free, no key, covers almost every US stock); FMP only fills what Yahoo didn't have — saves its tiny quota.
+  const y = await safe(P.yahoo && P.yahoo.summary && (() => P.yahoo.summary(ticker)), errors, "yahoo summary");
+  const yDcf = yahooDcf(y), yPeg = yahooPeg(y);
+  const yCounts = y && y.counts && (y.counts.strongBuy + y.counts.buy + y.counts.hold + y.counts.sell + y.counts.strongSell) > 0 ? y.counts : null;
+  const yTarget = y && (y.targetMean || y.targetMedian);
   const [profile, dcf, pt, gc, ratios, rec, metric] = await Promise.all([
-    safe(fmp && (() => fmp.profile(ticker)), errors, "fmp profile"),
-    safe(fmp && (() => fmp.dcf(ticker)), errors, "fmp dcf"),
-    safe(fmp && (() => fmp.priceTarget(ticker)), errors, "fmp price target"),
-    safe(fmp && (() => fmp.gradesConsensus(ticker)), errors, "fmp grades consensus"),
-    safe(fmp && (() => fmp.ratiosTtm(ticker)), errors, "fmp ratios"),
-    safe(finnhub && (() => finnhub.recommendation(ticker)), errors, "finnhub recommendation"),
+    base && base.sector ? null : safe(fmp && (() => fmp.profile(ticker)), errors, "fmp profile"),
+    yDcf != null || (y && y.freeCashflow != null && y.freeCashflow <= 0) ? null : safe(fmp && (() => fmp.dcf(ticker)), errors, "fmp dcf"),
+    yTarget ? null : safe(fmp && (() => fmp.priceTarget(ticker)), errors, "fmp price target"),
+    yCounts ? null : safe(fmp && (() => fmp.gradesConsensus(ticker)), errors, "fmp grades consensus"),
+    yPeg != null && y.forwardPE != null ? null : safe(fmp && (() => fmp.ratiosTtm(ticker)), errors, "fmp ratios"),
+    yCounts ? null : safe(finnhub && (() => finnhub.recommendation(ticker)), errors, "finnhub recommendation"),
     safe(finnhub && (() => finnhub.metric(ticker)), errors, "finnhub metric"),
   ]);
   // Alpha Vantage only fills gaps (PEG, P/E, price target, analyst ratings) — it has a tiny free quota.
-  const needsAv = !(ratios && (ratios.priceToEarningsGrowthRatioTTM != null || ratios.pegRatioTTM != null))
-    || !(pt && pt.targetConsensus) || !(gc && gc.strongBuy != null) && !(rec && rec.strongBuy != null);
+  const needsAv = (yPeg == null && !(ratios && (ratios.priceToEarningsGrowthRatioTTM != null || ratios.pegRatioTTM != null)))
+    || (!yTarget && !(pt && pt.targetConsensus)) || (!yCounts && !(gc && gc.strongBuy != null) && !(rec && rec.strongBuy != null));
   const ov = needsAv ? await safe(alpha && (() => alpha.overview(ticker)), errors, "alpha vantage overview") : null;
   let daily = pre && pre.candles && pre.candles.length >= 30 ? pre.candles : await safe(fmp && (() => fmp.daily(ticker)), errors, "fmp candles");
   if (!daily || daily.length < 30) daily = await safe(alpha && (() => alpha.daily(ticker)), errors, "alpha vantage candles");
   daily = (daily || []).slice(-260);
 
   // Analyst consensus: FMP grades consensus → Finnhub recommendation trends → Alpha Vantage overview
-  const counts = gc && gc.strongBuy != null ? gc : rec && rec.strongBuy != null ? rec
+  const counts = yCounts ? yCounts : gc && gc.strongBuy != null ? gc : rec && rec.strongBuy != null ? rec
     : ov ? { strongBuy: +ov.AnalystRatingStrongBuy || 0, buy: +ov.AnalystRatingBuy || 0, hold: +ov.AnalystRatingHold || 0, sell: +ov.AnalystRatingSell || 0, strongSell: +ov.AnalystRatingStrongSell || 0 } : null;
   const total = counts ? (counts.strongBuy || 0) + (counts.buy || 0) + (counts.hold || 0) + (counts.sell || 0) + (counts.strongSell || 0) : 0;
   const buyPct = total ? ((counts.strongBuy || 0) + (counts.buy || 0)) / total : null;
 
-  const target12m = pick(pt && pt.targetConsensus, pt && pt.targetMedian, ov && ov.AnalystTargetPrice);
+  const target12m = pick(y && y.targetMean, y && y.targetMedian, pt && pt.targetConsensus, pt && pt.targetMedian, ov && ov.AnalystTargetPrice);
   const setup = deriveSetup({ daily, price, ptConsensus: target12m });
 
   const stock = {
     ticker,
-    name: (fq && fq.name) || (profile && profile.companyName) || (ov && ov.Name) || (pre && pre.name) || (base && base.name) || ticker,
+    name: (fq && fq.name) || (y && y.name) || (profile && profile.companyName) || (ov && ov.Name) || (pre && pre.name) || (base && base.name) || ticker,
     sector: base ? base.sector : mapSector((profile && profile.sector) || (ov && ov.Sector)),
     price,
-    beta: pick(profile && profile.beta, ov && ov.Beta, metric && metric.beta, 1),
-    dcfValue: pick(dcf && dcf.dcf),
-    peg: pick(ov && ov.PEGRatio, ratios && ratios.priceToEarningsGrowthRatioTTM, ratios && ratios.pegRatioTTM),
-    fwdPE: pick(ov && ov.ForwardPE, ratios && ratios.priceToEarningsRatioTTM, ratios && ratios.peRatioTTM, metric && metric.peTTM),
+    beta: pick(y && y.beta, profile && profile.beta, ov && ov.Beta, metric && metric.beta, 1),
+    dcfValue: pick(yDcf, dcf && dcf.dcf),
+    peg: pick(yPeg, ov && ov.PEGRatio, ratios && ratios.priceToEarningsGrowthRatioTTM, ratios && ratios.pegRatioTTM),
+    fwdPE: pick(y && y.forwardPE, ov && ov.ForwardPE, ratios && ratios.priceToEarningsRatioTTM, ratios && ratios.peRatioTTM, metric && metric.peTTM),
     fvg: setup ? setup.fvg : { tf: null, status: "None", lo: null, hi: null },
     fib: setup ? setup.fib : null,
     support: setup ? setup.support : false,

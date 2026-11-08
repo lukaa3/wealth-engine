@@ -4,7 +4,7 @@
  *
  *  0. Market scan: daily charts for the whole universe (S&P 500 + Nasdaq-100 extras + popular names, ~550 stocks)
  *     from Yahoo's free chart feed → momentum + FVG setup for each → public/data/scan.json. The best setups and the
- *     strongest movers (DEEP_N, default 30) go on to step 1.
+ *     strongest movers (DEEP_N, default 50) go on to step 1.
  *  1. Deep check: quotes, DCF, price targets, analyst consensus/grades, ratios for those stocks
  *     from FMP / Finnhub / Alpha Vantage (whichever keys are set).
  *  2. Detects bullish FVGs, Fib depth and support, and derives stops, 1-mo / 6-mo targets and DCA zones.
@@ -14,7 +14,7 @@
  *
  *  3b. Optional: asks a free-tier AI (Groq or Gemini) for a short analyst-style take on the top-scored stocks.
  * Env: FMP_API_KEY, FINNHUB_API_KEY, ALPHA_VANTAGE_API_KEY, WATCHLIST (always deep-checked), EXTRA_TICKERS (added to the scan),
- *      DEEP_N (default 30), SCAN (set to "off" to skip the market scan),
+ *      DEEP_N (default 50), SCAN (set to "off" to skip the market scan),
  *      GROQ_API_KEY or GEMINI_API_KEY, AI_PROVIDER (groq|gemini), AI_MODEL, AI_MAX_STOCKS (default 15), AI_DELAY_MS,
  *      SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (optional), OUT_DIR (default public/data)
  * Node 18+ (global fetch). No npm dependencies.
@@ -47,7 +47,7 @@ const baseByTicker = Object.fromEntries(mockData.stocks.map((s) => [s.ticker, s]
 // the same day costs almost no quota and Alpha Vantage's 25 calls/day refresh each ticker about every 3 days.
 // Big payloads (candles, news, insider lists) stay in memory only, to keep the repo small.
 const CACHE_FILE = "cache/api-cache.json";
-const PERSIST = /^(fmp:(p|dcf|pt|gc|r):|fh:rec:|av:o:)/;
+const PERSIST = /^(fmp:(p|dcf|pt|gc|r):|fh:rec:|av:o:|y:s:)/;
 let store = {};
 try { store = JSON.parse(fs.readFileSync(CACHE_FILE, "utf8")); } catch (e) {}
 try { Object.assign(store, JSON.parse(fs.readFileSync("cache/alpha-vantage.json", "utf8"))); } catch (e) {} // older file name
@@ -88,7 +88,7 @@ if (P.yahoo) {
   scanRows = rows.filter((r) => r && r.ticker);
   console.log(`Scanned ${scanRows.length} (${failedScan} failed). Live FVG entries: ${scanRows.filter((r) => r.entryLive).length}, any bullish FVG: ${scanRows.filter((r) => r.fvgStatus !== "None").length}`);
   if (scanRows.length >= 20) {
-    tickers = pickDeepSet(scanRows, { deepN: Number(env.DEEP_N || 30), watchlist });
+    tickers = pickDeepSet(scanRows, { deepN: Number(env.DEEP_N || 50), watchlist });
     console.log("Deep check:", tickers.join(", "));
   } else {
     console.warn("Market scan returned too little data; deep-checking the watchlist / default list instead.");

@@ -40,12 +40,28 @@ export function createCache(prefix = "wse-cache:") {
 
 class ProviderError extends Error {}
 
+// Finnhub's free plan allows 60 calls/minute — space calls out so a bigger deep check doesn't trip it.
+let fhNext = 0;
+const FH_GAP_MS = typeof process !== "undefined" && process.env && process.env.FH_GAP_MS ? Number(process.env.FH_GAP_MS) : 1050;
+async function paceFinnhub() {
+  const now = Date.now(), at = Math.max(now, fhNext);
+  fhNext = at + FH_GAP_MS;
+  if (at > now) await new Promise((r) => setTimeout(r, at - now));
+}
+
 async function getJSON(url, { cache, cacheKey, ttlMs, signal }) {
   if (cache && cacheKey) {
     const hit = cache.get(cacheKey);
     if (hit !== undefined) return hit;
   }
-  const res = await fetch(url, { signal, headers: { Accept: "application/json" } });
+  const isFh = url.startsWith(FINNHUB);
+  let res;
+  for (let attempt = 0; attempt < (isFh ? 3 : 1); attempt++) {
+    if (isFh) await paceFinnhub();
+    res = await fetch(url, { signal, headers: { Accept: "application/json" } });
+    if (res.status !== 429 || !isFh) break;
+    await new Promise((r) => setTimeout(r, 15000 * (attempt + 1)));
+  }
   if (res.status === 429) throw new ProviderError("rate limited");
   if (!res.ok) {
     let detail = "";
@@ -181,6 +197,57 @@ export function createProviders(keys, opts = {}) {
     },
   };
 
+  /**
+   * Yahoo quoteSummary: analyst targets, ratings, P/E, growth and cash-flow data — free, no key (unofficial).
+   * Needs a session cookie + "crumb", fetched once per run.
+   */
+  const YUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
+  let ySession = null;
+  const yLogin = async () => {
+    let cookie = "";
+    for (const url of ["https://fc.yahoo.com", "https://finance.yahoo.com/quote/AAPL/"]) {
+      try {
+        const r = await fetch(url, { signal, redirect: "manual", headers: { "User-Agent": YUA } });
+        const set = typeof r.headers.getSetCookie === "function" ? r.headers.getSetCookie() : [r.headers.get("set-cookie") || ""];
+        cookie = set.filter(Boolean).map((c) => c.split(";")[0]).join("; ");
+        if (cookie) break;
+      } catch { /* try next */ }
+    }
+    for (const host of ["query2", "query1"]) {
+      const r = await fetch(`https://${host}.finance.yahoo.com/v1/test/getcrumb`, { signal, headers: { "User-Agent": YUA, Cookie: cookie } });
+      const crumb = (await r.text()).trim();
+      if (r.ok && crumb && crumb.length < 40 && !/[<{]/.test(crumb)) return { cookie, crumb };
+    }
+    throw new ProviderError("yahoo: couldn't get a session (crumb)");
+  };
+  const Y_MODULES = "financialData,defaultKeyStatistics,summaryDetail,recommendationTrend,earningsTrend,price";
+  if (yahoo) yahoo.summary = async (t) => {
+    const key = "y:s:" + t;
+    const hit = cache.get(key);
+    if (hit !== undefined) return hit;
+    if (!ySession) ySession = yLogin();
+    let sess = await ySession;
+    const wait = (opts.yahooGapMs ?? 350) - (Date.now() - yLast);
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    yLast = Date.now();
+    let res;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      res = await fetch(`https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(dash(t))}?modules=${Y_MODULES}&crumb=${encodeURIComponent(sess.crumb)}`, {
+        signal, headers: { "User-Agent": YUA, Cookie: sess.cookie, Accept: "application/json" },
+      });
+      if (res.status === 401 && attempt === 0) { ySession = yLogin(); sess = await ySession; continue; }
+      if (res.status !== 429) break;
+      await new Promise((r) => setTimeout(r, 5000 * (attempt + 1)));
+    }
+    if (!res.ok) throw new ProviderError("yahoo summary HTTP " + res.status);
+    const j = await res.json();
+    const r = j && j.quoteSummary && j.quoteSummary.result && j.quoteSummary.result[0];
+    if (!r) throw new ProviderError("yahoo summary: no data");
+    const out = parseYahooSummary(r);
+    cache.set(key, out, fTtl);
+    return out;
+  };
+
   return { fmp, finnhub, alpha, yahoo, cache, num };
 }
 
@@ -196,4 +263,58 @@ export async function mapLimit(items, limit, fn) {
   });
   await Promise.all(workers);
   return out;
+}
+
+/** Yahoo quoteSummary → the flat fields the screener uses. Values arrive as {raw, fmt}. */
+export function parseYahooSummary(r) {
+  const v = (o, k) => { const x = o && o[k]; const n = x && typeof x === "object" ? x.raw : x; return typeof n === "number" && isFinite(n) ? n : null; };
+  const fd = r.financialData || {}, ks = r.defaultKeyStatistics || {}, sd = r.summaryDetail || {}, pr = r.price || {};
+  const trend = ((r.recommendationTrend && r.recommendationTrend.trend) || []).find((x) => x.period === "0m") || null;
+  const et = (r.earningsTrend && r.earningsTrend.trend) || [];
+  const grow = (p) => { const x = et.find((e) => e.period === p); return x ? v(x, "growth") : null; };
+  return {
+    name: pr.longName || pr.shortName || null,
+    price: v(fd, "currentPrice") ?? v(pr, "regularMarketPrice"),
+    targetMean: v(fd, "targetMeanPrice"), targetMedian: v(fd, "targetMedianPrice"),
+    targetHigh: v(fd, "targetHighPrice"), targetLow: v(fd, "targetLowPrice"),
+    analystOpinions: v(fd, "numberOfAnalystOpinions"), recMean: v(fd, "recommendationMean"),
+    counts: trend ? { strongBuy: trend.strongBuy || 0, buy: trend.buy || 0, hold: trend.hold || 0, sell: trend.sell || 0, strongSell: trend.strongSell || 0 } : null,
+    forwardPE: v(sd, "forwardPE") ?? v(ks, "forwardPE"), trailingPE: v(sd, "trailingPE"),
+    peg: v(ks, "pegRatio"), beta: v(sd, "beta") ?? v(ks, "beta"),
+    growthNextYear: grow("+1y"), growthThisYear: grow("0y"), growth5y: grow("+5y"),
+    revenueGrowth: v(fd, "revenueGrowth"), earningsGrowth: v(fd, "earningsGrowth"),
+    freeCashflow: v(fd, "freeCashflow"), totalCash: v(fd, "totalCash"), totalDebt: v(fd, "totalDebt"),
+    shares: v(ks, "sharesOutstanding") ?? v(pr, "sharesOutstanding") ?? (v(pr, "marketCap") && v(fd, "currentPrice") ? v(pr, "marketCap") / v(fd, "currentPrice") : null),
+  };
+}
+
+/**
+ * Simple two-stage DCF from Yahoo's numbers: free cash flow grows at g for 5 years, fades to 3% by year 10,
+ * discounted at 9%, 3% terminal growth; net cash added. g = average of next-year EPS growth and revenue growth, capped 0–20%.
+ * Returns null when free cash flow is negative or data is missing (a DCF means nothing there).
+ */
+export function yahooDcf(y) {
+  if (!y || !(y.freeCashflow > 0) || !(y.shares > 0)) return null;
+  const gs = [y.growth5y, y.growthNextYear, y.revenueGrowth].filter((x) => x != null && isFinite(x));
+  if (!gs.length) return null;
+  const g = Math.min(0.2, Math.max(0, gs.reduce((a, b) => a + b, 0) / gs.length));
+  const r = 0.09, tg = 0.03;
+  let fcf = y.freeCashflow, pv = 0;
+  for (let yr = 1; yr <= 10; yr++) {
+    const gy = yr <= 5 ? g : g + ((tg - g) * (yr - 5)) / 5;
+    fcf *= 1 + gy;
+    pv += fcf / Math.pow(1 + r, yr);
+  }
+  pv += (fcf * (1 + tg)) / (r - tg) / Math.pow(1 + r, 10);
+  const equity = pv + (y.totalCash || 0) - (y.totalDebt || 0);
+  return equity > 0 ? Math.round((equity / y.shares) * 100) / 100 : null;
+}
+
+/** PEG: Yahoo's own if present, else forward P/E ÷ next-year EPS growth (in %). Null when growth ≤ 0. */
+export function yahooPeg(y) {
+  if (!y) return null;
+  if (y.peg != null && y.peg > 0) return Math.round(y.peg * 100) / 100;
+  const g = y.growth5y ?? y.growthNextYear ?? y.earningsGrowth;
+  if (!(y.forwardPE > 0) || !(g > 0)) return null;
+  return Math.round((y.forwardPE / (g * 100)) * 100) / 100;
 }
