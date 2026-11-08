@@ -129,7 +129,7 @@ for (const s of stocks) {
   const prevStale = r.stale_fields || {};
   s.staleFields = {};
   for (const f of CARRY) {
-    if (s[f] != null || prev[f] == null || (f === "dcfValue" && s.dcfNm)) continue;
+    if (s[f] != null || prev[f] == null || (f === "dcfValue" && (s.dcfNm || s.dcfNa))) continue;
     const since = prevStale[f] || String(r.updated_at || today).slice(0, 10);
     if ((Date.parse(today) - Date.parse(since)) / 864e5 > MAX_CARRY_DAYS) continue;
     s[f] = prev[f]; s.staleFields[f] = since; carried++;

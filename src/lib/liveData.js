@@ -37,7 +37,12 @@ export async function buildLiveStock(ticker, P, base, pre) {
   // Nasdaq first (free, no key, covers almost every US stock); FMP only fills what Nasdaq didn't have — saves its tiny quota.
   const nq = await safe(P.nasdaq && (() => P.nasdaq.fundamentals(ticker)), errors, "nasdaq");
   const shares = nq && nq.marketCap && price ? nq.marketCap / price : null;
-  const nqDcf = nq ? simpleDcf({ ...nq, shares }) : null;
+  const isFin = base && base.sector === "Financials";
+  const rawDcf = nq && !isFin ? simpleDcf({ ...nq, shares }) : null;
+  // Sanity checks: a cash-flow DCF means nothing for banks/insurers, and >3× the price usually means a unit or
+  // currency mismatch (foreign filers report in their own currency) — those get neutral credit, not a fake boost.
+  const dcfNa = isFin ? "not used for financial companies" : rawDcf && rawDcf.value != null && rawDcf.value > price * 3 ? "unreliable (statements likely in a foreign currency)" : null;
+  const nqDcf = dcfNa ? null : rawDcf;
   const nqDcfValue = nqDcf && nqDcf.value != null ? nqDcf.value : null;
   const dcfNm = !!(nqDcf && nqDcf.negative);
   const nqPeg = nq ? (nq.peg != null ? nq.peg : nq.forwardPE != null && nq.forwardPE <= 0 ? 0 : null) : null; // 0 = loss-making
@@ -45,7 +50,7 @@ export async function buildLiveStock(ticker, P, base, pre) {
   const nqTarget = nq && nq.target;
   const [profile, dcf, pt, gc, ratios, rec, metric] = await Promise.all([
     base && base.sector ? null : safe(fmp && (() => fmp.profile(ticker)), errors, "fmp profile"),
-    nqDcfValue != null || dcfNm ? null : safe(fmp && (() => fmp.dcf(ticker)), errors, "fmp dcf"),
+    nqDcfValue != null || dcfNm || dcfNa ? null : safe(fmp && (() => fmp.dcf(ticker)), errors, "fmp dcf"),
     nqTarget ? null : safe(fmp && (() => fmp.priceTarget(ticker)), errors, "fmp price target"),
     nqCounts ? null : safe(fmp && (() => fmp.gradesConsensus(ticker)), errors, "fmp grades consensus"),
     nqPeg != null && nq && nq.forwardPE != null ? null : safe(fmp && (() => fmp.ratiosTtm(ticker)), errors, "fmp ratios"),
@@ -77,6 +82,7 @@ export async function buildLiveStock(ticker, P, base, pre) {
     beta: pick(profile && profile.beta, ov && ov.Beta, metric && metric.beta, 1),
     dcfValue: pick(nqDcfValue, dcf && dcf.dcf),
     dcfNm: nqDcfValue == null && !(dcf && dcf.dcf) && dcfNm, // negative free cash flow: a DCF can't support the price
+    dcfNa, // reason the DCF was left out (financials / implausible) — scored neutral
     peg: pick(nqPeg, ov && ov.PEGRatio, ratios && ratios.priceToEarningsGrowthRatioTTM, ratios && ratios.pegRatioTTM),
     fwdPE: pick(nq && nq.forwardPE, ov && ov.ForwardPE, ratios && ratios.priceToEarningsRatioTTM, ratios && ratios.peRatioTTM, metric && metric.peTTM),
     fvg: setup ? setup.fvg : { tf: null, status: "None", lo: null, hi: null },

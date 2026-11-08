@@ -7,7 +7,7 @@ const toNum = (v) => (v == null || v === "" ? null : Number(v));
 export function stockToRow(s) {
   return {
     ticker: s.ticker, name: s.name, sector: s.sector, price: s.price, beta: s.beta,
-    dcf_value: s.dcfValue, dcf_nm: !!s.dcfNm, peg_ratio: s.peg, forward_pe: s.fwdPE,
+    dcf_value: s.dcfValue, dcf_nm: !!s.dcfNm, dcf_na: s.dcfNa || null, peg_ratio: s.peg, forward_pe: s.fwdPE,
     fvg_timeframe: s.fvg.tf, fvg_status: s.fvg.status, fvg_low: s.fvg.lo, fvg_high: s.fvg.hi,
     fib_level: s.fib, structural_support: !!s.support, stop_price: s.stop,
     target_1m: s.target1m, target_6m: s.target6m, target_12m: s.target12m,
@@ -25,7 +25,7 @@ export function stockToRow(s) {
 export function rowToStock(r) {
   return {
     ticker: r.ticker, name: r.name, sector: r.sector, price: toNum(r.price), beta: toNum(r.beta) ?? 1,
-    dcfValue: toNum(r.dcf_value), dcfNm: !!r.dcf_nm, peg: toNum(r.peg_ratio), fwdPE: toNum(r.forward_pe),
+    dcfValue: toNum(r.dcf_value), dcfNm: !!r.dcf_nm, dcfNa: r.dcf_na || null, peg: toNum(r.peg_ratio), fwdPE: toNum(r.forward_pe),
     fvg: { tf: r.fvg_timeframe || null, status: r.fvg_status || "None", lo: toNum(r.fvg_low), hi: toNum(r.fvg_high) },
     fib: toNum(r.fib_level), support: !!r.structural_support, stop: toNum(r.stop_price),
     target1m: toNum(r.target_1m), target6m: toNum(r.target_6m), target12m: toNum(r.target_12m),
