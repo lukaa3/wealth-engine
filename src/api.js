@@ -24,7 +24,7 @@ const sharedCache = createCache();
 /* ------------------------------- Low-level clients ------------------------------- */
 async function supabaseSelect(settings, table, query, signal) {
   const url = `${settings.supabaseUrl.replace(/\/$/, "")}/rest/v1/${table}?${query}`;
-  const res = await fetch(url, { signal, headers: { apikey: settings.supabaseAnonKey, Authorization: `Bearer ${settings.supabaseAnonKey}` } });
+  const res = await fetch(url, { signal, headers: { apikey: settings.supabaseAnonKey, ...(settings.supabaseAnonKey.startsWith("eyJ") ? { Authorization: `Bearer ${settings.supabaseAnonKey}` } : {}) } });
   if (!res.ok) throw new Error(`Supabase ${table}: HTTP ${res.status}`);
   return res.json();
 }

@@ -27,7 +27,8 @@ export function createSyncClient({ url, key }) {
   const rpc = async (fn, body) => {
     const res = await fetch(`${base}/rest/v1/rpc/${fn}`, {
       method: "POST",
-      headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      // New-style keys (sb_publishable_…) go only in the apikey header; legacy anon keys are JWTs and also go as Bearer.
+      headers: { apikey: key, ...(key.startsWith("eyJ") ? { Authorization: `Bearer ${key}` } : {}), "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     if (!res.ok) {
