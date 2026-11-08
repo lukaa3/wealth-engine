@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-08T20:12:15.555Z",
+ "generatedAt": "2026-11-08T20:25:20.285Z",
  "universeSize": 558,
  "scanned": 557,
  "items": [
@@ -4856,7 +4856,7 @@
   },
   {
    "ticker": "HLT",
-   "name": "Hilton Worldwide Holdings Inc.",
+   "name": "Hilton Worldwide Holdings Inc. Common Stock",
    "sector": "Consumer",
    "fund": false,
    "price": 370.45,
@@ -10001,7 +10001,7 @@
   },
   {
    "ticker": "VMRK",
-   "name": "AvalonBay Communities, Inc.",
+   "name": "Vivmark Residential",
    "sector": "Other",
    "fund": false,
    "price": 65.51,
