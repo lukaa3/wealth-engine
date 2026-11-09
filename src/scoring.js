@@ -13,8 +13,8 @@
  */
 
 export const LIMITS = {
-  HIGH_CONVICTION: 78, // "Top pick"
-  RECOMMEND: 66,
+  HIGH_CONVICTION: 75, // "Top pick"
+  RECOMMEND: 65,
   WATCH: 55,
   REVIEW_SCORE: 45,
   CONCENTRATION_LIMIT: 0.35, // one sector
@@ -279,7 +279,7 @@ export function scoreUniverse(stocks, sectorPE, insiderTransactions) {
 /** Sectors the rebalancer leaves alone (no concentration or underweight alerts). */
 export const UNMANAGED_SECTORS = ["Cash", "Other", "Index Funds"];
 
-const ACTION_RANK = { Sell: 0, Trim: 1, Review: 2, "Buy more": 3, Hold: 4, "Pause adding": 4 };
+const ACTION_RANK = { Sell: 0, Trim: 1, Review: 2, "Buy more": 3, "Pause adding": 4, Hold: 5 };
 
 /**
  * One holding → what to do now. Uses the full score when we have it (stocks), otherwise the chart (ETFs/funds).
@@ -321,8 +321,10 @@ export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
     action = "Trim";
     why.push("Up " + Math.round(r.plPct * 100) + "% and stretched " + sp(f.ext50) + " above its 50-day average: take some profit (about a quarter)");
   } else if (action === "Hold" && s && s.composite < LIMITS.REVIEW_SCORE && !trendBroken) {
-    action = "Trim";
-    why.push("Weak score (" + s.composite + "): don't add more; trim if it breaks its 200-day average");
+    action = "Pause adding";
+    why.push("Weak score (" + s.composite + "): hold what you have, don't add; " + (f.above200 === false
+      ? "it's already under its 200-day average" + (isNum(f.ma200) ? " (" + dollars(f.ma200) + ")" : "") + ", so sell if the 50-day crosses under it too"
+      : "sell if it breaks below its 200-day average" + (isNum(f.ma200) ? " (" + dollars(f.ma200) + ")" : "")));
   }
 
   const weak = !s || s.composite < LIMITS.RECOMMEND;
@@ -348,7 +350,7 @@ export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
       action = "Buy more";
       why.push("Uptrend and pulled back to its 50-day average (" + dollars(f.ma50) + "), a good spot to add");
     } else {
-      why.push(f.above200 ? "Uptrend intact" + (isIndex ? "; a steady core holding" : "") : f.above200 === false ? "Below its 200-day average; hold, add only when it recovers" : "Holding");
+      why.push(f.above200 ? "Uptrend intact" + (isIndex ? "; a steady core holding" : "") : f.above200 === false ? "Below its 200-day average; hold, add only when it recovers" : "Too new to read a trend yet (under 200 days of history); hold");
     }
   }
   if (action !== "Review" && news.length) why.push("Headline to check: " + news[0].headline);

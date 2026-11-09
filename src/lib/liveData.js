@@ -147,7 +147,7 @@ export function refreshFromChart(stock, candles, price) {
 }
 
 // Real news, not price moves (the chart already shows those): probes, lawsuits, downgrades, guidance cuts, misses, dilution…
-const BAD_NEWS = /\b(downgrad\w*|(cuts?|lowers?|slash\w*) (its |full-year |annual )?(guidance|outlook|forecast|price target)|guidance (cut|miss\w*)|miss(es|ed)? (estimates|expectations|consensus)|misses|lawsuit|sued|probe|investigation|subpoena|charged|fraud|recall\w*|delist\w*|bankrupt\w*|short[- ]seller|short report|dilution|secondary offering|profit warning|warns?)\b/i;
+const BAD_NEWS = /\b(downgrad\w*|(cuts?|lowers?|slash\w*) (its |full-year |annual )?(guidance|outlook|forecast|price target)|guidance (cut|miss\w*)|miss(es|ed)? (estimates|expectations|consensus)|misses|lawsuit|sued|probe|investigation|subpoena|charged|fraud|recall\w*|delist\w*|bankrupt\w*|short[- ]seller|short report|dilution|secondary offering|profit warning)\b/i;
 const NOT_NEWS = /upgrades and downgrades|will climb or sink|top (upgrades|movers)/i;
 const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 

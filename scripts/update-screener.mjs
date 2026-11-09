@@ -158,7 +158,7 @@ const carriedTickers = [];
 for (const [t, r] of Object.entries(prevRows)) {
   if (fresh.has(t) || !pre[t]) continue;
   const checked = r.checked_at; // only rows from the current model (they carry the factor data)
-  if (!checked || !r.factors || (Date.parse(today) - Date.parse(checked)) / 864e5 > KEEP_DAYS) continue;
+  if (!checked || !r.factors || !("revUp" in r.factors) || (Date.parse(today) - Date.parse(checked)) / 864e5 > KEEP_DAYS) continue;
   const prev = rowToStock(r);
   if (!prev.checkedAt) prev.checkedAt = checked;
   const s = refreshFromChart(prev, pre[t].candles, pre[t].price);
