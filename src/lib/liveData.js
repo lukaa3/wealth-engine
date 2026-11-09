@@ -146,9 +146,32 @@ export function refreshFromChart(stock, candles, price) {
   };
 }
 
-const BAD_NEWS = /\b(downgrad\w*|cuts? (its )?(guidance|outlook|forecast)|lowers? (guidance|outlook|forecast)|guidance cut|misses|missed|plunge\w*|plummet\w*|tumble\w*|sinks?|slump\w*|lawsuit|sued|probe|investigation|subpoena|SEC charges|fraud|recall\w*|halt\w*|delist\w*|bankrupt\w*|default\w*|layoffs?|resign\w*|short seller|short report|dilution|secondary offering|accounting)\b/i;
+// Real news, not price moves (the chart already shows those): probes, lawsuits, downgrades, guidance cuts, misses, dilution…
+const BAD_NEWS = /\b(downgrad\w*|(cuts?|lowers?|slash\w*) (its |full-year |annual )?(guidance|outlook|forecast|price target)|guidance (cut|miss\w*)|miss(es|ed)? (estimates|expectations|consensus)|misses|lawsuit|sued|probe|investigation|subpoena|charged|fraud|recall\w*|delist\w*|bankrupt\w*|short[- ]seller|short report|dilution|secondary offering|profit warning|warns?)\b/i;
+const NOT_NEWS = /upgrades and downgrades|will climb or sink|top (upgrades|movers)/i;
+const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Recent negative headlines that actually name the company (for portfolio alerts). Uses the cached Finnhub news. */
+/** Where the company is named in a headline (by name, or ticker in "(TICK)" / "NYSE:TICK" form); -1 if not. */
+function subjectAt(h, ticker, name) {
+  const core = String(name || "").replace(/[,.()]/g, " ").replace(/\b(Inc|Corp|Corporation|Holdings|Company|Co|Ltd|plc|Group|Class [A-Z])\b/gi, " ").trim().split(/\s+/)[0] || "";
+  const res = [new RegExp("\\(" + esc(ticker) + "\\)|(NYSE|NASDAQ|Nasdaq):\\s?" + esc(ticker) + "\\b")];
+  if (core.length >= 3) res.push(new RegExp("\\b" + esc(core) + "(?![A-Za-z])", "i"));
+  const hits = res.map((re) => { const m = re.exec(h); return m ? m.index : -1; }).filter((i) => i >= 0);
+  return hits.length ? Math.min(...hits) : -1;
+}
+
+/** A bad-news headline about this company: named early, and before the bad word (or right after "downgrades"). */
+export function isBadNewsFor(h, ticker, name) {
+  if (!h || NOT_NEWS.test(h)) return false;
+  const m = BAD_NEWS.exec(h);
+  if (!m) return false;
+  const i = subjectAt(h, ticker, name);
+  if (i < 0 || i > 70) return false;
+  if (i < m.index) return m.index - i <= 80; // "Nvidia sinks on spy probe", "Aflac misses Q3 revenue estimates"
+  return /downgrad/i.test(m[0]) && i - (m.index + m[0].length) <= 1; // "Citigroup Downgrades Adobe to Sell"
+}
+
+/** Recent negative headlines that are actually about the company (for portfolio alerts). Uses the cached Finnhub news. */
 export async function buildNewsFlags(tickers, P, { days = 10, names = {}, sinceDays = 30 } = {}) {
   const out = {};
   if (!P.finnhub || !P.finnhub.news) return out;
@@ -160,7 +183,7 @@ export async function buildNewsFlags(tickers, P, { days = 10, names = {}, sinceD
     if (!Array.isArray(list)) return;
     const t = tickers[i], seen = new Set();
     const flags = list
-      .filter((n) => (n.datetime || 0) >= cutoff && n.headline && mentions(n.headline, t, names[t]) && BAD_NEWS.test(n.headline))
+      .filter((n) => (n.datetime || 0) >= cutoff && isBadNewsFor(n.headline, t, names[t]))
       .filter((n) => { const k = n.headline.toLowerCase().slice(0, 60); if (seen.has(k)) return false; seen.add(k); return true; })
       .slice(0, 3)
       .map((n) => ({ date: new Date(n.datetime * 1000).toISOString().slice(0, 10), headline: n.headline.slice(0, 160), source: n.source || "News", url: n.url || null }));

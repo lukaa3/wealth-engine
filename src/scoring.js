@@ -325,7 +325,8 @@ export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
     why.push("Weak score (" + s.composite + "): don't add more; trim if it breaks its 200-day average");
   }
 
-  if ((action === "Hold" || action === "Buy more") && (news.length || downgrades.length >= 2 || revCut)) {
+  const weak = !s || s.composite < LIMITS.RECOMMEND;
+  if ((action === "Hold" || action === "Buy more") && (news.length >= 2 || (news.length && weak) || downgrades.length >= 2 || revCut)) {
     action = "Review";
     if (news.length) why.push("Negative headline" + (news.length > 1 ? "s" : "") + " this week: " + news[0].headline);
     if (downgrades.length) why.push(downgrades.length + " analyst downgrade" + (downgrades.length > 1 ? "s" : "") + " / target cut" + (downgrades.length > 1 ? "s" : "") + " in the last 30 days");
@@ -350,6 +351,7 @@ export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
       why.push(f.above200 ? "Uptrend intact" + (isIndex ? "; a steady core holding" : "") : f.above200 === false ? "Below its 200-day average; hold, add only when it recovers" : "Holding");
     }
   }
+  if (action !== "Review" && news.length) why.push("Headline to check: " + news[0].headline);
   return { action, why, rank: ACTION_RANK[action] ?? 5 };
 }
 
