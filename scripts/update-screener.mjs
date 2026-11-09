@@ -3,10 +3,12 @@
  * update-screener.mjs — background job (run by .github/workflows/deploy.yml on a schedule).
  *
  *  0. Market scan: daily charts for the whole universe (S&P 500 + Nasdaq-100 extras + popular names, ~550 stocks)
- *     from Yahoo's free chart feed → momentum + FVG setup for each → public/data/scan.json. The best setups and the
- *     strongest movers (DEEP_N, default 50) go on to step 1.
- *  1. Deep check: quotes, DCF, price targets, analyst consensus/grades, ratios for those stocks
- *     from FMP / Finnhub / Alpha Vantage (whichever keys are set).
+ *     from Yahoo's free chart feed → momentum (ranked vs the whole scan), trend, volatility and FVG setup for each
+ *     → public/data/scan.json. Your holdings, the momentum leaders, big movers, live FVG entries and a rotating slice
+ *     (DEEP_N, default 80) go on to step 1.
+ *  1. Deep check: price targets, analyst consensus, EPS estimate revisions, earnings surprises, margins, cash flow
+ *     (Nasdaq, free) plus Finnhub / FMP / Alpha Vantage to fill gaps. Stocks fully checked in the last 6 days stay
+ *     on the site with today's price and chart.
  *  2. Detects bullish FVGs, Fib depth and support, and derives stops, 1-mo / 6-mo targets and DCA zones.
  *  3. Scores everything with the same scorer the UI uses.
  *  4. Writes public/data/{screener,analyst,insider}.json (deployed with the site), and
@@ -14,7 +16,7 @@
  *
  *  3b. Optional: asks a free-tier AI (Groq or Gemini) for a short analyst-style take on the top-scored stocks.
  * Env: FMP_API_KEY, FINNHUB_API_KEY, ALPHA_VANTAGE_API_KEY, WATCHLIST (always deep-checked), EXTRA_TICKERS (added to the scan),
- *      DEEP_N (default 50), SCAN (set to "off" to skip the market scan),
+ *      DEEP_N (default 80), SCAN (set to "off" to skip the market scan),
  *      GROQ_API_KEY or GEMINI_API_KEY, AI_PROVIDER (groq|gemini), AI_MODEL, AI_MAX_STOCKS (default 15), AI_DELAY_MS,
  *      SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (optional), OUT_DIR (default public/data)
  * Node 18+ (global fetch). No npm dependencies.
@@ -23,11 +25,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { mockData } from "../src/mockData.js";
 import { createProviders, createCache } from "../src/lib/providers.js";
-import { buildLiveUniverse, buildLiveAnalystFeed, buildLiveInsider } from "../src/lib/liveData.js";
+import { buildLiveUniverse, buildLiveAnalystFeed, buildLiveInsider, refreshFromChart, buildNewsFlags } from "../src/lib/liveData.js";
+import { percentileRanks } from "../src/lib/factors.js";
 import { scoreUniverse } from "../src/scoring.js";
-import { stockToRow, rowToStock, actionToRow, insiderToRow } from "../src/lib/schema.js";
+import { stockToRow, rowToStock, actionToRow, insiderToRow, rowToAction, rowToInsider } from "../src/lib/schema.js";
 import { analyzeMany, buildPrompt } from "../src/lib/ai.js";
-import { loadUniverse } from "../src/lib/universe.js";
+import { loadUniverse, HOLDINGS } from "../src/lib/universe.js";
 import { scanRow, pickDeepSet } from "../src/lib/scan.js";
 import { mapLimit } from "../src/lib/providers.js";
 
@@ -47,7 +50,7 @@ const baseByTicker = Object.fromEntries(mockData.stocks.map((s) => [s.ticker, s]
 // the same day costs almost no quota and Alpha Vantage's 25 calls/day refresh each ticker about every 3 days.
 // Big payloads (candles, news, insider lists) stay in memory only, to keep the repo small.
 const CACHE_FILE = "cache/api-cache.json";
-const PERSIST = /^(fmp:(p|dcf|pt|gc|r):|fh:rec:|av:o:|nq:f:)/;
+const PERSIST = /^(fmp:(p|dcf|pt|gc|r):|fh:rec:|av:o:|nq:f\d*:)/;
 let store = {};
 try { store = JSON.parse(fs.readFileSync(CACHE_FILE, "utf8")); } catch (e) {}
 try { Object.assign(store, JSON.parse(fs.readFileSync("cache/alpha-vantage.json", "utf8"))); } catch (e) {} // older file name
@@ -72,6 +75,8 @@ let tickers = watchlist.length ? watchlist : mockData.stocks.map((s) => s.ticker
 const pre = {};
 let scanRows = [];
 let universe = [];
+let ranks = { mom12: {}, mom6: {} };
+let spyMom3 = null;
 if (P.yahoo) {
   universe = await loadUniverse({ extra: [...watchlist, ...list(env.EXTRA_TICKERS)], fallback: mockData.stocks });
   universe.forEach((u) => { if (!baseByTicker[u.ticker]) baseByTicker[u.ticker] = { name: u.name, sector: u.sector }; });
@@ -88,8 +93,17 @@ if (P.yahoo) {
   process.stdout.write("\n");
   scanRows = rows.filter((r) => r && r.ticker);
   console.log(`Scanned ${scanRows.length} (${failedScan} failed). Live FVG entries: ${scanRows.filter((r) => r.entryLive).length}, any bullish FVG: ${scanRows.filter((r) => r.fvgStatus !== "None").length}`);
+  // Momentum is judged relative to the market: rank every stock's 12-1 and 6-month return against the whole scan.
+  ranks = { mom12: percentileRanks(scanRows, "mom12_1"), mom6: percentileRanks(scanRows, "mom6") };
+  const spy = scanRows.find((r) => r.ticker === "SPY");
+  spyMom3 = spy ? spy.mom3 : null;
+  scanRows.forEach((r) => {
+    r.momRank12 = ranks.mom12[r.ticker] ?? null; r.momRank6 = ranks.mom6[r.ticker] ?? null;
+    r.rs3 = r.mom3 != null && spyMom3 != null ? Math.round((r.mom3 - spyMom3) * 1000) / 1000 : null;
+  });
   if (scanRows.length >= 20) {
-    tickers = pickDeepSet(scanRows, { deepN: Number(env.DEEP_N || 50), watchlist });
+    const day = Math.floor(Date.now() / 864e5);
+    tickers = pickDeepSet(scanRows, { deepN: Number(env.DEEP_N || 80), always: [...HOLDINGS, ...watchlist], ranks, day });
     console.log("Deep check:", tickers.join(", "));
   } else {
     console.warn("Market scan returned too little data; deep-checking the watchlist / default list instead.");
@@ -137,9 +151,45 @@ for (const s of stocks) {
 }
 if (carried) console.log(`Kept ${carried} last-known-good value(s) where today's call failed (max ${MAX_CARRY_DAYS} days)`);
 
+/* ------------- Keep stocks fully checked in the last few days (fundamentals change slowly) ------------- */
+const KEEP_DAYS = Number(env.KEEP_DAYS || 6);
+const fresh = new Set(stocks.map((s) => s.ticker));
+const carriedTickers = [];
+for (const [t, r] of Object.entries(prevRows)) {
+  if (fresh.has(t) || !pre[t]) continue;
+  const checked = r.checked_at || String(r.updated_at || "").slice(0, 10);
+  if (!checked || (Date.parse(today) - Date.parse(checked)) / 864e5 > KEEP_DAYS) continue;
+  const prev = rowToStock(r);
+  if (!prev.checkedAt) prev.checkedAt = checked;
+  const s = refreshFromChart(prev, pre[t].candles, pre[t].price);
+  if (s) { stocks.push(s); carriedTickers.push(t); }
+}
+if (carriedTickers.length) console.log(`Kept ${carriedTickers.length} stocks checked in the last ${KEEP_DAYS} days (price + chart refreshed today)`);
+
+// Market-relative momentum on every stock.
+for (const s of stocks) {
+  s.factors = s.factors || {};
+  s.factors.momRank12 = ranks.mom12[s.ticker] ?? null;
+  s.factors.momRank6 = ranks.mom6[s.ticker] ?? null;
+  s.factors.rs3 = s.factors.mom3 != null && spyMom3 != null ? Math.round((s.factors.mom3 - spyMom3) * 1000) / 1000 : null;
+}
+
 const names = Object.fromEntries(stocks.map((s) => [s.ticker, s.name]));
-const analyst = await buildLiveAnalystFeed(tickers, P, { names }).catch((e) => (console.warn("analyst feed:", e.message), []));
-const insider = await buildLiveInsider(tickers, P).catch((e) => (console.warn("insider:", e.message), []));
+const freshTickers = stocks.filter((s) => !s.carried).map((s) => s.ticker);
+let analyst = await buildLiveAnalystFeed(freshTickers, P, { names }).catch((e) => (console.warn("analyst feed:", e.message), []));
+let insider = await buildLiveInsider(freshTickers, P).catch((e) => (console.warn("insider:", e.message), []));
+// Carried stocks keep their recent analyst actions and insider trades from the last run.
+{
+  const keep = new Set(carriedTickers);
+  const since30 = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+  const readOld = (f) => { try { return JSON.parse(fs.readFileSync(path.join(OUT_DIR, f), "utf8")).items || []; } catch (e) { return []; } };
+  analyst = analyst.concat(readOld("analyst.json").map(rowToAction).filter((a) => keep.has(a.ticker) && a.date >= since30));
+  insider = insider.concat(readOld("insider.json").map(rowToInsider).filter((x) => keep.has(x.ticker)));
+}
+// Bad-news headlines for your holdings and today's checks (same cached Finnhub news as the analyst feed).
+const newsFlags = await buildNewsFlags(freshTickers, P, { names }).catch((e) => (console.warn("news flags:", e.message), {}));
+stocks.forEach((s) => { if (newsFlags[s.ticker]) s.newsFlags = newsFlags[s.ticker]; else if (!s.carried) s.newsFlags = []; });
+console.log(`News flags: ${Object.keys(newsFlags).length} stocks with negative headlines this week`);
 
 const scored = scoreUniverse(stocks, mockData.sectorPE, insider);
 
@@ -182,7 +232,7 @@ const generatedAt = new Date().toISOString();
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 const write = (f, obj) => fs.writeFileSync(path.join(OUT_DIR, f), JSON.stringify(obj, null, 1));
-write("screener.json", { generatedAt, stocks: rows });
+write("screener.json", { generatedAt, spyMom3, stocks: rows });
 if (scanRows.length) {
   const deepSet = new Set(stocks.map((s) => s.ticker));
   write("scan.json", { generatedAt, universeSize: universe.length, scanned: scanRows.length,

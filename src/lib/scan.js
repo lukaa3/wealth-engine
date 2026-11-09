@@ -5,6 +5,7 @@
  * full "deep check" (valuation, analysts, insiders, AI) within the free API quotas.
  */
 import { deriveSetup } from "./technicals.js";
+import { chartFactors } from "./factors.js";
 
 const FVG_POINTS = { "Weekly|Rejected": 20, "Daily|Rejected": 16, "Weekly|Testing": 10, "Daily|Testing": 8 };
 const ret = (c, n) => (c.length > n && c[c.length - 1 - n].close ? c[c.length - 1].close / c[c.length - 1 - n].close - 1 : null);
@@ -29,11 +30,14 @@ export function scanRow(meta, data) {
     const rr = (setup.target1m - mid) / (mid - setup.stop);
     entryLive = price <= setup.fvg.hi * 1.03 && rr >= 2;
   }
+  const f = chartFactors(c, price) || {};
   return {
     ticker: meta.ticker, name: data.name || meta.name, sector: meta.sector, fund: !!meta.fund, price: r3(price),
     ret5: r3(ret(c, 5)), ret20: r3(ret(c, 20)), ret60: r3(ret(c, 60)),
     volRatio: avgVol ? r3((last.volume || 0) / avgVol) : null,
     fromHigh: r3(price / hi52 - 1),
+    mom12_1: f.mom12_1 ?? null, mom6: f.mom6 ?? null, mom3: f.mom3 ?? null, ma50: f.ma50 ?? null, ma200: f.ma200 ?? null,
+    above200: f.above200 ?? null, golden: f.golden ?? null, ext50: f.ext50 ?? null, vol63: f.vol63 ?? null, rsi14: f.rsi14 ?? null,
     fvgTf: setup ? setup.fvg.tf : null, fvgStatus: setup ? setup.fvg.status : "None",
     fvgLo: setup ? setup.fvg.lo : null, fvgHi: setup ? setup.fvg.hi : null,
     fib: setup ? setup.fib : null, support: !!(setup && setup.support),
@@ -42,18 +46,29 @@ export function scanRow(meta, data) {
 }
 
 /**
- * Which stocks get the deep check:
- *   1. the watchlist (always),
- *   2. the strongest chart setups (live FVG entries first, then technical score, then 1-month momentum),
- *   3. the top momentum runners (biggest 1-month gains on rising volume), so big movers get a look too.
+ * Which stocks get the deep check (valuation, earnings estimates, quality, analysts, insiders):
+ *   1. your holdings + the watchlist (always),
+ *   2. the strongest momentum + trend leaders (12-1 and 6-month momentum rank, above the 200-day average),
+ *   3. the biggest 1-month movers on rising volume (so APP-style runs get a look),
+ *   4. live FVG entries among decent-trend names (timing setups),
+ *   5. a rotating slice of the rest, so steady long-term compounders get checked every few weeks even when
+ *      their momentum is quiet (results stay on the site for up to a week).
+ * `ranks` = { mom12: {T: 0–1}, mom6: {T: 0–1} } from percentileRanks().
  */
-export function pickDeepSet(rows, { deepN = 30, momentumN = 10, watchlist = [] } = {}) {
-  const chosen = new Set(watchlist.filter((t) => rows.some((r) => r.ticker === t)));
+export function pickDeepSet(rows, { deepN = 80, momentumN = 10, leadersN = 35, fvgN = 5, rotateN = 15, always = [], ranks = {}, day = 0 } = {}) {
+  const have = new Set(rows.map((r) => r.ticker));
+  const chosen = new Set(always.filter((t) => have.has(t)));
+  const add = (t) => { if (chosen.size < deepN) chosen.add(t); };
   const liquid = rows.filter((r) => r.price >= 5 && !r.fund); // funds/ETFs are held, not picked
+  const pre = (r) => 0.5 * ((ranks.mom12 || {})[r.ticker] ?? 0.5) + 0.3 * ((ranks.mom6 || {})[r.ticker] ?? 0.5) + (r.above200 ? 0.2 : 0);
+  const leaders = liquid.slice().sort((a, b) => pre(b) - pre(a)).slice(0, leadersN);
   const movers = liquid.filter((r) => r.ret20 != null && (r.volRatio || 0) >= 1).sort((a, b) => b.ret20 - a.ret20).slice(0, momentumN);
-  // Prefer live entries, then technical score, then the stronger 3-month trend (leaders pulling back beat laggards).
-  const setups = liquid.slice().sort((a, b) => (b.entryLive - a.entryLive) || (b.tech - a.tech) || ((b.ret60 || 0) - (a.ret60 || 0)));
-  for (const r of movers) if (chosen.size < deepN) chosen.add(r.ticker);
-  for (const r of setups) { if (chosen.size >= deepN) break; chosen.add(r.ticker); }
+  const entries = liquid.filter((r) => r.entryLive && r.above200 !== false).sort((a, b) => pre(b) - pre(a)).slice(0, fvgN);
+  [...leaders, ...movers, ...entries].forEach((r) => add(r.ticker));
+  const rest = liquid.filter((r) => !chosen.has(r.ticker)).sort((a, b) => (a.ticker < b.ticker ? -1 : 1));
+  if (rest.length) {
+    const start = (day * rotateN) % rest.length;
+    for (let i = 0; i < Math.min(rotateN, rest.length); i++) add(rest[(start + i) % rest.length].ticker);
+  }
   return Array.from(chosen);
 }

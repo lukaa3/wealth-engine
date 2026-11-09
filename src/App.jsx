@@ -1,10 +1,10 @@
 /**
- * App.jsx — Wealth & Stock Intelligence Engine (UI): swing + position screener.
+ * App.jsx — Wealth & Stock Intelligence Engine (UI): multi-factor stock picks (swing / core / long-term), portfolio advisor.
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import * as LucideIcons from "lucide-react";
 import { SECTORS, SECTOR_COLORS, SOURCE_URLS, insiderSourceUrl } from "./mockData.js";
-import { LIMITS, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio } from "./scoring.js";
+import { LIMITS, FACTORS, HORIZON_INFO, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio } from "./scoring.js";
 import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
 import { ruleSummary } from "./lib/ai.js";
@@ -97,19 +97,13 @@ function InsiderChip({ insider, short = false }) {
   );
 }
 
-const PILLARS = [
-  { k: "technical", label: "HTF Technical", icon: "Activity", max: 35 },
-  { k: "fundamental", label: "Valuation", icon: "Scale", max: 35 },
-  { k: "sentiment", label: "Street + Insiders", icon: "Building2", max: 30 },
-];
-
 function PillarBars({ s }) {
   return (
     <div className="space-y-1.5">
-      {PILLARS.map((p) => (
+      {FACTORS.map((p) => (
         <div key={p.k} className="flex items-center gap-2 text-[11px]">
-          <span className="w-24 shrink-0 text-slate-400">{p.label}</span>
-          <div className="h-1.5 flex-1 rounded-full bg-slate-700"><div className="h-1.5 rounded-full bg-indigo-400" style={{ width: (s[p.k] / p.max) * 100 + "%" }} /></div>
+          <span className="w-32 shrink-0 text-slate-400">{p.label}</span>
+          <div className="h-1.5 flex-1 rounded-full bg-slate-700"><div className="h-1.5 rounded-full bg-indigo-400" style={{ width: Math.max(0, (s[p.k] / p.max) * 100) + "%" }} /></div>
           <span className="w-12 shrink-0 text-right tabular-nums text-slate-300">{s[p.k]}<span className="text-slate-500">/{p.max}</span></span>
         </div>
       ))}
@@ -117,17 +111,80 @@ function PillarBars({ s }) {
   );
 }
 
+const RISK_STYLE = {
+  Low: "bg-emerald-500/10 text-emerald-300 ring-emerald-500/30",
+  Medium: "bg-amber-500/10 text-amber-300 ring-amber-500/30",
+  High: "bg-rose-500/10 text-rose-300 ring-rose-500/30",
+};
+function RiskChip({ risk }) {
+  return <span title="Based on how much the price swings, whether it's profitable, and company size" className={"inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 " + (RISK_STYLE[risk] || RISK_STYLE.Medium)}><Icon name="Gauge" size={12} />{risk} risk</span>;
+}
+function HorizonChip({ s }) {
+  const h = HORIZON_INFO[s.horizon] || HORIZON_INFO.core;
+  return <span title="The holding period this stock's strengths fit best" className="inline-flex items-center gap-1 rounded-md bg-indigo-500/15 px-2 py-0.5 text-xs font-semibold text-indigo-200 ring-1 ring-indigo-500/30"><Icon name={h.icon} size={12} />{h.label} · {h.span}</span>;
+}
+function FitBars({ s }) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {Object.entries(HORIZON_INFO).map(([k, h]) => (
+        <div key={k} className={"rounded-lg p-2 " + (s.horizon === k ? "bg-indigo-500/15 ring-1 ring-indigo-500/40" : "bg-slate-900/50")}>
+          <div className="text-[10px] uppercase tracking-wide text-slate-400">{h.label}</div>
+          <div className="text-sm font-semibold tabular-nums text-slate-100">{s.fits[k]}<span className="text-xs text-slate-500">/100</span></div>
+          <div className="text-[10px] text-slate-500">{h.span}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** The plan in plain words: buy in thirds at real price levels, where the idea is wrong, where to take profit. */
+function BuyPlanBox({ s }) {
+  const bp = s.buyPlan;
+  if (!bp) return null;
+  const h = HORIZON_INFO[s.horizon] || HORIZON_INFO.core;
+  return (
+    <div className="rounded-lg bg-slate-900/60 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-400"><Icon name="ListChecks" size={12} />How to buy · {h.label.toLowerCase()} hold</span>
+        {s.plan.status === "live" && <span className="rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-slate-900" title={"FVG " + px(s.fvg.lo) + "–" + px(s.fvg.hi) + ", reward:risk " + s.plan.rr.toFixed(1) + ":1"}>FVG entry live</span>}
+      </div>
+      {bp.note && <p className="mt-1.5 flex gap-1.5 text-xs text-amber-300"><Icon name="Hourglass" size={13} className="mt-0.5 shrink-0" />{bp.note}</p>}
+      <ol className="mt-2 space-y-1">
+        {bp.steps.map((x, i) => (
+          <li key={i} className="grid grid-cols-[2.25rem_5.5rem_1fr] items-baseline gap-2 text-sm">
+            <span className="text-xs font-semibold text-slate-400">{x.share}</span>
+            <span className={"font-semibold tabular-nums " + (x.when === "now" ? "text-emerald-300" : "text-slate-100")}>{x.when === "now" ? "Now" : "at " + px(x.price)}</span>
+            <span className="truncate text-xs text-slate-400">{x.when === "now" ? "~" + px(x.price) + " · " : ""}{x.why}</span>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-2 grid gap-1 border-t border-slate-700/60 pt-2 text-xs">
+        <div className="flex gap-1.5 text-rose-300"><Icon name="XCircle" size={13} className="mt-0.5 shrink-0" /><span><span className="font-semibold">Stop adding / exit below {px(bp.stop)}</span> <span className="text-rose-300/70">({spct(bp.stopPct, 0)})</span>: the idea is wrong there.</span></div>
+        <div className="flex gap-1.5 text-emerald-300"><Icon name="Flag" size={13} className="mt-0.5 shrink-0" /><span>{bp.take.text}</span></div>
+      </div>
+    </div>
+  );
+}
+
 /* ===================== Tab 1: Swing & Position Picks ===================== */
 const SORTS = [
-  { value: "composite", label: "Composite Score", icon: "Award" },
-  { value: "upside1m", label: "1-Mo Upside", icon: "Zap" },
-  { value: "upside6m", label: "6-Mo Upside", icon: "Target" },
-  { value: "technical", label: "Technical Setup", icon: "Activity" },
+  { value: "composite", label: "Overall", icon: "Award" },
+  { value: "momentum", label: "Momentum", icon: "TrendingUp" },
+  { value: "earnings", label: "Earnings", icon: "Activity" },
+  { value: "quality", label: "Quality", icon: "ShieldCheck" },
+  { value: "value", label: "Value", icon: "Scale" },
 ];
 const HORIZONS = [
-  { value: "all", label: "All horizons" },
-  { value: "swing", label: "Swing (~1 mo)", icon: "Zap" },
-  { value: "position", label: "Position (~6 mo)", icon: "CalendarRange" },
+  { value: "all", label: "All" },
+  { value: "swing", label: "Swing · 1–3 mo", icon: "Zap" },
+  { value: "core", label: "Core · 3–12 mo", icon: "CalendarRange" },
+  { value: "long", label: "Long-term · 1–3+ yr", icon: "Sprout" },
+];
+const RISKS = [
+  { value: "all", label: "Any risk" },
+  { value: "Low", label: "Low" },
+  { value: "Medium", label: "Medium" },
+  { value: "High", label: "High" },
 ];
 const sortBy = (list, key) => list.slice().sort((a, b) => b[key] - a[key] || b.composite - a.composite);
 
@@ -142,86 +199,6 @@ function FvgPill({ fvg }) {
     <span className={"inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 " + (map[fvg.status] || map.None)}>
       <Icon name={fvg.status === "Rejected" ? "CircleCheck" : fvg.status === "Testing" ? "Crosshair" : "Minus"} size={12} />{label}
     </span>
-  );
-}
-
-const PLAN_STATUS = {
-  live: ["Entry live", "bg-emerald-500 text-slate-900", "Zap"],
-  extended: ["Extended · wait for retest", "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30", "Hourglass"],
-  testing: ["Testing FVG · wait for rejection", "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30", "Crosshair"],
-  failed: ["Below stop · setup failed", "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30", "XCircle"],
-  none: ["No FVG setup", "bg-slate-700/60 text-slate-400 ring-1 ring-slate-600/50", "Minus"],
-};
-function PlanPill({ s }) {
-  const p = PLAN_STATUS[s.plan.status];
-  return <span className={"inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold " + p[1]}><Icon name={p[2]} size={12} />{p[0]}</span>;
-}
-
-const pz = (x) => (!ok(x) ? "—" : "$" + (x >= 100 ? Math.round(x).toLocaleString("en-US") : x.toFixed(2)));
-
-function PlanCell({ label, value, sub, valueCls = "text-slate-100", subCls = "text-slate-500" }) {
-  return (
-    <div className="min-w-0">
-      <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
-      <div className={"truncate text-sm font-semibold tabular-nums " + valueCls}>{value}</div>
-      {sub && <div className={"truncate text-[11px] tabular-nums " + subCls}>{sub}</div>}
-    </div>
-  );
-}
-
-function TradePlan({ s }) {
-  const hasPlan = s.plan.status !== "none";
-  return (
-    <div className="space-y-2">
-      <div className="rounded-lg bg-slate-900/60 p-2.5">
-        <div className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-400"><Icon name="Zap" size={11} />Swing plan · ~1 month</div>
-        {hasPlan ? (
-          <div className="grid grid-cols-[1.35fr_1fr_1fr_1fr] gap-2">
-            <PlanCell label="Entry (FVG)" value={pz(s.fvg.lo) + "–" + pz(s.fvg.hi).slice(1)} />
-            <PlanCell label="Stop" value={pz(s.stop)} sub={"-" + pct(s.plan.riskPct)} valueCls="text-rose-300" />
-            <PlanCell label="Target" value={pz(s.target1m)} sub={spct(s.upside1m)} valueCls="text-emerald-300" subCls="text-emerald-400/80" />
-            <PlanCell label="Reward:risk" value={s.plan.rr.toFixed(1) + ":1"} valueCls={s.plan.rr >= L.MIN_RR ? "text-emerald-300" : "text-amber-300"} />
-          </div>
-        ) : (
-          <div className="text-xs text-slate-400">No bullish FVG to trade off. 1-mo target {pz(s.target1m)} ({spct(s.upside1m)}).</div>
-        )}
-      </div>
-      <div className="rounded-lg bg-slate-900/60 p-2.5">
-        <div className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-indigo-300"><Icon name="CalendarRange" size={11} />Position · ~6 months</div>
-        <div className="grid grid-cols-[1.35fr_1fr_1fr_1fr] gap-2">
-          <PlanCell label="6-mo target" value={pz(s.target6m)} sub={spct(s.upside6m)} valueCls="text-emerald-300" subCls="text-emerald-400/80" />
-          <PlanCell label="DCF value" value={pz(s.dcfValue)} sub={spct(s.dcfUpside, 0)} subCls={tone(s.dcfUpside)} />
-          <PlanCell label="Street PT" value={pz(s.target12m)} sub="12-mo" />
-          <PlanCell label="Beta" value={s.beta.toFixed(2)} sub="vs SPY" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BuyZone({ s }) {
-  const [lo, hi] = s.buyZone;
-  const min = Math.min(lo, s.price) * 0.94, max = Math.max(hi, s.price) * 1.06;
-  const x = (v) => ((v - min) / (max - min)) * 100;
-  const status = {
-    in: ["In zone · accumulate", "text-emerald-300 bg-emerald-500/15 ring-emerald-500/30", "CircleCheck"],
-    below: ["Below zone · deep value", "text-emerald-300 bg-emerald-500/20 ring-emerald-500/40", "ArrowDownToLine"],
-    above: ["Above zone · wait", "text-amber-300 bg-amber-500/15 ring-amber-500/30", "Hourglass"],
-  }[s.zoneStatus];
-  return (
-    <div>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] uppercase tracking-wide text-slate-400">DCA buy zone (longer hold)</span>
-        <span className={"inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium ring-1 " + status[1]}><Icon name={status[2]} size={11} />{status[0]}</span>
-      </div>
-      <div className="relative mt-2 h-2 rounded-full bg-slate-700/80">
-        <div className="absolute h-2 rounded bg-emerald-500/50" style={{ left: x(lo) + "%", width: x(hi) - x(lo) + "%" }} />
-        <div className="absolute -top-1 h-4 w-0.5 rounded bg-white" style={{ left: "calc(" + x(s.price) + "% - 1px)" }} title={"Price " + px(s.price)} />
-      </div>
-      <div className="mt-1 flex justify-between text-[11px] tabular-nums text-slate-400">
-        <span>{px(lo)} – {px(hi)}</span><span>Price {px(s.price)}</span>
-      </div>
-    </div>
   );
 }
 
@@ -280,31 +257,33 @@ function InvestmentCard({ s, onOpen }) {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <PlanPill s={s} />
-        <FvgPill fvg={s.fvg} />
-        {s.fib != null && s.fib >= 0.618 && <span className="rounded-md bg-slate-700/60 px-2 py-0.5 text-xs text-slate-300 ring-1 ring-slate-600/50">Fib {s.fib.toFixed(3)}</span>}
-        {s.support && <span className="rounded-md bg-slate-700/60 px-2 py-0.5 text-xs text-slate-300 ring-1 ring-slate-600/50">Support</span>}
+        <HorizonChip s={s} />
+        <RiskChip risk={s.risk} />
         {s.partial && s.partial.length > 0 && (
-          <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-xs text-amber-300 ring-1 ring-amber-500/30" title={"Not available on the free data plan, scored as neutral: " + s.partial.join(", ")}>
-            Partial data
-          </span>
+          <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-xs text-amber-300 ring-1 ring-amber-500/30" title={"Not available, scored as neutral: " + s.partial.join(", ")}>Partial data</span>
         )}
+        {s.carried && s.checkedAt && <span className="rounded-md bg-slate-700/60 px-2 py-0.5 text-xs text-slate-400 ring-1 ring-slate-600/50" title="Fundamentals from this date; price and chart are from today">Checked {fmtDate(s.checkedAt)}</span>}
       </div>
 
       <div className="mt-3"><AiTake s={s} /></div>
-      <div className="mt-3"><TradePlan s={s} /></div>
-      <div className="mt-4"><BuyZone s={s} /></div>
+      <div className="mt-3"><BuyPlanBox s={s} /></div>
 
       <div className="mt-4">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-400">Catalysts</div>
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-400">Why it's here</div>
         <ul className="mt-1.5 space-y-1">
-          {s.catalysts.slice(0, 3).map((c) => (
+          {s.catalysts.slice(0, 4).map((c) => (
             <li key={c} className="flex gap-2 text-sm text-slate-300"><Icon name="TrendingUp" size={14} className="mt-0.5 shrink-0 text-emerald-400" />{c}</li>
           ))}
         </ul>
       </div>
+      {(s.newsFlags || []).length > 0 && (
+        <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-amber-300"><Icon name="Newspaper" size={12} />Headlines to check</div>
+          <ul className="mt-1 space-y-0.5">{s.newsFlags.map((n) => <li key={n.headline} className="text-xs text-slate-300">• {n.url ? <a href={n.url} target="_blank" rel="noreferrer" className="hover:text-white hover:underline">{n.headline}</a> : n.headline} <span className="text-slate-500">({fmtDate(n.date)})</span></li>)}</ul>
+        </div>
+      )}
       <div className="mt-3 rounded-lg border border-rose-500/25 bg-rose-500/5 p-2.5">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-rose-400"><Icon name="AlertTriangle" size={12} />Invalidation watch</div>
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-rose-400"><Icon name="AlertTriangle" size={12} />Sell / rethink if</div>
         <ul className="mt-1 space-y-0.5">
           {s.invalidationAll.map((c) => <li key={c} className="text-xs text-slate-300">• {c}</li>)}
         </ul>
@@ -313,7 +292,7 @@ function InvestmentCard({ s, onOpen }) {
       <div className="mt-4 border-t border-slate-700/60 pt-3"><PillarBars s={s} /></div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <InsiderChip insider={s.insider} />
-        <button type="button" onClick={() => onOpen(s.ticker)} className="flex items-center gap-1 text-xs font-medium text-indigo-300 hover:text-indigo-200">Score breakdown <Icon name="ArrowRight" size={12} /></button>
+        <button type="button" onClick={() => onOpen(s.ticker)} className="flex items-center gap-1 text-xs font-medium text-indigo-300 hover:text-indigo-200">Full breakdown <Icon name="ArrowRight" size={12} /></button>
       </div>
     </div>
   );
@@ -322,14 +301,16 @@ function InvestmentCard({ s, onOpen }) {
 function Methodology() {
   const [open, setOpen] = useState(false);
   const rows = [
-    ["35%", "HTF Technical Setup", "Bullish FVG: Weekly rejection 20 / Daily rejection 16 / testing 8–10 · Fib 0.618+ confluence 10 (0.5 = 4) · key structural support 5"],
-    ["35%", "Fundamental Value", "DCF ≥20% below fair value (15) · PEG < 1.0 (10, fades to 0 at 2.0) · forward P/E ≥20% below sector (10)"],
-    ["30%", "Wall Street & Insiders", "Buy consensus ≥75% (10) · 12-month price-target upside ≥25% (12) · insider open-market buying over 90 days (8; routine selling isn't penalized)"],
+    ["30", "Momentum & trend", "The strongest-proven signal for the next 3–12 months: stocks that went up the most over the past year (skipping the last month) tend to keep going. Ranked against ~550 stocks, plus 6-month momentum, strength vs the S&P 500, and trend (above the 200-day average, 50-day above 200-day, near highs)."],
+    ["25", "Earnings momentum", "Prices follow earnings. Analysts raising their EPS estimates (last 4 weeks), the 1-month change in the consensus, expected EPS growth next year, and beating estimates in recent quarters."],
+    ["15", "Quality", "Profitable, efficient companies hold up better when markets drop: operating margin, return on equity, free cash flow, and not too much debt."],
+    ["15", "Valuation", "Don't overpay for growth: PEG ratio, forward P/E vs the sector, and a rough cash-flow DCF (skipped for banks)."],
+    ["15", "Smart money & setup", "Insider buying, analyst consensus and price target (weak signals on their own, so small weight), and the HTF bullish FVG, used mainly to time the entry."],
   ];
   return (
     <Card className="overflow-hidden">
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-slate-200 hover:bg-slate-700/40">
-        <span className="flex items-center gap-2"><Icon name="Info" size={15} className="text-indigo-300" />Scoring methodology & trade-plan rules</span>
+        <span className="flex items-center gap-2"><Icon name="Info" size={15} className="text-indigo-300" />How stocks are scored, labeled and planned</span>
         <Icon name="ChevronDown" size={16} className={"transition " + (open ? "rotate-180" : "")} />
       </button>
       {open && (
@@ -340,12 +321,13 @@ function Methodology() {
               <div><div className="font-medium text-slate-100">{k}</div><div className="text-slate-400">{d}</div></div>
             </div>
           ))}
-          <div className="rounded-lg bg-slate-900/50 p-3 text-sm text-slate-400">
-            <span className="font-medium text-slate-200">Swing plan:</span> entry is the bullish FVG, the stop sits under it, the target is the ~1-month objective. Reward:risk is measured from the middle of the FVG. <span className="text-emerald-300">Entry live</span> = FVG rejected and price no more than {pct(L.ENTRY_TOLERANCE, 0)} above it, with at least {L.MIN_RR}:1 reward:risk.
-            <br /><span className="font-medium text-slate-200">Position fit:</span> 6-month target at least 15% above price. The DCA zone is for building a longer hold in pieces.
+          <div className="space-y-1.5 rounded-lg bg-slate-900/50 p-3 text-sm text-slate-400">
+            <div><span className="font-medium text-slate-200">Horizon label:</span> each stock gets a fit score for <span className="text-slate-200">Swing (1–3 months)</span>: short-term strength, estimate raises and a live entry; <span className="text-slate-200">Core (3–12 months)</span>: the overall score; and <span className="text-slate-200">Long-term (1–3+ years)</span>: quality, growth and fair price. It's labeled with the best fit.</div>
+            <div><span className="font-medium text-slate-200">Risk:</span> High = big price swings, losing money, small company or under $5. Low = calm, profitable. Being young, a mix with some High-risk names is fine; keep each one small.</div>
+            <div><span className="font-medium text-slate-200">How to buy:</span> buy in thirds at real support levels below the price (FVG, 50-day average, pullback levels, 200-day average). If the stock is stretched far above its 50-day, wait for the first level instead of chasing. The stop is where the idea is wrong.</div>
           </div>
-          <p className="text-xs text-slate-500">Linear partial credit between thresholds. A metric the free data plans don't provide counts as neutral (half credit) and the card is tagged "Partial data". Composite ≥ {L.RECOMMEND} = Recommended Buy; ≥ {L.HIGH_CONVICTION} = High Conviction; {L.WATCH}–{L.RECOMMEND - 1} = Watchlist; holdings below {L.REVIEW_SCORE} get a review flag.</p>
-          <p className="text-xs text-slate-500">How stocks are found: every weekday the job scans ~550 stocks (S&amp;P 500, Nasdaq-100 and popular momentum names) on daily charts, then gives the best FVG setups and biggest movers the full check.</p>
+          <p className="text-xs text-slate-500">Score ≥ {L.HIGH_CONVICTION} = Top pick · {L.RECOMMEND}–{L.HIGH_CONVICTION - 1} = Recommended · {L.WATCH}–{L.RECOMMEND - 1} = Watchlist. A number we couldn't get counts as neutral (half credit) and the card says "Partial data". No method guarantees profits; this one leans on the signals with the best long-run track record.</p>
+          <p className="text-xs text-slate-500">Every weekday the job scans ~550 stocks (S&amp;P 500, Nasdaq-100, popular momentum names), then fully checks about 80: your holdings, the momentum leaders, big movers, live FVG entries and a rotating slice of everything else. Full checks stay on the site for up to 6 days.</p>
         </div>
       )}
     </Card>
@@ -353,15 +335,17 @@ function Methodology() {
 }
 
 function WatchRow({ s, onOpen }) {
+  const h = HORIZON_INFO[s.horizon] || HORIZON_INFO.core;
+  const first = s.buyPlan && s.buyPlan.steps[0];
   return (
     <tr onClick={() => onOpen(s.ticker)} className="cursor-pointer border-b border-slate-700/40 last:border-0 hover:bg-slate-700/30">
       <td className="px-4 py-2.5"><div className="font-semibold text-white">{s.ticker}</div><SectorChip sector={s.sector} /></td>
       <td className="px-3 py-2.5"><ScoreBadge score={s.composite} size="sm" /></td>
       <td className="px-3 py-2.5 text-right tabular-nums text-slate-200">{px(s.price)}</td>
-      <td className="px-3 py-2.5"><PlanPill s={s} /></td>
-      <td className={"px-3 py-2.5 text-right tabular-nums " + tone(s.upside1m)}>{spct(s.upside1m)}</td>
-      <td className={"px-3 py-2.5 text-right tabular-nums " + tone(s.upside6m)}>{spct(s.upside6m)}</td>
-      <td className="px-3 py-2.5 text-xs text-slate-400">{s.partial && s.partial.length ? "Partial data" : ""}</td>
+      <td className="px-3 py-2.5 text-xs text-slate-300">{h.label}</td>
+      <td className="px-3 py-2.5 text-xs"><span className={"rounded px-1.5 py-0.5 ring-1 " + RISK_STYLE[s.risk]}>{s.risk}</span></td>
+      <td className={"px-3 py-2.5 text-right tabular-nums " + tone(s.factors && s.factors.mom12_1)}>{spct(s.factors && s.factors.mom12_1, 0)}</td>
+      <td className="px-3 py-2.5 text-xs text-slate-300">{first ? (first.when === "now" ? "Buy now" : "Wait for " + px(first.price)) : "—"}</td>
     </tr>
   );
 }
@@ -380,7 +364,9 @@ function MarketScan({ scan, byTicker, onOpen }) {
   const items = scan.items || [];
   const list = view === "movers"
     ? items.filter((r) => !r.fund && r.ret20 != null && r.price >= 5).sort((a, b) => b.ret20 - a.ret20)
-    : items.filter((r) => !r.fund && r.fvgStatus !== "None").sort((a, b) => (b.entryLive - a.entryLive) || (b.tech - a.tech) || ((b.ret20 || 0) - (a.ret20 || 0)));
+    : view === "leaders"
+      ? items.filter((r) => !r.fund && r.mom12_1 != null && r.price >= 5).sort((a, b) => (b.momRank12 ?? 0) + (b.above200 ? 0.2 : 0) - ((a.momRank12 ?? 0) + (a.above200 ? 0.2 : 0)))
+      : items.filter((r) => !r.fund && r.fvgStatus !== "None").sort((a, b) => (b.entryLive - a.entryLive) || (b.tech - a.tech) || ((b.ret20 || 0) - (a.ret20 || 0)));
   const rows = list.slice(0, more ? 75 : 15);
   const live = items.filter((r) => r.entryLive).length;
   return (
@@ -391,14 +377,14 @@ function MarketScan({ scan, byTicker, onOpen }) {
           <p className="text-sm text-slate-400">{scan.scanned} stocks scanned on {fmtDate((scan.generatedAt || "").slice(0, 10))} · {items.filter((r) => r.fvgStatus !== "None").length} with a bullish FVG · {live} live entries. Highlighted rows got the full check above.</p>
         </div>
         <Segmented label="Scan view" value={view} onChange={(v) => { setView(v); setMore(false); }}
-          options={[{ value: "movers", label: "Top movers (1 mo)", icon: "Rocket" }, { value: "setups", label: "FVG setups", icon: "Crosshair" }]} />
+          options={[{ value: "movers", label: "Top movers (1 mo)", icon: "Rocket" }, { value: "leaders", label: "Momentum leaders (12 mo)", icon: "TrendingUp" }, { value: "setups", label: "FVG setups", icon: "Crosshair" }]} />
       </div>
       <Card className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[760px] text-sm">
+        <table className="w-full min-w-[840px] text-sm">
           <thead><tr className="border-b border-slate-700/60 text-left text-xs uppercase tracking-wide text-slate-400">
             <th className="px-4 py-2.5 font-medium">Ticker</th><th className="px-3 py-2.5 text-right font-medium">Price</th>
             <th className="px-3 py-2.5 text-right font-medium">1 week</th><th className="px-3 py-2.5 text-right font-medium">1 month</th>
-            <th className="px-3 py-2.5 text-right font-medium">3 months</th><th className="px-3 py-2.5 text-right font-medium">Volume vs avg</th>
+            <th className="px-3 py-2.5 text-right font-medium">3 months</th><th className="px-3 py-2.5 text-right font-medium">12-1 mo</th><th className="px-3 py-2.5 text-right font-medium">Volume vs avg</th>
             <th className="px-3 py-2.5 text-right font-medium">From 52w high</th><th className="px-3 py-2.5 font-medium">Setup</th><th className="px-3 py-2.5 font-medium">Score</th>
           </tr></thead>
           <tbody>
@@ -412,6 +398,7 @@ function MarketScan({ scan, byTicker, onOpen }) {
                   <td className={"px-3 py-2.5 text-right tabular-nums " + tone(r.ret5)}>{spct(r.ret5)}</td>
                   <td className={"px-3 py-2.5 text-right font-medium tabular-nums " + tone(r.ret20)}>{spct(r.ret20)}</td>
                   <td className={"px-3 py-2.5 text-right tabular-nums " + tone(r.ret60)}>{spct(r.ret60)}</td>
+                  <td className={"px-3 py-2.5 text-right tabular-nums " + tone(r.mom12_1)} title={r.above200 == null ? "" : r.above200 ? "Above its 200-day average" : "Below its 200-day average"}>{spct(r.mom12_1, 0)}{r.above200 === false && <span className="ml-1 text-[10px] text-rose-400">▼200d</span>}</td>
                   <td className={"px-3 py-2.5 text-right tabular-nums " + (r.volRatio >= 1.5 ? "text-emerald-300" : "text-slate-300")}>{r.volRatio != null ? r.volRatio.toFixed(1) + "x" : "—"}</td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">{spct(r.fromHigh)}</td>
                   <td className="px-3 py-2.5">
@@ -440,57 +427,61 @@ function MarketScan({ scan, byTicker, onOpen }) {
 function Picks({ scored, byTicker, scan, onOpen }) {
   const [sort, setSort] = useState("composite");
   const [horizon, setHorizon] = useState("all");
+  const [risk, setRisk] = useState("all");
+  const fits = (s) => (horizon === "all" || s.horizon === horizon) && (risk === "all" || s.risk === risk);
+  // Within a horizon tab, rank by that horizon's fit; otherwise by the chosen factor.
+  const order = (list) => list.slice().sort((a, b) => (sort === "composite" && horizon !== "all" ? b.fits[horizon] - a.fits[horizon] : b[sort] - a[sort]) || b.composite - a.composite);
   const qualified = scored.filter((s) => s.composite >= L.RECOMMEND);
-  const fits = (s) => horizon === "all" || (horizon === "swing" ? s.swingReady : s.positionReady);
-  const shown = qualified.filter(fits);
-  const top = sortBy(shown.filter((s) => s.composite >= L.HIGH_CONVICTION), sort);
-  const mid = sortBy(shown.filter((s) => s.composite < L.HIGH_CONVICTION), sort);
-  const swing = qualified.filter((s) => s.swingReady);
-  const avg1m = swing.reduce((a, s) => a + s.upside1m, 0) / (swing.length || 1);
-  const avg6m = qualified.reduce((a, s) => a + s.upside6m, 0) / (qualified.length || 1);
-  const watch = sortBy(scored.filter((s) => s.composite >= L.WATCH && s.composite < L.RECOMMEND).filter(fits), sort);
+  const top = order(scored.filter((s) => s.composite >= L.HIGH_CONVICTION && fits(s)));
+  const mid = order(scored.filter((s) => s.composite >= L.RECOMMEND && s.composite < L.HIGH_CONVICTION && fits(s)));
+  const watch = order(scored.filter((s) => s.composite >= L.WATCH && s.composite < L.RECOMMEND && fits(s)));
+  const n = (h) => qualified.filter((s) => s.horizon === h).length;
+  const buyNow = qualified.filter((s) => s.buyPlan && s.buyPlan.steps[0].when === "now").length;
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Recommended" value={qualified.length} sub={"score ≥ " + L.RECOMMEND + " · " + scored.length + " fully checked" + (scan ? " of " + scan.scanned + " scanned" : "")} icon="ShieldCheck" />
-        <Stat label="High conviction" value={qualified.filter((s) => s.composite >= L.HIGH_CONVICTION).length} sub={"score ≥ " + L.HIGH_CONVICTION} icon="Award" />
-        <Stat label="Swing entries live" value={swing.length} sub={"avg 1-mo target " + spct(avg1m)} valueTone="up" icon="Zap" />
-        <Stat label="Avg 6-mo upside" value={spct(avg6m)} sub="across recommended picks" valueTone="up" icon="CalendarRange" />
+        <Stat label="Top picks" value={qualified.filter((s) => s.composite >= L.HIGH_CONVICTION).length} sub={"score ≥ " + L.HIGH_CONVICTION + " · " + qualified.length + " recommended"} icon="Award" />
+        <Stat label="By horizon" value={n("swing") + " · " + n("core") + " · " + n("long")} sub="swing · core · long-term" icon="CalendarRange" />
+        <Stat label="Buyable now" value={buyNow} sub="recommended and not stretched" valueTone="up" icon="ShoppingCart" />
+        <Stat label="Checked" value={scored.length} sub={scan ? "fully, of " + scan.scanned + " scanned" : "fully checked"} icon="ScanSearch" />
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <Segmented options={HORIZONS} value={horizon} onChange={setHorizon} label="Filter by horizon" />
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-wrap gap-2">
+          <Segmented options={HORIZONS} value={horizon} onChange={setHorizon} label="Filter by horizon" />
+          <Segmented options={RISKS} value={risk} onChange={setRisk} label="Filter by risk" />
+        </div>
         <div className="flex items-center gap-2"><span className="hidden text-xs text-slate-400 xl:inline">Sort by</span><Segmented options={SORTS} value={sort} onChange={setSort} label="Sort picks" /></div>
       </div>
 
       <div>
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white"><Icon name="Award" size={18} className="text-indigo-400" />High Conviction Picks<span className="rounded bg-indigo-500/20 px-1.5 py-0.5 text-xs font-semibold text-indigo-300">{L.HIGH_CONVICTION}+</span></h2>
-        <p className="mb-3 text-sm text-slate-400">HTF structure, valuation and the Street all lined up.</p>
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-white"><Icon name="Award" size={18} className="text-indigo-400" />Top Picks<span className="rounded bg-indigo-500/20 px-1.5 py-0.5 text-xs font-semibold text-indigo-300">{L.HIGH_CONVICTION}+</span></h2>
+        <p className="mb-3 text-sm text-slate-400">Strong on most of the five factors at once: the best-backed ideas right now.</p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {top.map((s) => <InvestmentCard key={s.ticker} s={s} onOpen={onOpen} />)}
         </div>
-        {top.length === 0 && <Card className="p-6 text-center text-sm text-slate-400">No high-conviction picks match this horizon right now.</Card>}
+        {top.length === 0 && <Card className="p-6 text-center text-sm text-slate-400">No top picks match these filters right now.</Card>}
       </div>
 
       <div>
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white"><Icon name="Layers" size={18} className="text-emerald-400" />Recommended Buys<span className="rounded bg-slate-700 px-1.5 py-0.5 text-xs font-semibold text-slate-300">{L.RECOMMEND}–{L.HIGH_CONVICTION - 1}</span></h2>
-        <p className="mb-3 text-sm text-slate-400">Pass the screen but miss full marks on at least one pillar.</p>
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-white"><Icon name="Layers" size={18} className="text-emerald-400" />Recommended<span className="rounded bg-slate-700 px-1.5 py-0.5 text-xs font-semibold text-slate-300">{L.RECOMMEND}–{L.HIGH_CONVICTION - 1}</span></h2>
+        <p className="mb-3 text-sm text-slate-400">Good overall, with one or two weaker factors (see the bars on each card).</p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {mid.map((s) => <InvestmentCard key={s.ticker} s={s} onOpen={onOpen} />)}
         </div>
-        {mid.length === 0 && <Card className="p-6 text-center text-sm text-slate-400">Nothing in this band matches this horizon.</Card>}
+        {mid.length === 0 && <Card className="p-6 text-center text-sm text-slate-400">Nothing in this band matches these filters.</Card>}
       </div>
 
       <div>
         <h2 className="flex items-center gap-2 text-lg font-semibold text-white"><Icon name="Eye" size={18} className="text-amber-300" />Watchlist<span className="rounded bg-slate-700 px-1.5 py-0.5 text-xs font-semibold text-slate-300">{L.WATCH}–{L.RECOMMEND - 1}</span></h2>
-        <p className="mb-3 text-sm text-slate-400">Close, but not there yet. Click a row for the full breakdown.</p>
+        <p className="mb-3 text-sm text-slate-400">Close, but not there yet. Click a row for the full breakdown and buy plan.</p>
         {watch.length > 0 ? (
           <Card className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead><tr className="border-b border-slate-700/60 text-left text-xs uppercase tracking-wide text-slate-400">
                 <th className="px-4 py-2.5 font-medium">Ticker</th><th className="px-3 py-2.5 font-medium">Score</th><th className="px-3 py-2.5 text-right font-medium">Price</th>
-                <th className="px-3 py-2.5 font-medium">Setup</th><th className="px-3 py-2.5 text-right font-medium">1-mo target</th><th className="px-3 py-2.5 text-right font-medium">6-mo target</th><th className="px-3 py-2.5" />
+                <th className="px-3 py-2.5 font-medium">Horizon</th><th className="px-3 py-2.5 font-medium">Risk</th><th className="px-3 py-2.5 text-right font-medium">12-mo momentum</th><th className="px-3 py-2.5 font-medium">Plan</th>
               </tr></thead>
               <tbody>{watch.map((s) => <WatchRow key={s.ticker} s={s} onOpen={onOpen} />)}</tbody>
             </table>
@@ -793,7 +784,7 @@ function HoldingForm({ byTicker, scored, priceBook, onAdd }) {
         </label>
         <button type="submit" className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-emerald-400"><Icon name="Plus" size={15} />Add</button>
       </form>
-      {known && !err && <p className="mt-2 text-xs text-slate-400">{known.name} · {known.sector} · last {px(known.price)} · score {known.composite} · {PLAN_STATUS[known.plan.status][0]}</p>}
+      {known && !err && <p className="mt-2 text-xs text-slate-400">{known.name} · {known.sector} · last {px(known.price)} · score {known.composite} · {(HORIZON_INFO[known.horizon] || HORIZON_INFO.core).label} · {known.risk} risk</p>}
       {scanned && !err && <p className="mt-2 text-xs text-slate-400">{scanned.name} · {scanned.sector} · last {px(scanned.price)} · in the market scan (price only, no full score today)</p>}
       {!known && !scanned && !isCash && t && !err && <p className="mt-2 text-xs text-amber-300">{t} isn't in today's data, so it's tracked at your cost basis until a price is available. Add it to the repo's WATCHLIST variable to get it fully checked every day.</p>}
       {err && <p className="mt-2 flex items-center gap-1.5 text-xs text-rose-400"><Icon name="AlertTriangle" size={13} />{err}</p>}
@@ -849,52 +840,68 @@ function AllocationChart({ sectors, total }) {
   );
 }
 
-function RebalanceFeed({ a, onOpen }) {
+const ADVICE_STYLE = {
+  Sell: ["border-rose-500/40 bg-rose-500/15 text-rose-300", "bg-rose-500 text-white", "XCircle"],
+  Trim: ["border-amber-500/40 bg-amber-500/10 text-amber-300", "bg-amber-500 text-slate-900", "Scissors"],
+  Review: ["border-amber-500/30 bg-amber-500/5 text-amber-200", "bg-amber-500/20 text-amber-200 ring-1 ring-amber-500/40", "Newspaper"],
+  "Buy more": ["border-emerald-500/30 bg-emerald-500/10 text-emerald-300", "bg-emerald-500 text-slate-900", "Plus"],
+  "Pause adding": ["border-slate-600 bg-slate-900/40 text-slate-300", "bg-slate-700 text-slate-200", "Pause"],
+  Hold: ["border-slate-700 bg-slate-900/40 text-slate-300", "bg-slate-700/70 text-slate-300", "CircleCheck"],
+};
+function ActionChip({ action }) {
+  const st = ADVICE_STYLE[action] || ADVICE_STYLE.Hold;
+  return <span className={"inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold " + st[1]}><Icon name={st[2]} size={12} />{action}</span>;
+}
+
+function AdviceFeed({ a, onOpen }) {
+  const adv = a.feed.filter((f) => f.type === "advice");
+  const other = a.feed.filter((f) => f.type !== "advice");
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-white"><Icon name="RefreshCw" size={15} className="text-indigo-300" />Smart rebalance recommendations</h3>
-        <span className="text-xs text-slate-400">{a.feed.length} signals</span>
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-white"><Icon name="ClipboardList" size={15} className="text-indigo-300" />What to do now</h3>
+        <span className="text-xs text-slate-400">{Object.entries(a.counts).map(([k, v]) => v + " " + k.toLowerCase()).join(" · ")}</span>
       </div>
-      {a.feed.length === 0 && <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-300"><Icon name="CircleCheck" size={16} />Balanced: no sector over {pct(L.CONCENTRATION_LIMIT, 0)} and every holding scores {L.REVIEW_SCORE}+.</div>}
+      {a.feed.length === 0 && <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-300"><Icon name="CircleCheck" size={16} />Nothing to do: every holding is a hold and the mix is balanced.</div>}
       <div className="mt-3 space-y-2.5">
-        {a.feed.map((f, i) => {
-          if (f.type === "stop")
-            return (
-              <div key={i} className="rounded-lg border border-rose-500/40 bg-rose-500/15 p-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-rose-300"><Icon name="XCircle" size={15} />Stop breached: {f.ticker}</div>
-                <p className="mt-1 text-sm text-slate-300">Price {px(f.price)} is under the {px(f.stop)} technical stop, so the FVG setup has failed. {pct(f.weight)} of the portfolio. Cut or re-plan the trade.</p>
+        {adv.map((f) => {
+          const st = ADVICE_STYLE[f.action] || ADVICE_STYLE.Hold;
+          return (
+            <div key={f.ticker} className={"rounded-lg border p-3 " + st[0]}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <button type="button" onClick={() => onOpen(f.ticker)} className="flex items-center gap-2 text-sm font-semibold text-white hover:text-indigo-200"><ActionChip action={f.action} />{f.ticker}<span className="font-normal text-slate-400">{pct(f.weight)} of portfolio</span></button>
+                {f.score != null && <ScoreBadge score={f.score} size="sm" />}
               </div>
-            );
+              <ul className="mt-1.5 space-y-0.5">{f.why.map((w) => <li key={w} className="text-sm text-slate-300">• {w}</li>)}</ul>
+            </div>
+          );
+        })}
+        {other.map((f, i) => {
           if (f.type === "concentration")
             return (
-              <div key={i} className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-rose-300"><Icon name="AlertTriangle" size={15} />Over-concentrated: {f.sector} at {pct(f.weight)}</div>
-                <p className="mt-1 text-sm text-slate-300">Trim about <span className="font-semibold text-white">{usd(f.excess)}</span> to bring {f.sector} back to {pct(L.CONCENTRATION_LIMIT, 0)}.{f.trimFirst.length > 0 && <> Lowest-scored to trim first: <span className="font-medium text-white">{f.trimFirst.join(", ")}</span>.</>}</p>
+              <div key={"c" + i} className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-rose-300"><Icon name="AlertTriangle" size={15} />Too much in {f.sector}: {pct(f.weight)}</div>
+                <p className="mt-1 text-sm text-slate-300">Trim about <span className="font-semibold text-white">{usd(f.excess)}</span> to get {f.sector} back to {pct(L.CONCENTRATION_LIMIT, 0)}.{f.trimFirst.length > 0 && <> Weakest to trim first: <span className="font-medium text-white">{f.trimFirst.join(", ")}</span>.</>}</p>
               </div>
             );
-          if (f.type === "add")
+          if (f.type === "risk")
             return (
-              <div key={i} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><Icon name="TrendingUp" size={15} />Build {f.sector} ({pct(f.weight)} now)</div>
-                  <button type="button" onClick={() => onOpen(f.stock.ticker)} className="flex items-center gap-2 rounded-md bg-slate-900/60 px-2 py-1 text-sm font-semibold text-white ring-1 ring-slate-700 hover:ring-indigo-500">{f.stock.ticker}<ScoreBadge score={f.stock.composite} size="sm" /></button>
-                </div>
-                <p className="mt-1 text-sm text-slate-300">
-                  {f.stock.name}: {PLAN_STATUS[f.stock.plan.status][0].toLowerCase()}{f.stock.plan.status !== "none" ? " (FVG " + px(f.stock.fvg.lo) + "–" + px(f.stock.fvg.hi) + ", stop " + px(f.stock.stop) + ")" : ""}. 1-mo target {spct(f.stock.upside1m)}, 6-mo {spct(f.stock.upside6m)}.
-                  {f.amount > 0 && <> Size ~<span className="font-semibold text-white">{usd(f.amount)}</span> (≈{f.shares} sh); scale in across the FVG or the {px(f.stock.buyZone[0])}–{px(f.stock.buyZone[1])} DCA zone.</>}
-                </p>
+              <div key={"r" + i} className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-amber-300"><Icon name="Gauge" size={15} />{pct(f.share)} of your money is in high-risk names</div>
+                <p className="mt-1 text-sm text-slate-300">Some risk is fine when you're young, but over ~40% means a rough month can hurt a lot. High risk: <span className="font-medium text-white">{f.names.join(", ")}</span>. Balance it with a core holding or an index fund.</p>
               </div>
             );
           return (
-            <div key={i} className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2 text-sm font-semibold text-amber-300"><Icon name="Flag" size={15} />Review holding: {f.ticker}</div><ScoreBadge score={f.score} size="sm" /></div>
-              <p className="mt-1 text-sm text-slate-300">Score {f.score} is below the {L.REVIEW_SCORE} floor. {pct(f.weight)} of the portfolio, {f.pl >= 0 ? "up " : "down "}{usd(Math.abs(f.pl))} unrealized. Check its invalidation triggers before adding more.</p>
+            <div key={"a" + i} className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><Icon name="Lightbulb" size={15} />Idea: {f.stock.ticker}{f.light ? " (you're light in " + f.sector + ")" : ""}</div>
+                <button type="button" onClick={() => onOpen(f.stock.ticker)} className="flex items-center gap-2 rounded-md bg-slate-900/60 px-2 py-1 text-sm font-semibold text-white ring-1 ring-slate-700 hover:ring-indigo-500">{f.stock.ticker}<ScoreBadge score={f.stock.composite} size="sm" /></button>
+              </div>
+              <p className="mt-1 text-sm text-slate-300">{f.stock.name}: {(HORIZON_INFO[f.stock.horizon] || HORIZON_INFO.core).label.toLowerCase()} pick, {f.stock.risk.toLowerCase()} risk. {f.stock.buyPlan ? (f.stock.buyPlan.steps[0].when === "now" ? "Buyable now; " : "Wait for " + px(f.stock.buyPlan.steps[0].price) + "; ") + "stop " + px(f.stock.buyPlan.stop) + "." : ""}</p>
             </div>
           );
         })}
       </div>
-      {a.feed.some((f) => f.type === "add") && <p className="mt-3 text-xs text-slate-500">Funding pool {usd(a.funding)} = trim proceeds {usd(a.trimProceeds)} + cash {usd(a.cash)}. Each underweight sector is built toward {pct(L.UNDERWEIGHT_FLOOR, 0)}, scaled to the pool.</p>}
     </Card>
   );
 }
@@ -911,7 +918,7 @@ function HoldingRow({ r, onOpen, onSave, onDelete }) {
     onSave(r.id, { shares: s, cost: cash ? 1 : cc });
     setEditing(false);
   };
-  const flagged = r.score != null && r.score < L.REVIEW_SCORE;
+  const flagged = r.advice && (r.advice.action === "Sell" || r.advice.action === "Trim");
   const cell = "px-3 py-3 text-right tabular-nums";
   return (
     <tr className={"border-b border-slate-700/40 last:border-0 " + (flagged ? "bg-rose-500/5" : "")}>
@@ -929,7 +936,7 @@ function HoldingRow({ r, onOpen, onSave, onDelete }) {
       <td className={cell + " text-slate-300"}>{cash ? "—" : px(r.price)}</td>
       <td className={cell + " font-medium text-slate-100"}>{usd(r.value)}</td>
       <td className={cell + " " + tone(r.pl)}>{cash ? "—" : <>{usd(r.pl)} <span className="text-xs opacity-80">({spct(r.plPct)})</span></>}</td>
-      <td className="px-3 py-3">{r.stock ? <PlanPill s={r.stock} /> : r.scanOnly ? <span className="text-xs text-slate-400">Price only (not fully checked)</span> : r.unpriced ? <span className="text-xs text-amber-300">No price data yet (held at cost)</span> : <span className="text-slate-500">—</span>}</td>
+      <td className="max-w-[16rem] px-3 py-3">{r.advice ? <div title={r.advice.why.join("\n")}><ActionChip action={r.advice.action} /><div className="mt-0.5 truncate text-[11px] text-slate-400">{r.advice.why[0]}</div></div> : r.unpriced ? <span className="text-xs text-amber-300">No price data yet (held at cost)</span> : <span className="text-slate-500">—</span>}</td>
       <td className={cell + " text-slate-300"}>{pct(r.weight)}</td>
       <td className="px-3 py-3">{r.score != null ? <ScoreBadge score={r.score} size="sm" /> : <span className="text-slate-500">—</span>}</td>
       <td className="relative whitespace-nowrap px-3 py-3 text-right">
@@ -995,24 +1002,25 @@ function SyncCard({ sync }) {
   );
 }
 
-function PortfolioTab({ scored, byTicker, scan, onOpen }) {
+function PortfolioTab({ scored, byTicker, scan, analyst, onOpen }) {
   const { holdings, addHolding, updateHolding, deleteHolding, resetPortfolio, sync } = usePortfolio();
   const priceBook = useMemo(() => Object.fromEntries(((scan && scan.items) || []).map((r) => [r.ticker, r])), [scan]);
-  const a = useMemo(() => analyzePortfolio(holdings, byTicker, SECTORS, SECTOR_COLORS, priceBook), [holdings, byTicker, priceBook]);
-  const rows = a.rows.slice().sort((x, y) => y.value - x.value);
+  const a = useMemo(() => analyzePortfolio(holdings, byTicker, SECTORS, SECTOR_COLORS, priceBook, { analyst }), [holdings, byTicker, priceBook, analyst]);
+  const rows = a.rows.slice().sort((x, y) => ((x.advice ? x.advice.rank : 9) - (y.advice ? y.advice.rank : 9)) || y.value - x.value);
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Total portfolio value" value={usd(a.total)} sub={rows.length + " positions incl. cash"} icon="Briefcase" />
         <Stat label="Overall P/L" value={usd(a.pl)} sub={"on " + usd(a.costTotal) + " cost basis"} valueTone={a.pl >= 0 ? "up" : "down"} icon={a.pl >= 0 ? "TrendingUp" : "TrendingDown"} />
-        <Stat label="Portfolio beta vs SPY" value={a.beta.toFixed(2)} sub={a.beta > 1.1 ? "more volatile than SPY" : a.beta < 0.9 ? "less volatile than SPY" : "close to SPY"} icon="Gauge" />
+        <Stat label="To act on" value={(a.counts.Sell || 0) + (a.counts.Trim || 0) + (a.counts["Buy more"] || 0) + (a.counts.Review || 0)}
+          sub={[["Sell", a.counts.Sell], ["Trim", a.counts.Trim], ["Buy more", a.counts["Buy more"]], ["Review", a.counts.Review]].filter(([, v]) => v).map(([k, v]) => v + " " + k.toLowerCase()).join(" · ") || "all holds"} icon="ClipboardList" />
         <Stat label="Overall P/L %" value={spct(a.plPct)} sub="unrealized, excludes cash" valueTone={a.plPct >= 0 ? "up" : "down"} icon="Percent" />
       </div>
       <HoldingForm byTicker={byTicker} scored={scored} priceBook={priceBook} onAdd={addHolding} />
       <SyncCard sync={sync} />
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
         <AllocationChart sectors={a.sectors} total={a.total} />
-        <RebalanceFeed a={a} onOpen={onOpen} />
+        <AdviceFeed a={a} onOpen={onOpen} />
       </div>
       <Card className="overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3">
@@ -1020,11 +1028,11 @@ function PortfolioTab({ scored, byTicker, scan, onOpen }) {
           <button type="button" onClick={resetPortfolio} className="flex items-center gap-1 text-xs text-slate-400 hover:text-white"><Icon name="RotateCcw" size={12} />Reset to sample</button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[960px] text-sm">
+          <table className="w-full min-w-[1020px] text-sm">
             <thead><tr className="border-y border-slate-700/60 text-left text-xs uppercase tracking-wide text-slate-400">
               <th className="px-4 py-2.5 font-medium">Ticker</th><th className="px-3 py-2.5 text-right font-medium">Shares</th><th className="px-3 py-2.5 text-right font-medium">Avg cost</th>
               <th className="px-3 py-2.5 text-right font-medium">Price</th><th className="px-3 py-2.5 text-right font-medium">Value</th><th className="px-3 py-2.5 text-right font-medium">P/L</th>
-              <th className="px-3 py-2.5 font-medium">FVG setup</th><th className="px-3 py-2.5 text-right font-medium">Weight</th><th className="px-3 py-2.5 font-medium">Score</th>
+              <th className="px-3 py-2.5 font-medium">Action</th><th className="px-3 py-2.5 text-right font-medium">Weight</th><th className="px-3 py-2.5 font-medium">Score</th>
               <th className="relative px-3 py-2.5"><span className="sr-only">Actions</span></th>
             </tr></thead>
             <tbody>
@@ -1048,7 +1056,7 @@ function StockModal({ s, onClose }) {
     return () => window.removeEventListener("keydown", k);
   }, [onClose]);
   if (!s) return null;
-  const verdict = s.composite >= L.HIGH_CONVICTION ? ["High Conviction Buy", "text-emerald-300 bg-emerald-500/15"]
+  const verdict = s.composite >= L.HIGH_CONVICTION ? ["Top Pick", "text-emerald-300 bg-emerald-500/15"]
     : s.composite >= L.RECOMMEND ? ["Recommended Buy", "text-emerald-300 bg-emerald-500/10"]
     : s.composite >= L.REVIEW_SCORE ? ["Watchlist", "text-slate-300 bg-slate-700"] : ["Avoid / Review", "text-rose-300 bg-rose-500/15"];
   return (
@@ -1070,12 +1078,18 @@ function StockModal({ s, onClose }) {
           <InsiderChip insider={s.insider} />
           <span className="text-xs text-slate-400">β {s.beta.toFixed(2)} · {s.analystCount ?? "n/a"} analysts · {s.buyPct != null ? Math.round(s.buyPct * 100) + "% Buy" : "no consensus"}{s.live ? " · live data" : ""}</span>
         </div>
-        <div className="mt-3 flex flex-wrap gap-1.5"><PlanPill s={s} /><FvgPill fvg={s.fvg} /></div>
+        <div className="mt-3 flex flex-wrap gap-1.5"><HorizonChip s={s} /><RiskChip risk={s.risk} /><FvgPill fvg={s.fvg} />{s.carried && s.checkedAt && <span className="rounded-md bg-slate-700/60 px-2 py-0.5 text-xs text-slate-400">Full check {fmtDate(s.checkedAt)}</span>}</div>
         <div className="mt-3"><AiTake s={s} full /></div>
-        <div className="mt-3"><TradePlan s={s} /></div>
-        <div className="mt-4"><BuyZone s={s} /></div>
+        <div className="mt-3"><BuyPlanBox s={s} /></div>
+        <div className="mt-3"><FitBars s={s} /></div>
+        {(s.newsFlags || []).length > 0 && (
+          <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">Headlines to check</div>
+            <ul className="mt-1 space-y-0.5">{s.newsFlags.map((n) => <li key={n.headline} className="text-xs text-slate-300">• {n.url ? <a href={n.url} target="_blank" rel="noreferrer" className="hover:underline">{n.headline}</a> : n.headline} <span className="text-slate-500">({fmtDate(n.date)})</span></li>)}</ul>
+          </div>
+        )}
         <div className="mt-5 space-y-4">
-          {PILLARS.map((p) => (
+          {FACTORS.map((p) => (
             <div key={p.k}>
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2 font-semibold text-slate-100"><Icon name={p.icon} size={14} className="text-indigo-300" />{p.label}</span>
@@ -1194,9 +1208,9 @@ function SettingsDrawer({ settings, onSave, onClose, status }) {
 
 /* ================================ Shell ================================ */
 const TABS = [
-  { id: "picks", label: "Swing & Position Picks", short: "Picks", icon: "Target" },
+  { id: "picks", label: "Stock Picks", short: "Picks", icon: "Target" },
   { id: "intelligence", label: "Analyst & Insider Intelligence", short: "Intel", icon: "Newspaper" },
-  { id: "portfolio", label: "Portfolio Tracker & Rebalancer", short: "Portfolio", icon: "Briefcase" },
+  { id: "portfolio", label: "Portfolio & Advisor", short: "Portfolio", icon: "Briefcase" },
 ];
 const tabFromHash = () => {
   const h = (typeof location !== "undefined" ? location.hash : "").replace("#", "").split("&")[0];
@@ -1244,7 +1258,7 @@ export default function App() {
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500"><Icon name="Landmark" size={18} className="text-white" /></div>
               <div className="min-w-0">
                 <h1 className="text-base font-bold leading-tight text-white sm:text-lg">Wealth &amp; Stock Intelligence Engine</h1>
-                <div className="text-[11px] leading-tight text-slate-400">HTF FVG setups · Valuation · Street + insiders · as of {fmtDate(screener.data.asOf || new Date().toISOString().slice(0, 10))}</div>
+                <div className="text-[11px] leading-tight text-slate-400">Momentum · Earnings trend · Quality · Value · Smart money · as of {fmtDate(screener.data.asOf || new Date().toISOString().slice(0, 10))}</div>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1281,11 +1295,11 @@ export default function App() {
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {tab === "picks" && <Picks scored={scored} byTicker={byTicker} scan={screener.source !== "mock" ? scanRes.data : null} onOpen={setOpen} />}
         {tab === "intelligence" && <Intelligence scored={scored} byTicker={byTicker} feedRes={feed} txRes={insider} onOpen={setOpen} />}
-        {tab === "portfolio" && <PortfolioTab scored={scored} byTicker={byTicker} scan={screener.source !== "mock" ? scanRes.data : null} onOpen={setOpen} />}
+        {tab === "portfolio" && <PortfolioTab scored={scored} byTicker={byTicker} scan={screener.source !== "mock" ? scanRes.data : null} analyst={feed.data.items} onOpen={setOpen} />}
       </main>
 
       <footer className="mx-auto max-w-7xl px-4 pb-8 text-xs text-slate-500 sm:px-6">
-        {live ? "Screener data: " + SOURCE_LABEL[src] + ". FVG zones, stops and targets are computed from daily candles by the rules in the methodology panel."
+        {live ? "Screener data: " + SOURCE_LABEL[src] + ". Scores, buy levels and stops are computed from daily charts, analyst estimates and financial statements by the rules in the methodology panel."
           : "Prices, FVG zones, targets, analyst actions and insider trades are illustrative sample data."} Scores are a screening aid, not investment advice.
       </footer>
 

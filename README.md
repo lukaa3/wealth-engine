@@ -1,6 +1,8 @@
 # Wealth & Stock Intelligence Engine
 
-A swing + position stock screener: HTF bullish FVG setups, valuation, analyst consensus and insider flow.
+A multi-factor stock screener and portfolio advisor: momentum & trend, earnings-estimate momentum, quality, valuation,
+smart money (insiders, analysts) and HTF bullish FVG entry timing. Each pick is labeled Swing (1–3 mo), Core (3–12 mo)
+or Long-term (1–3+ yr) with a Low/Medium/High risk tag and a buy-in-thirds plan.
 React + Tailwind CSS v4 + Lucide React, built with Vite, hosted free on **GitHub Pages**.
 
 It always works out of the box on sample data (`src/mockData.js`). Add free API keys and/or a scheduled
@@ -10,9 +12,11 @@ GitHub Action to switch to live data.
 
 Every weekday after the close, the job **scans ~550 stocks** (S&P 500 + Nasdaq-100 extras + popular momentum names,
 see `src/lib/universe.js`) on daily charts from Yahoo's free chart feed (unofficial, no key; it can change or throttle).
-For each one it measures momentum (1-week / 1-month / 3-month returns, volume vs average, distance from the 52-week high)
-and looks for a bullish FVG setup. The best setups plus the biggest movers (`DEEP_N`, default 30) get the **full check**:
-valuation, analyst ratings and targets, insider buying, and the AI take. Everything scanned appears in the site's
+For each one it measures momentum (12-1 month and 6-month, ranked against the whole scan), trend (50/200-day averages),
+volatility and a bullish FVG setup. About 80 stocks (`DEEP_N`) get the **full check** each day: your holdings
+(`HOLDINGS` in `src/lib/universe.js`), the momentum leaders, big movers, live FVG entries and a rotating slice of the rest.
+The full check pulls analyst targets/ratings, EPS estimate revisions, earnings surprises, margins, ROE and cash flow
+(Nasdaq, free), insider buying (Finnhub) and the AI take. Full checks stay on the site for up to 6 days (`KEEP_DAYS`). Everything scanned appears in the site's
 **Market scan** table; fully-checked stocks get a score. Repo variables: `WATCHLIST` (always fully checked),
 `EXTRA_TICKERS` (added to the scan), `DEEP_N`.
 
@@ -102,7 +106,8 @@ job writing data, or history.
 | `src/lib/liveData.js` | Turns API responses into the app's stock / analyst / insider records |
 | `src/lib/ai.js` | AI analyst take (Groq / Gemini, OpenAI-compatible) + rule-based fallback summary |
 | `src/lib/schema.js` | Row mapping for Supabase and the JSON files |
-| `src/scoring.js` | Composite score (Technical 35 / Valuation 35 / Street + Insiders 30) + rebalancing |
+| `src/scoring.js` | Score (Momentum 30 / Earnings 25 / Quality 15 / Valuation 15 / Smart money & setup 15), horizon + risk labels, buy plan, portfolio advice |
+| `src/lib/factors.js` | Chart signals: 12-1 / 6 / 3-month momentum, 50/200-day trend, volatility, RSI, percentile ranks |
 | `scripts/update-screener.mjs` | The background job (`npm run update-data` locally) |
 | `supabase/schema.sql` | Tables + read-only public access |
 | `.github/workflows/deploy.yml` | Scheduled refresh + build + deploy to Pages |

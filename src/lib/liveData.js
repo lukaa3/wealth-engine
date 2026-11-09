@@ -5,6 +5,7 @@
  */
 import { deriveSetup } from "./technicals.js";
 import { mapLimit, simpleDcf } from "./providers.js";
+import { chartFactors } from "./factors.js";
 
 const safe = async (p, errors, label) => {
   if (!p) return null;
@@ -95,6 +96,18 @@ export async function buildLiveStock(ticker, P, base, pre) {
     buyPct,
     analystCount: total || null,
     buyZone: setup ? setup.buyZone : [Math.round(price * 90) / 100, Math.round(price * 97) / 100],
+    // Momentum / trend / risk from the chart, earnings momentum + quality from Nasdaq (see factors.js, parseNasdaq).
+    factors: {
+      ...(chartFactors(daily, price) || {}),
+      epsGrowthNext: nq ? nq.epsGrowthNext : null, turningProfitable: nq ? !!nq.turningProfitable : false,
+      revUp: nq ? nq.revUp : null, revDown: nq ? nq.revDown : null, consensusChange1m: nq ? nq.consensusChange1m : null,
+      surprises: nq ? nq.surprises : null, revenueGrowth: nq ? nq.revenueGrowth : null,
+      grossMargin: nq ? nq.grossMargin : null, opMargin: nq ? nq.opMargin : null, roe: nq ? nq.roe : null,
+      fcfYield: nq && nq.fcf != null && nq.marketCap ? nq.fcf / nq.marketCap : null,
+      netDebtToCap: nq && nq.marketCap && (nq.debt != null || nq.cash != null) ? ((nq.debt || 0) - (nq.cash || 0)) / nq.marketCap : null,
+      marketCap: nq ? nq.marketCap : null,
+    },
+    checkedAt: new Date().toISOString().slice(0, 10),
     // Narrative text isn't in free APIs; generated from the data (sample-universe prose is never mixed into live rows).
     catalysts: [],
     invalidation: [],
@@ -112,6 +125,48 @@ export async function buildLiveStock(ticker, P, base, pre) {
     stock.buyZone[0] ? "Close below the $" + stock.buyZone[0] + " DCA zone low" : "Losing the recent swing low",
   ];
   return stock;
+}
+
+/**
+ * A stock fully checked on an earlier day: keep its fundamentals (they change slowly) but refresh price, setup,
+ * targets and the chart signals from today's candles, so it can stay on the site for a few days.
+ */
+export function refreshFromChart(stock, candles, price) {
+  if (!candles || candles.length < 30 || !price) return null;
+  const setup = deriveSetup({ daily: candles, price, ptConsensus: stock.target12m });
+  const f = chartFactors(candles, price) || {};
+  return {
+    ...stock, price,
+    fvg: setup ? setup.fvg : { tf: null, status: "None", lo: null, hi: null },
+    fib: setup ? setup.fib : null, support: setup ? setup.support : false, stop: setup ? setup.stop : null,
+    target1m: setup ? setup.target1m : Math.round(price * 110) / 100, target6m: setup ? setup.target6m : Math.round(price * 115) / 100,
+    buyZone: setup ? setup.buyZone : stock.buyZone,
+    factors: { ...(stock.factors || {}), ...f },
+    carried: true,
+  };
+}
+
+const BAD_NEWS = /\b(downgrad\w*|cuts? (its )?(guidance|outlook|forecast)|lowers? (guidance|outlook|forecast)|guidance cut|misses|missed|plunge\w*|plummet\w*|tumble\w*|sinks?|slump\w*|lawsuit|sued|probe|investigation|subpoena|SEC charges|fraud|recall\w*|halt\w*|delist\w*|bankrupt\w*|default\w*|layoffs?|resign\w*|short seller|short report|dilution|secondary offering|accounting)\b/i;
+
+/** Recent negative headlines that actually name the company (for portfolio alerts). Uses the cached Finnhub news. */
+export async function buildNewsFlags(tickers, P, { days = 10, names = {}, sinceDays = 30 } = {}) {
+  const out = {};
+  if (!P.finnhub || !P.finnhub.news) return out;
+  const since = new Date(Date.now() - sinceDays * 864e5).toISOString().slice(0, 10); // same window as the analyst feed → cache hit
+  const today = new Date().toISOString().slice(0, 10);
+  const cutoff = Date.now() / 1000 - days * 86400;
+  const lists = await mapLimit(tickers, 3, (t) => P.finnhub.news(t, since, today));
+  lists.forEach((list, i) => {
+    if (!Array.isArray(list)) return;
+    const t = tickers[i], seen = new Set();
+    const flags = list
+      .filter((n) => (n.datetime || 0) >= cutoff && n.headline && mentions(n.headline, t, names[t]) && BAD_NEWS.test(n.headline))
+      .filter((n) => { const k = n.headline.toLowerCase().slice(0, 60); if (seen.has(k)) return false; seen.add(k); return true; })
+      .slice(0, 3)
+      .map((n) => ({ date: new Date(n.datetime * 1000).toISOString().slice(0, 10), headline: n.headline.slice(0, 160), source: n.source || "News", url: n.url || null }));
+    if (flags.length) out[t] = flags;
+  });
+  return out;
 }
 
 export async function buildLiveUniverse(tickers, P, baseByTicker = {}, onProgress, preByTicker = {}) {

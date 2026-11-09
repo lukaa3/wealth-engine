@@ -17,6 +17,9 @@ export const EXTRA_TICKERS = [
   "VST", "OKLO", "SMR", "HIMS", "ALAB", "CRDO", "NBIS", "TEM", "RDDT", "DUOL", "CAVA", "ELF", "TOST", "SOUN", "ACHR",
 ];
 
+/** Stocks Yur owns: always get the full daily check so the Portfolio tab can say buy more / hold / trim / sell. */
+export const HOLDINGS = ["MSFT", "PLTR", "HOOD", "META", "SPCX", "JPM", "AAL", "NOW", "NVDA", "QCOM", "NFLX", "BE", "ONDS", "IREN"];
+
 /**
  * Tickers Yur owns that aren't in the S&P 500 list, plus sector fixes for ones that land in the wrong bucket.
  * [sector, name, fund?] — funds/ETFs are priced every day but never treated as picks.

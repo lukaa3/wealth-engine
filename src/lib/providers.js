@@ -225,17 +225,22 @@ export function createProviders(keys, opts = {}) {
   const nasdaq = opts.nasdaq && {
     /** → flat fields (see parseNasdaq); null when Nasdaq has nothing for the ticker. */
     fundamentals: async (t) => {
-      const ck = "nq:f:" + t;
+      const ck = "nq:f2:" + t;
       const hit = cache.get(ck);
       if (hit !== undefined) return hit;
       const s = encodeURIComponent(dash(t));
-      const [tp, peg, sum, fin] = await Promise.all([
-        nqGet(`analyst/${s}/targetprice`, "nqraw:tp:" + t),
-        nqGet(`analyst/${s}/peg-ratio`, "nqraw:peg:" + t),
-        nqGet(`quote/${s}/summary?assetclass=stocks`, "nqraw:sum:" + t),
-        nqGet(`company/${s}/financials?frequency=1`, "nqraw:fin:" + t),
+      const soft = (p) => p.catch(() => null); // one missing page shouldn't sink the rest
+      const [tp, peg, sum, fin, fc, em, es] = await Promise.all([
+        soft(nqGet(`analyst/${s}/targetprice`, "nqraw:tp:" + t)),
+        soft(nqGet(`analyst/${s}/peg-ratio`, "nqraw:peg:" + t)),
+        soft(nqGet(`quote/${s}/summary?assetclass=stocks`, "nqraw:sum:" + t)),
+        soft(nqGet(`company/${s}/financials?frequency=1`, "nqraw:fin:" + t)),
+        soft(nqGet(`analyst/${s}/earnings-forecast`, "nqraw:fc:" + t)),
+        soft(nqGet(`analyst/${s}/estimate-momentum`, "nqraw:em:" + t)),
+        soft(nqGet(`company/${s}/earnings-surprise`, "nqraw:es:" + t)),
       ]);
-      const out = !tp && !peg && !sum && !fin ? null : parseNasdaq({ tp, peg, sum, fin });
+      if (!tp && !peg && !sum && !fin && !fc) throw new ProviderError("nasdaq: no data (all pages failed or empty)");
+      const out = parseNasdaq({ tp, peg, sum, fin, fc, em, es });
       cache.set(ck, out, fTtl);
       return out;
     },
@@ -268,8 +273,12 @@ export function nqNum(x) {
   return isFinite(n) ? n : null;
 }
 
-/** Nasdaq responses → { target, targetLow, targetHigh, counts, peg, forwardPE, growth, marketCap, fcf, cash, debt, revenueGrowth, sector }. */
-export function parseNasdaq({ tp, peg, sum, fin }) {
+/**
+ * Nasdaq responses → flat fields: price target + buy/hold/sell counts, PEG, forward P/E, market cap, cash flow,
+ * plus earnings momentum (EPS estimate raises vs cuts in the last 4 weeks, 1-month consensus change, expected EPS growth,
+ * last 4 quarterly surprises) and quality (margins, return on equity).
+ */
+export function parseNasdaq({ tp, peg, sum, fin, fc, em, es }) {
   const co = tp && tp.consensusOverview;
   const counts = co && (co.buy || co.hold || co.sell) ? { strongBuy: 0, buy: co.buy || 0, hold: co.hold || 0, sell: co.sell || 0, strongSell: 0 } : null;
   const pegV = peg && peg.pegr ? nqNum(peg.pegr.pegValue) : null;
@@ -285,7 +294,23 @@ export function parseNasdaq({ tp, peg, sum, fin }) {
   const k = (x) => (x == null ? null : x * 1000);
   const ocf = row("cashFlowTable", "Net Cash Flow-Operating"), capex = row("cashFlowTable", "Capital Expenditures");
   const rev = row("incomeStatementTable", "Total Revenue"), revPrev = row("incomeStatementTable", "Total Revenue", "value3");
+  // Earnings estimates: yearly rows = current fiscal year, next, …
+  const yr = (fc && fc.yearlyForecast && fc.yearlyForecast.rows) || [];
+  const eps0 = yr[0] ? nqNum(yr[0].consensusEPSForecast) : null, eps1 = yr[1] ? nqNum(yr[1].consensusEPSForecast) : null;
+  const revUp = yr.slice(0, 2).reduce((a, r) => a + (nqNum(r.up) || 0), 0), revDown = yr.slice(0, 2).reduce((a, r) => a + (nqNum(r.down) || 0), 0);
+  const cc = em && em.changeInConsensus;
+  const yrNow = cc && cc.currentData ? nqNum(cc.currentData.yrMean) : null, yrMonth = cc && cc.monthData ? nqNum(cc.monthData.yrMean) : null;
+  const surprises = ((es && es.earningsSurpriseTable && es.earningsSurpriseTable.rows) || []).slice(0, 4)
+    .map((r) => nqNum(r.percentageSurprise)).filter((x) => x != null).map((x) => x / 100);
+  const ratio = (label) => { const r = row("financialRatiosTable", label); return r == null ? null : r / 100; };
   return {
+    epsThisYear: eps0, epsNextYear: eps1,
+    epsGrowthNext: eps0 != null && eps1 != null && eps0 > 0 ? eps1 / eps0 - 1 : null,
+    turningProfitable: eps0 != null && eps1 != null && eps0 <= 0 && eps1 > eps0,
+    revUp: fc ? revUp : null, revDown: fc ? revDown : null,
+    consensusChange1m: yrNow != null && yrMonth ? (yrNow - yrMonth) / Math.abs(yrMonth) : null,
+    surprises: surprises.length ? surprises : null,
+    grossMargin: ratio("Gross Margin"), opMargin: ratio("Operating Margin"), profitMargin: ratio("Profit Margin"), roe: ratio("After Tax ROE"),
     target: co ? nqNum(co.priceTarget) : nqNum(sd.OneYrTarget && sd.OneYrTarget.value),
     targetLow: co ? nqNum(co.lowPriceTarget) : null, targetHigh: co ? nqNum(co.highPriceTarget) : null,
     counts,

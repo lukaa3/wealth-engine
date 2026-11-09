@@ -36,7 +36,11 @@ create table if not exists public.screener_metrics (
 );
 alter table public.screener_metrics add column if not exists ai_take jsonb;
 alter table public.screener_metrics add column if not exists dcf_nm boolean default false; -- negative free cash flow
-alter table public.screener_metrics add column if not exists dcf_na text;          -- why the DCF was left out
+alter table public.screener_metrics add column if not exists dcf_na text;
+alter table public.screener_metrics add column if not exists factors jsonb;          -- momentum / earnings / quality numbers
+alter table public.screener_metrics add column if not exists news_flags jsonb;
+alter table public.screener_metrics add column if not exists checked_at date;
+alter table public.screener_metrics add column if not exists carried boolean default false;          -- why the DCF was left out
 alter table public.screener_metrics add column if not exists stale_fields jsonb; -- { field: "YYYY-MM-DD" } values carried from an earlier run
 
 create table if not exists public.analyst_actions (
