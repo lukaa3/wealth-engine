@@ -9,6 +9,9 @@ on:
       top:
         description: "Stocks held each month"
         default: "20"
+      universe:
+        description: "sp500 (no hand-picked extras = less hindsight) or all"
+        default: "sp500"
 permissions:
   contents: write
 concurrency:
@@ -27,6 +30,7 @@ jobs:
         env:
           BT_YEARS: ${{ inputs.years }}
           BT_TOP: ${{ inputs.top }}
+          BT_UNIVERSE: ${{ inputs.universe }}
       - name: Save results
         run: |
           git config user.name "github-actions[bot]"

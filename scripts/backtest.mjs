@@ -54,9 +54,11 @@ async function history(t) {
   throw new Error("rate limited");
 }
 
-const universe = (await loadUniverse({ fallback: [] })).filter((u) => !u.fund || u.ticker === "SPY");
+// BT_UNIVERSE=sp500 drops the hand-picked extras (many were added *because* they had already soared = hindsight).
+const SP_ONLY = env.BT_UNIVERSE === "sp500";
+const universe = (await loadUniverse({ fallback: [], extras: !SP_ONLY })).filter((u) => !u.fund || u.ticker === "SPY");
 if (!universe.find((u) => u.ticker === "SPY")) universe.push({ ticker: "SPY", name: "SPY", sector: "Index Funds", fund: true });
-console.log(`Backtest: ${universe.length} tickers, ${YEARS} years, top ${TOP}, cost ${COST * 100}% per side`);
+console.log(`Backtest (${SP_ONLY ? "S&P 500 only" : "S&P 500 + extras"}): ${universe.length} tickers, ${YEARS} years, top ${TOP}, cost ${COST * 100}% per side`);
 const data = {};
 let failed = 0;
 for (const u of universe) {
@@ -170,6 +172,22 @@ results["Site score, rebalance every 3 months"] = simulate(STRATS["Site momentum
 results["Site score, top 10"] = simulate(STRATS["Site momentum & trend score"], 10);
 results["Site score, top 40"] = simulate(STRATS["Site momentum & trend score"], 40);
 
+// Same tests on each half of the period, to see if the edge is steady or came from one stretch.
+const all = snapshots.slice();
+const halves = {};
+for (const [label, part] of [["first half", all.slice(0, Math.floor(all.length / 2))], ["second half", all.slice(Math.floor(all.length / 2))]]) {
+  snapshots.length = 0; snapshots.push(...part);
+  halves[label] = { period: [part[0].date, part[part.length - 1].date], results: {
+    "SPY (buy and hold)": benchmark((s) => s.spyRet),
+    "Equal-weight all stocks": benchmark((s) => mean(s.rows.map((r) => r.ret1).filter((x) => x != null))),
+    "Site momentum & trend score": simulate(STRATS["Site momentum & trend score"]),
+    "Site score, rebalance every 3 months": simulate(STRATS["Site momentum & trend score"], TOP, 3),
+    "Score + FVG timing": simulate(STRATS["Score + FVG timing"]),
+    "FVG only (old method)": simulate(STRATS["FVG only (old method)"]),
+  } };
+}
+snapshots.length = 0; snapshots.push(...all);
+
 /* ---------------- 4. Does a higher score mean higher returns? ---------------- */
 function quintiles(key, fwdKey) {
   const buckets = [[], [], [], [], []];
@@ -205,7 +223,8 @@ const above = (flag) => { const v = []; snapshots.forEach((s) => { const g = s.r
 const out = {
   generatedAt: new Date().toISOString(), years: YEARS, top: TOP, costPerSide: COST,
   period: [snapshots[0].date, snapshots[snapshots.length - 1].date], months: snapshots.length, tickers: Object.keys(data).length - 1,
-  results,
+  universe: SP_ONLY ? "sp500" : "sp500+extras",
+  results, halves,
   quintiles: {
     note: "Average forward return by score quintile (Q1 = lowest score, Q5 = highest), averaged over all months",
     momScore_1m: quintiles("momScore", "ret1"), momScore_3m: quintiles("momScore", "fwd3"), momScore_6m: quintiles("momScore", "fwd6"),
@@ -225,6 +244,10 @@ fs.writeFileSync(OUT, JSON.stringify(out));
 const pct = (x) => (x == null ? "  n/a" : ((x * 100).toFixed(1) + "%").padStart(7));
 console.log("\nStrategy".padEnd(52) + "  CAGR   Total   MaxDD     Vol  Sharpe  Beat SPY");
 for (const [k, v] of Object.entries(results)) console.log(k.padEnd(50) + pct(v.cagr) + pct(v.total).padStart(9) + pct(v.maxDD) + pct(v.vol) + String(v.sharpe).padStart(7) + pct(v.beatSpy));
+for (const [h, v] of Object.entries(halves)) {
+  console.log(`\n${h} (${v.period[0]} → ${v.period[1]})`);
+  for (const [k, x] of Object.entries(v.results)) console.log("  " + k.padEnd(48) + pct(x.cagr) + pct(x.maxDD) + String(x.sharpe).padStart(7));
+}
 console.log("\nScore quintiles (Q1 low → Q5 high), next 1 / 3 / 6 months:");
 console.log(" 1m", out.quintiles.momScore_1m.map(pct).join(" "));
 console.log(" 3m", out.quintiles.momScore_3m.map(pct).join(" "));

@@ -58,7 +58,7 @@ function parseCsv(text) {
 }
 
 /** Returns [{ ticker, name, sector }] — never throws; falls back to the extras + fallback list. */
-export async function loadUniverse({ fetchImpl = fetch, extra = [], fallback = [] } = {}) {
+export async function loadUniverse({ fetchImpl = fetch, extra = [], fallback = [], extras = true } = {}) {
   const out = new Map();
   try {
     const res = await fetchImpl(SP500_CSV);
@@ -70,7 +70,7 @@ export async function loadUniverse({ fetchImpl = fetch, extra = [], fallback = [
   } catch (e) {
     console.warn("S&P 500 list unavailable (" + e.message + "); using the built-in list only.");
   }
-  for (const t of [...EXTRA_TICKERS, ...Object.keys(KNOWN), ...extra, ...fallback.map((f) => f.ticker || f)]) {
+  for (const t of [...(extras ? [...EXTRA_TICKERS, ...Object.keys(KNOWN)] : ["SPY"]), ...extra, ...fallback.map((f) => f.ticker || f)]) {
     const k = String(t).trim().toUpperCase();
     if (k && !out.has(k)) {
       const fb = fallback.find((f) => f.ticker === k);
