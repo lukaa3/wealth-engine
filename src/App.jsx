@@ -1,15 +1,17 @@
 /**
  * App.jsx — Wealth & Stock Intelligence Engine (UI): multi-factor stock picks (swing / core / long-term), portfolio advisor.
  */
-import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import * as LucideIcons from "lucide-react";
 import { SECTORS, SECTOR_COLORS, SOURCE_URLS, insiderSourceUrl } from "./mockData.js";
-import { LIMITS, FACTORS, HORIZON_INFO, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio } from "./scoring.js";
+import { LIMITS, FACTORS, HORIZON_INFO, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio, suggestedSize, planNewMoney } from "./scoring.js";
 import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
 import { ruleSummary } from "./lib/ai.js";
 
 const L = LIMITS;
+/** Your portfolio's total value, so buy plans can say "about $X" instead of only "% of portfolio". */
+const PortfolioValue = createContext(0);
 
 /* ================================ Icons ================================ */
 function Icon({ name, size = 16, className = "" }) {
@@ -139,22 +141,29 @@ function FitBars({ s }) {
 
 /** The plan in plain words: buy in thirds at real price levels, where the idea is wrong, where to take profit. */
 function BuyPlanBox({ s }) {
+  const total = useContext(PortfolioValue);
   const bp = s.buyPlan;
   if (!bp) return null;
   const h = HORIZON_INFO[s.horizon] || HORIZON_INFO.core;
+  const size = suggestedSize(s, total);
   return (
     <div className="rounded-lg bg-slate-900/60 p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-400"><Icon name="ListChecks" size={12} />How to buy · {h.label.toLowerCase()} hold</span>
         {s.plan.status === "live" && <span className="rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-slate-900" title={"FVG " + px(s.fvg.lo) + "–" + px(s.fvg.hi) + ", reward:risk " + s.plan.rr.toFixed(1) + ":1"}>FVG entry live</span>}
       </div>
+      <p className="mt-1.5 text-xs text-slate-300">
+        <span className="font-semibold text-white">Position size: {Math.round(size.pct * 100)}% of your portfolio</span>
+        {size.amount ? <> (about <span className="font-semibold text-white">{usd(size.amount)}</span> in total, first buy ~{usd(size.amount * bp.steps[0].part)})</> : " (add your holdings in the Portfolio tab to see dollars)"}
+        <span className="text-slate-500"> · {s.risk} risk{s.composite >= L.HIGH_CONVICTION ? " · Top pick" : ""}</span>
+      </p>
       {bp.note && <p className="mt-1.5 flex gap-1.5 text-xs text-amber-300"><Icon name="Hourglass" size={13} className="mt-0.5 shrink-0" />{bp.note}</p>}
       <ol className="mt-2 space-y-1">
         {bp.steps.map((x, i) => (
           <li key={i} className="grid grid-cols-[2.25rem_5.5rem_1fr] items-baseline gap-2 text-sm">
             <span className="text-xs font-semibold text-slate-400">{x.share}</span>
             <span className={"font-semibold tabular-nums " + (x.when === "now" ? "text-emerald-300" : "text-slate-100")}>{x.when === "now" ? "Now" : "at " + px(x.price)}</span>
-            <span className="truncate text-xs text-slate-400">{x.when === "now" ? "~" + px(x.price) + " · " : ""}{x.why}</span>
+            <span className="truncate text-xs text-slate-400">{size.amount ? usd(size.amount * x.part) + " · " : ""}{x.when === "now" ? "~" + px(x.price) + " · " : ""}{x.why}</span>
           </li>
         ))}
       </ol>
@@ -301,11 +310,11 @@ function InvestmentCard({ s, onOpen }) {
 function Methodology() {
   const [open, setOpen] = useState(false);
   const rows = [
-    ["30", "Momentum & trend", "The strongest-proven signal for the next 3–12 months: stocks that went up the most over the past year (skipping the last month) tend to keep going. Ranked against ~550 stocks, plus 6-month momentum, strength vs the S&P 500, and trend (above the 200-day average, 50-day above 200-day, near highs)."],
+    ["34", "Momentum & trend", "The strongest-proven signal for the next 3–12 months, and the one our 10-year backtest confirmed: stocks that went up the most over the past year (skipping the last month) tend to keep going. Ranked against ~550 stocks, plus 6-month momentum, strength vs the S&P 500, and trend (above the 200-day average, 50-day above 200-day)."],
     ["25", "Earnings momentum", "Prices follow earnings. Analysts raising their EPS estimates (last 4 weeks), the 1-month change in the consensus, expected EPS growth next year, and beating estimates in recent quarters."],
     ["15", "Quality", "Profitable, efficient companies hold up better when markets drop: operating margin, return on equity, free cash flow, and not too much debt."],
     ["15", "Valuation", "Don't overpay for growth: PEG ratio, forward P/E vs the sector, and a rough cash-flow DCF (skipped for banks)."],
-    ["15", "Smart money & setup", "Insider buying, analyst consensus and price target (weak signals on their own, so small weight), and the HTF bullish FVG, used mainly to time the entry."],
+    ["11", "Smart money & setup", "Insider buying, analyst consensus and price target (weak signals on their own, so small weight). The HTF bullish FVG is worth only 2 points: in the backtest it didn't predict returns, so it's used for buy levels, not for picking."],
   ];
   return (
     <Card className="overflow-hidden">
@@ -324,7 +333,9 @@ function Methodology() {
           <div className="space-y-1.5 rounded-lg bg-slate-900/50 p-3 text-sm text-slate-400">
             <div><span className="font-medium text-slate-200">Horizon label:</span> each stock gets a fit score for <span className="text-slate-200">Swing (1–3 months)</span>: short-term strength, estimate raises and a live entry; <span className="text-slate-200">Core (3–12 months)</span>: the overall score; and <span className="text-slate-200">Long-term (1–3+ years)</span>: quality, growth and fair price. It's labeled with the best fit.</div>
             <div><span className="font-medium text-slate-200">Risk:</span> High = big price swings, losing money, small company or under $5. Low = calm, profitable. Being young, a mix with some High-risk names is fine; keep each one small.</div>
-            <div><span className="font-medium text-slate-200">How to buy:</span> buy in thirds at real support levels below the price (FVG, 50-day average, pullback levels, 200-day average). If the stock is stretched far above its 50-day, wait for the first level instead of chasing. The stop is where the idea is wrong.</div>
+            <div><span className="font-medium text-slate-200">How to buy:</span> buy in thirds at real support levels below the price (FVG, 50-day average, pullback levels, 200-day average). If the stock is stretched far above its 50-day, start with a smaller first piece (1/5): in the backtest, waiting cost more than it saved. The stop is where the idea is wrong.</div>
+            <div><span className="font-medium text-slate-200">How much:</span> keep about half your money in index funds. Each pick gets 8% of your portfolio if Low risk, 5% Medium, 3% High, and 25% more for Top picks (max 10%), so no single stock can sink you. Check picks about every 3 months.</div>
+            <div><span className="font-medium text-slate-200">Backtest (2016–2026, S&amp;P 500, top 20 monthly):</span> the momentum & trend score made about 32%/yr vs 15% for SPY and 17% for all stocks equally, in both 5-year halves. FVG setups added nothing to picking. Real results will be lower: the test only includes today's index members, so it misses companies that collapsed. Earnings, quality and valuation couldn't be tested (no free history).</div>
           </div>
           <p className="text-xs text-slate-500">Score ≥ {L.HIGH_CONVICTION} = Top pick · {L.RECOMMEND}–{L.HIGH_CONVICTION - 1} = Recommended · {L.WATCH}–{L.RECOMMEND - 1} = Watchlist. A number we couldn't get counts as neutral (half credit) and the card says "Partial data". No method guarantees profits; this one leans on the signals with the best long-run track record.</p>
           <p className="text-xs text-slate-500">Every weekday the job scans ~550 stocks (S&amp;P 500, Nasdaq-100, popular momentum names), then fully checks about 80: your holdings, the momentum leaders, big movers, live FVG entries and a rotating slice of everything else. Full checks stay on the site for up to 6 days.</p>
@@ -345,7 +356,7 @@ function WatchRow({ s, onOpen }) {
       <td className="px-3 py-2.5 text-xs text-slate-300">{h.label}</td>
       <td className="px-3 py-2.5 text-xs"><span className={"rounded px-1.5 py-0.5 ring-1 " + RISK_STYLE[s.risk]}>{s.risk}</span></td>
       <td className={"px-3 py-2.5 text-right tabular-nums " + tone(s.factors && s.factors.mom12_1)}>{spct(s.factors && s.factors.mom12_1, 0)}</td>
-      <td className="px-3 py-2.5 text-xs text-slate-300">{first ? (first.when === "now" ? "Buy now" : "Wait for " + px(first.price)) : "—"}</td>
+      <td className="px-3 py-2.5 text-xs text-slate-300">{first ? (s.buyPlan.hot ? "Small starter now" : "Buy 1/3 now") : "—"}</td>
     </tr>
   );
 }
@@ -436,7 +447,7 @@ function Picks({ scored, byTicker, scan, onOpen }) {
   const mid = order(scored.filter((s) => s.composite >= L.RECOMMEND && s.composite < L.HIGH_CONVICTION && fits(s)));
   const watch = order(scored.filter((s) => s.composite >= L.WATCH && s.composite < L.RECOMMEND && fits(s)));
   const n = (h) => qualified.filter((s) => s.horizon === h).length;
-  const buyNow = qualified.filter((s) => s.buyPlan && s.buyPlan.steps[0].when === "now").length;
+  const buyNow = qualified.filter((s) => s.buyPlan && !s.buyPlan.hot).length;
 
   return (
     <div className="space-y-6">
@@ -862,6 +873,7 @@ function AdviceFeed({ a, onOpen }) {
         <h3 className="flex items-center gap-2 text-sm font-semibold text-white"><Icon name="ClipboardList" size={15} className="text-indigo-300" />What to do now</h3>
         <span className="text-xs text-slate-400">{Object.entries(a.counts).map(([k, v]) => v + " " + k.toLowerCase()).join(" · ")}</span>
       </div>
+      <p className="mt-1 text-xs text-slate-500">Act on Sell and Trim when they show up. Otherwise check in about once a month, and swap picks about every 3 months; in the backtest, holding ~3 months worked as well as trading monthly, with less trading.</p>
       {a.feed.length === 0 && <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-300"><Icon name="CircleCheck" size={16} />Nothing to do: every holding is a hold and the mix is balanced.</div>}
       <div className="mt-3 space-y-2.5">
         {adv.map((f) => {
@@ -897,7 +909,7 @@ function AdviceFeed({ a, onOpen }) {
                 <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><Icon name="Lightbulb" size={15} />Idea: {f.stock.ticker}{f.light ? " (you're light in " + f.sector + ")" : ""}</div>
                 <button type="button" onClick={() => onOpen(f.stock.ticker)} className="flex items-center gap-2 rounded-md bg-slate-900/60 px-2 py-1 text-sm font-semibold text-white ring-1 ring-slate-700 hover:ring-indigo-500">{f.stock.ticker}<ScoreBadge score={f.stock.composite} size="sm" /></button>
               </div>
-              <p className="mt-1 text-sm text-slate-300">{f.stock.name}: {(HORIZON_INFO[f.stock.horizon] || HORIZON_INFO.core).label.toLowerCase()} pick, {f.stock.risk.toLowerCase()} risk. {f.stock.buyPlan ? (f.stock.buyPlan.steps[0].when === "now" ? "Buyable now; " : "Wait for " + px(f.stock.buyPlan.steps[0].price) + "; ") + "stop " + px(f.stock.buyPlan.stop) + "." : ""}</p>
+              <p className="mt-1 text-sm text-slate-300">{f.stock.name}: {(HORIZON_INFO[f.stock.horizon] || HORIZON_INFO.core).label.toLowerCase()} pick, {f.stock.risk.toLowerCase()} risk. {f.stock.buyPlan ? (f.stock.buyPlan.hot ? "Stretched: start small; " : "Buyable now; ") + "stop " + px(f.stock.buyPlan.stop) + "." : ""}</p>
             </div>
           );
         })}
@@ -1002,10 +1014,45 @@ function SyncCard({ sync }) {
   );
 }
 
-function PortfolioTab({ scored, byTicker, scan, analyst, onOpen }) {
-  const { holdings, addHolding, updateHolding, deleteHolding, resetPortfolio, sync } = usePortfolio();
-  const priceBook = useMemo(() => Object.fromEntries(((scan && scan.items) || []).map((r) => [r.ticker, r])), [scan]);
-  const a = useMemo(() => analyzePortfolio(holdings, byTicker, SECTORS, SECTOR_COLORS, priceBook, { analyst }), [holdings, byTicker, priceBook, analyst]);
+/** "I have $X to invest": what to buy now, sized to the portfolio. */
+function NewMoneyPlanner({ a, scored, onOpen }) {
+  const [raw, setRaw] = useState("");
+  const cash = Number(String(raw).replace(/[^0-9.]/g, "")) || 0;
+  const plan = useMemo(() => planNewMoney(cash, a, scored), [cash, a, scored]);
+  return (
+    <Card className="p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-white"><Icon name="Wallet" size={15} className="text-emerald-300" />Have money to invest?</h3>
+        <label className="flex items-center gap-2 text-sm text-slate-300">
+          <span>Amount</span>
+          <span className="relative"><span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500">$</span>
+            <input inputMode="decimal" value={raw} onChange={(e) => setRaw(e.target.value)} placeholder="200" aria-label="Amount to invest"
+              className="w-28 rounded-lg border border-slate-600 bg-slate-900 py-1.5 pl-6 pr-2 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400 focus:outline-none" /></span>
+        </label>
+      </div>
+      {cash <= 0 ? (
+        <p className="mt-2 text-sm text-slate-400">Type an amount and I'll split it: about half tops up your index funds (until they're ~50% of your money), the rest goes into the first buy of the best picks, sized by risk.</p>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {plan.items.map((x) => (
+            <div key={x.ticker + x.kind} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-lg bg-slate-900/50 px-3 py-2">
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-semibold tabular-nums text-emerald-300">{usd(x.amount)}</span>
+                <button type="button" onClick={() => x.stock && onOpen(x.ticker)} className="text-sm font-semibold text-white hover:text-indigo-200">{x.ticker}</button>
+                <span className="text-xs text-slate-400">{x.kind === "core" ? "index-fund core" : x.kind === "add" ? "add to your position" : "new position"}</span>
+              </div>
+              <div className="text-xs text-slate-400">{x.kind === "core" ? x.why : "Target " + usd(x.target) + " (" + Math.round(x.pct * 100) + "%) · score " + x.stock.composite + " · " + x.stock.risk.toLowerCase() + " risk" + (x.later.length ? " · next buys at " + x.later.map(px).join(", ") : "")}</div>
+            </div>
+          ))}
+          <p className="text-xs text-slate-500">Each pick gets its first piece now; the rest of its target comes later at the listed prices or from future money. Fractional shares are fine.</p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen }) {
+  const { addHolding, updateHolding, deleteHolding, resetPortfolio, sync } = pf;
   const rows = a.rows.slice().sort((x, y) => ((x.advice ? x.advice.rank : 9) - (y.advice ? y.advice.rank : 9)) || y.value - x.value);
   return (
     <div className="space-y-5">
@@ -1018,6 +1065,7 @@ function PortfolioTab({ scored, byTicker, scan, analyst, onOpen }) {
       </div>
       <HoldingForm byTicker={byTicker} scored={scored} priceBook={priceBook} onAdd={addHolding} />
       <SyncCard sync={sync} />
+      <NewMoneyPlanner a={a} scored={scored} onOpen={onOpen} />
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
         <AllocationChart sectors={a.sectors} total={a.total} />
         <AdviceFeed a={a} onOpen={onOpen} />
@@ -1234,6 +1282,10 @@ export default function App() {
 
   const scored = useMemo(() => scoreUniverse(screener.data.stocks, screener.data.sectorPE, insider.data.items), [screener.data, insider.data]);
   const byTicker = useMemo(() => Object.fromEntries(scored.map((s) => [s.ticker, s])), [scored]);
+  const pf = usePortfolio();
+  const scanLive = screener.source !== "mock" ? scanRes.data : null;
+  const priceBook = useMemo(() => Object.fromEntries(((scanLive && scanLive.items) || []).map((r) => [r.ticker, r])), [scanLive]);
+  const analysis = useMemo(() => analyzePortfolio(pf.holdings, byTicker, SECTORS, SECTOR_COLORS, priceBook, { analyst: feed.data.items }), [pf.holdings, byTicker, priceBook, feed.data]);
 
   useEffect(() => {
     const f = () => setTab(tabFromHash());
@@ -1250,6 +1302,7 @@ export default function App() {
     : SOURCE_LABEL[src] + (live && screener.data.asOf ? " · " + fmtDate(screener.data.asOf) : "");
 
   return (
+    <PortfolioValue.Provider value={analysis.total}>
     <div className="min-h-screen bg-slate-900 text-slate-100">
       <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/90 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -1295,7 +1348,7 @@ export default function App() {
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {tab === "picks" && <Picks scored={scored} byTicker={byTicker} scan={screener.source !== "mock" ? scanRes.data : null} onOpen={setOpen} />}
         {tab === "intelligence" && <Intelligence scored={scored} byTicker={byTicker} feedRes={feed} txRes={insider} onOpen={setOpen} />}
-        {tab === "portfolio" && <PortfolioTab scored={scored} byTicker={byTicker} scan={screener.source !== "mock" ? scanRes.data : null} analyst={feed.data.items} onOpen={setOpen} />}
+        {tab === "portfolio" && <PortfolioTab scored={scored} byTicker={byTicker} priceBook={priceBook} pf={pf} a={analysis} onOpen={setOpen} />}
       </main>
 
       <footer className="mx-auto max-w-7xl px-4 pb-8 text-xs text-slate-500 sm:px-6">
@@ -1307,5 +1360,6 @@ export default function App() {
       {drawer && <SettingsDrawer settings={settings} status={{ screener, feed, insider }} onClose={closeDrawer}
         onSave={(next) => { setSettings({ ...next }); setDrawer(false); }} />}
     </div>
+    </PortfolioValue.Provider>
   );
 }

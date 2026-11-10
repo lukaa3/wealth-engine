@@ -3,11 +3,13 @@
  *
  * What drives the score (and why): these are the signals with the strongest real-world record for returns
  * over the next few months to few years — not one indicator, but agreement across several:
- *   Momentum & trend      30  12-1 month momentum rank, 6-month rank, strength vs the S&P 500, 200/50-day trend, near highs
+ *   Momentum & trend      34  12-1 month momentum rank, 6-month rank, strength vs the S&P 500, 200/50-day trend
  *   Earnings momentum     25  analysts raising vs cutting EPS estimates (4 wks), consensus change, expected EPS growth, beats
  *   Quality               15  operating margin, return on equity, free cash flow, balance sheet
  *   Valuation             15  PEG, forward P/E vs sector, cash-flow DCF (sanity-checked)
- *   Smart money & setup   15  insider buying, analyst consensus + target, and the HTF FVG entry (timing)
+ *   Smart money & setup   11  insider buying, analyst consensus + target, and the HTF FVG (2 pts — timing only)
+ * Weights were checked with a 10-year backtest (scripts/backtest.mjs): 12-1 momentum carried the edge; FVG setups
+ * and "near the 52-week high" showed no predictive power, so they barely count.
  * A metric we couldn't get counts as neutral (half credit) and the stock is tagged "partial data".
  * Insider *buying* earns points; routine selling doesn't cost any.
  */
@@ -26,11 +28,11 @@ export const LIMITS = {
 };
 
 export const FACTORS = [
-  { k: "momentum", label: "Momentum & trend", icon: "TrendingUp", max: 30 },
+  { k: "momentum", label: "Momentum & trend", icon: "TrendingUp", max: 34 },
   { k: "earnings", label: "Earnings momentum", icon: "Activity", max: 25 },
   { k: "quality", label: "Quality", icon: "ShieldCheck", max: 15 },
   { k: "value", label: "Valuation", icon: "Scale", max: 15 },
-  { k: "smart", label: "Smart money & setup", icon: "Crosshair", max: 15 },
+  { k: "smart", label: "Smart money & setup", icon: "Crosshair", max: 11 },
 ];
 
 export const HORIZON_INFO = {
@@ -49,7 +51,7 @@ const pc = (x) => (!isNum(x) ? "n/a" : Math.round(x * 100) + "%");
 const rel = (a, b) => (a == null || b == null || !b ? null : (a - b) / b);
 const money = (x) => (x < 0 ? "-$" : "$") + (Math.abs(x) >= 1e6 ? (Math.abs(x) / 1e6).toFixed(1) + "M" : Math.round(Math.abs(x) / 1e3) + "K");
 const dollars = (x) => (!isNum(x) ? "n/a" : "$" + (x >= 100 ? Math.round(x).toLocaleString("en-US") : x.toFixed(2)));
-const FVG_SETUP = { "Weekly|Rejected": 6, "Daily|Rejected": 5, "Weekly|Testing": 3, "Daily|Testing": 3 };
+const FVG_SETUP = { "Weekly|Rejected": 2, "Daily|Rejected": 1.5, "Weekly|Testing": 1, "Daily|Testing": 1 };
 
 /** Net open-market insider $ flow per ticker over the 90-day window. */
 export function insiderNetByTicker(transactions) {
@@ -104,9 +106,9 @@ export function buyPlan(s, horizon = "core") {
 
   const ext = isNum(f.ext50) ? f.ext50 : 0;
   const hot = ext > 0.15 || (f.rsi14 != null && f.rsi14 >= 75);
-  const steps = [];
-  if (!hot) steps.push({ when: "now", price: p, why: levels[0] && levels[0].v >= p * 0.97 ? "just above the " + levels[0].why : "trend is healthy, start the position" });
-  let last = hot ? p : p;
+  // Backtest: skipping stretched leaders cost returns (strong stocks kept going), so even then start small now.
+  const steps = [{ when: "now", price: p, why: hot ? "small starter: strong stocks often keep running" : levels[0] && levels[0].v >= p * 0.97 ? "just above the " + levels[0].why : "trend is healthy, start the position" }];
+  let last = p;
   for (const l of levels) {
     if (steps.length >= 3) break;
     if (l.v <= last * 0.97) { steps.push({ when: "at", price: r2(l.v), why: l.why }); last = l.v; }
@@ -124,10 +126,11 @@ export function buyPlan(s, horizon = "core") {
       ? { price: s.target12m, text: (s.target12m ? "Street target " + dollars(s.target12m) + " (" + sp(rel(s.target12m, p)) + "). " : "") + "Hold while the trend and earnings stay strong; trim if it grows past 20% of your portfolio" }
       : { price: s.target6m, text: "First target " + dollars(s.target6m) + " (" + sp(rel(s.target6m, p)) + "); trim a quarter if it runs 25%+ above its 50-day average" };
 
+  const shares = hot ? [0.2, 0.4, 0.4] : [1 / 3, 1 / 3, 1 / 3];
   return {
-    steps: steps.map((x) => ({ ...x, share: "1/3" })),
+    steps: steps.map((x, i) => ({ ...x, part: shares[i], share: hot ? ["1/5", "2/5", "2/5"][i] : "1/3" })),
     stop, stopPct: rel(stop, p), take, hot, ext,
-    note: hot ? "Stretched " + sp(ext) + " above its 50-day average" + (f.rsi14 >= 75 ? " (RSI " + f.rsi14 + ")" : "") + ": don't chase, wait for the first level." : null,
+    note: hot ? "Stretched " + sp(ext) + " above its 50-day average" + (f.rsi14 >= 75 ? " (RSI " + f.rsi14 + ")" : "") + ": start with a small piece now, add the rest on pullbacks." : null,
   };
 }
 
@@ -155,13 +158,13 @@ export function scoreStock(s, sectorPE, insider) {
   const partial = [];
   const miss = (label, half) => (partial.push(label), half);
 
-  // Momentum & trend — 30
-  const m12 = isNum(f.momRank12) ? 10 * f.momRank12 : isNum(f.mom12_1) ? lin(f.mom12_1, -0.1, 0.6, 10) : miss("12-month momentum", 5);
+  // Momentum & trend — 34
+  const m12 = isNum(f.momRank12) ? 16 * f.momRank12 : isNum(f.mom12_1) ? lin(f.mom12_1, -0.1, 0.6, 16) : miss("12-month momentum", 8);
   const m6 = isNum(f.momRank6) ? 6 * f.momRank6 : isNum(f.mom6) ? lin(f.mom6, -0.05, 0.35, 6) : miss("6-month momentum", 3);
   const rs = isNum(f.rs3) ? lin(f.rs3, -0.05, 0.1, 4) : isNum(f.mom3) ? lin(f.mom3, -0.03, 0.15, 4) : miss("relative strength", 2);
   const tr200 = f.above200 == null ? miss("200-day trend", 2) : f.above200 ? 4 : 0;
   const trX = f.golden == null ? 1.5 : f.golden ? 3 : 0;
-  const trHi = isNum(f.fromHigh) ? lin(f.fromHigh, -0.35, -0.12, 3) : 1.5;
+  const trHi = isNum(f.fromHigh) ? lin(f.fromHigh, -0.35, -0.12, 1) : 0.5;
   const momentum = m12 + m6 + rs + tr200 + trX + trHi;
 
   // Earnings momentum — 25
@@ -189,22 +192,22 @@ export function scoreStock(s, sectorPE, insider) {
   const vDcf = dcfUpside == null ? (s.dcfNm ? 0 : s.dcfNa ? 2 : miss("DCF", 2)) : lin(dcfUpside, -0.2, 0.25, 4);
   const value = vPeg + vPe + vDcf;
 
-  // Smart money & setup — 15
+  // Smart money & setup — 11 (FVG ≤ 2: timing only)
   const sIns = insiderPoints(ins);
   const sBuy = s.buyPct == null ? miss("analyst ratings", 1.5) : lin(s.buyPct, 0.5, 0.85, 3);
   const sPt = upside12m == null ? miss("price target", 1) : lin(upside12m, 0, 0.25, 2);
-  const sSet = Math.min(6, (FVG_SETUP[s.fvg.tf + "|" + s.fvg.status] || 0) + (plan.status === "live" && plan.rr >= LIMITS.MIN_RR ? 1 : 0) - (plan.status === "failed" ? 3 : 0));
+  const sSet = Math.min(2, (FVG_SETUP[s.fvg.tf + "|" + s.fvg.status] || 0) + (plan.status === "live" && plan.rr >= LIMITS.MIN_RR ? 0.5 : 0) - (plan.status === "failed" ? 1 : 0));
   const smart = sIns + sBuy + sPt + Math.max(0, sSet);
 
   const composite = Math.round(momentum + earnings + quality + value + smart);
 
   // Which holding period fits best (each 0–100).
   const swingFit = Math.round(
-    lin(f.mom3 ?? 0, -0.02, 0.3, 20) + lin(f.mom1 ?? 0, -0.02, 0.15, 15) + (Math.max(0, sSet) / 6) * 15 + (plan.status === "live" ? 10 : 0)
-    + ((eRev + eCons) / 12) * 25 + ((tr200 + trX + trHi) / 10) * 15);
+    lin(f.mom3 ?? 0, -0.02, 0.3, 20) + lin(f.mom1 ?? 0, -0.02, 0.15, 15) + (Math.max(0, sSet) / 2) * 10 + (plan.status === "live" ? 5 : 0)
+    + ((eRev + eCons) / 12) * 25 + ((tr200 + trX + trHi) / 8) * 15 + lin(f.momRank12 ?? 0.5, 0.5, 1, 10));
   const coreFit = composite;
   const longFit = Math.round((quality / 15) * 35 + (eGrow / 7) * 15 + lin(f.revenueGrowth ?? 0, 0, 0.2, 10) + (value / 15) * 25
-    + (f.above200 ? 10 : 0) + (m12 / 10) * 5 - (riskLevel(s) === "High" ? 10 : 0));
+    + (f.above200 ? 10 : 0) + (m12 / 16) * 5 - (riskLevel(s) === "High" ? 10 : 0));
   const fits = { swing: swingFit, core: coreFit, long: longFit };
   const horizon = Object.keys(fits).sort((a, b) => fits[b] - fits[a])[0];
   const risk = riskLevel(s);
@@ -237,12 +240,12 @@ export function scoreStock(s, sectorPE, insider) {
     technical: r1(momentum), fundamental: r1(value), sentiment: r1(smart),
     breakdown: {
       momentum: [
-        { label: "12-month momentum", value: isNum(f.mom12_1) ? sp(f.mom12_1) + (isNum(f.momRank12) ? " · beats " + pc(f.momRank12) + " of stocks" : "") : "n/a", rule: "Return from 12 to 1 month ago, ranked vs ~550 stocks", pts: r1(m12), max: 10 },
+        { label: "12-month momentum", value: isNum(f.mom12_1) ? sp(f.mom12_1) + (isNum(f.momRank12) ? " · beats " + pc(f.momRank12) + " of stocks" : "") : "n/a", rule: "Return from 12 to 1 month ago, ranked vs ~550 stocks (the backtest's strongest signal)", pts: r1(m12), max: 16 },
         { label: "6-month momentum", value: isNum(f.mom6) ? sp(f.mom6) + (isNum(f.momRank6) ? " · beats " + pc(f.momRank6) : "") : "n/a", rule: "Ranked vs the scanned market", pts: r1(m6), max: 6 },
         { label: "Strength vs S&P 500", value: isNum(f.rs3) ? sp(f.rs3) + " vs SPY (3 mo)" : isNum(f.mom3) ? sp(f.mom3) + " (3 mo)" : "n/a", rule: "+10% vs the market = full", pts: r1(rs), max: 4 },
         { label: "Above 200-day avg", value: f.above200 == null ? "n/a" : f.above200 ? "Yes (" + dollars(f.ma200) + ")" : "No (" + dollars(f.ma200) + ")", rule: "Long-term uptrend = 4", pts: r1(tr200), max: 4 },
         { label: "50-day above 200-day", value: f.golden == null ? "n/a" : f.golden ? "Yes" : "No", rule: "Trend confirmed = 3", pts: r1(trX), max: 3 },
-        { label: "Near 52-week high", value: isNum(f.fromHigh) ? sp(f.fromHigh) + " from high" : "n/a", rule: "Within 12% = full", pts: r1(trHi), max: 3 },
+        { label: "Near 52-week high", value: isNum(f.fromHigh) ? sp(f.fromHigh) + " from high" : "n/a", rule: "Within 12% = full (small: no edge in backtest)", pts: r1(trHi), max: 1 },
       ],
       earnings: [
         { label: "EPS estimate revisions", value: f.revUp == null ? "n/a" : (f.revUp || 0) + " up / " + (f.revDown || 0) + " down (4 wks)", rule: "Mostly raises = full", pts: r1(eRev), max: 8 },
@@ -265,7 +268,7 @@ export function scoreStock(s, sectorPE, insider) {
         { label: "Insider buying (90d)", value: ins.buys > 0 ? money(ins.buys) + " bought" + (ins.sells ? ", " + money(-ins.sells) + " sold" : "") : ins.sells ? "Selling only (" + money(-ins.sells) + ")" : "No filings", rule: "≥$1M bought = 4 (selling not penalized)", pts: sIns, max: 4 },
         { label: "Analyst consensus", value: s.buyPct == null ? "n/a" : Math.round(s.buyPct * 100) + "% Buy of " + s.analystCount, rule: "85%+ Buy = full", pts: r1(sBuy), max: 3 },
         { label: "12-mo price target", value: s.target12m == null ? "n/a" : sp(upside12m) + " to " + dollars(s.target12m), rule: "25%+ = full", pts: r1(sPt), max: 2 },
-        { label: "FVG entry setup", value: s.fvg.status === "None" ? "None" : s.fvg.tf + " " + s.fvg.status.toLowerCase() + " " + dollars(s.fvg.lo) + "–" + dollars(s.fvg.hi) + (plan.status === "live" ? " · entry live" : ""), rule: "Weekly rejection 6 · Daily 5 · testing 3 (timing only)", pts: Math.max(0, sSet), max: 6 },
+        { label: "FVG entry setup", value: s.fvg.status === "None" ? "None" : s.fvg.tf + " " + s.fvg.status.toLowerCase() + " " + dollars(s.fvg.lo) + "–" + dollars(s.fvg.hi) + (plan.status === "live" ? " · entry live" : ""), rule: "Weekly rejection 2 · Daily 1.5 · testing 1 (timing only: no edge in backtest)", pts: Math.max(0, sSet), max: 2 },
       ],
     },
   };
@@ -338,12 +341,12 @@ export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
   if (action === "Hold") {
     if (s) {
       const bp = s.buyPlan;
-      const nowBuy = bp && bp.steps[0] && bp.steps[0].when === "now";
+      const nowBuy = bp && !bp.hot;
       if (s.composite >= LIMITS.RECOMMEND && f.above200 && nowBuy && r.weight < LIMITS.POSITION_TARGET) {
         action = "Buy more";
         why.push("Score " + s.composite + ", in an uptrend and at a buy level. Next adds: " + bp.steps.slice(1).map((x) => dollars(x.price)).join(", ") + "; stop " + dollars(bp.stop));
       } else {
-        why.push(s.composite >= LIMITS.RECOMMEND ? (bp && bp.hot ? "Strong, but stretched right now; add on a pullback to " + dollars(bp.steps[0].price) : "Strong score (" + s.composite + "); keep holding")
+        why.push(s.composite >= LIMITS.RECOMMEND ? (bp && bp.hot ? "Strong, but stretched right now; keep any add small, bigger adds near " + dollars(bp.steps[1].price) : "Strong score (" + s.composite + "); keep holding")
           : "Score " + s.composite + ": fine to hold, not a top add right now");
       }
     } else if (f.above200 && isNum(f.ext50) && Math.abs(f.ext50) <= 0.03 && r.weight < (isIndex ? 0.5 : LIMITS.POSITION_TARGET)) {
@@ -437,3 +440,69 @@ export function analyzePortfolio(holdings, byTicker, sectors, sectorColors, pric
   rows.forEach((r) => { if (r.advice) counts[r.advice.action] = (counts[r.advice.action] || 0) + 1; });
   return { rows, total, costTotal, pl, plPct: costTotal ? pl / costTotal : 0, beta, sectors: sectorRows, feed, funding, trimProceeds, cash, riskShare, counts };
 }
+
+/**
+ * How big a position should be, as a share of the whole portfolio. With roughly half in index funds and 8–15 picks,
+ * no single stock can sink you: Low risk 8%, Medium 5%, High 3%; Top picks get 25% more (max 10%).
+ */
+export const SIZE_BY_RISK = { Low: 0.08, Medium: 0.05, High: 0.03 };
+export function suggestedSize(s, total) {
+  let pct = SIZE_BY_RISK[s.risk] || 0.05;
+  if (s.composite >= LIMITS.HIGH_CONVICTION) pct *= 1.25;
+  pct = Math.min(pct, 0.1);
+  return { pct, amount: total > 0 ? total * pct : null };
+}
+
+/**
+ * "I have $X to invest" → what to buy now. Tops up the index-fund core toward ~50% (with up to half the money),
+ * then funds the first buy of: holdings marked Buy more, Top picks you don't own, then Recommended ones —
+ * each sized by suggestedSize(), at most 2 new names per sector. Leftover goes to the core fund.
+ */
+export function planNewMoney(cash, a, scored, { coreTarget = 0.5, maxBuys = 6 } = {}) {
+  const items = [];
+  if (!(cash > 0)) return { items, total: a.total };
+  const total = a.total + cash;
+  let left = cash;
+  const coreRows = a.rows.filter((r) => r.sector === "Index Funds");
+  const coreVal = coreRows.reduce((x, r) => x + r.value, 0);
+  const pickCore = coreRows.slice().sort((x, y) => ((y.advice && y.advice.action === "Buy more") - (x.advice && x.advice.action === "Buy more")) || y.value - x.value)[0];
+  const coreTicker = pickCore ? pickCore.ticker : "SPY";
+  const coreNeed = Math.max(0, coreTarget * total - coreVal);
+  const coreBuy = Math.min(left * 0.5, coreNeed);
+  if (coreBuy >= 10) {
+    items.push({ ticker: coreTicker, amount: coreBuy, kind: "core", why: "Index funds are " + Math.round((a.total ? coreVal / a.total : 0) * 100) + "% of your portfolio; ~50% keeps you steady" });
+    left -= coreBuy;
+  }
+  const held = Object.fromEntries(a.rows.map((r) => [r.ticker, r]));
+  const bySector = {};
+  const desc = (x, y) => y.composite - x.composite;
+  const cands = [
+    ...a.rows.filter((r) => r.stock && r.advice && r.advice.action === "Buy more").map((r) => r.stock).sort(desc),
+    ...scored.filter((s) => !held[s.ticker] && s.composite >= LIMITS.HIGH_CONVICTION).sort(desc),
+    ...scored.filter((s) => !held[s.ticker] && s.composite >= LIMITS.RECOMMEND && s.composite < LIMITS.HIGH_CONVICTION && s.buyPlan && !s.buyPlan.hot).sort(desc),
+  ];
+  const seen = new Set();
+  for (const s of cands) {
+    if (left < 10 || items.filter((x) => x.kind !== "core").length >= maxBuys) break;
+    if (seen.has(s.ticker)) continue;
+    seen.add(s.ticker);
+    if (!held[s.ticker] && (bySector[s.sector] || 0) >= 2) continue;
+    const size = suggestedSize(s, total);
+    const have = held[s.ticker] ? held[s.ticker].value : 0;
+    const need = size.amount - have;
+    if (need < 10) continue;
+    const first = s.buyPlan ? s.buyPlan.steps[0].part : 1 / 3;
+    const now = Math.min(left, Math.max(10, need * first));
+    items.push({ ticker: s.ticker, amount: now, kind: held[s.ticker] ? "add" : "new", target: size.amount, pct: size.pct, stock: s,
+      later: s.buyPlan ? s.buyPlan.steps.slice(1).map((x) => x.price) : [] });
+    if (!held[s.ticker]) bySector[s.sector] = (bySector[s.sector] || 0) + 1;
+    left -= now;
+  }
+  if (left >= 1) {
+    const core = items.find((x) => x.kind === "core");
+    if (core) { core.amount += left; core.why += " (plus what's left over)"; }
+    else items.push({ ticker: coreTicker, amount: left, kind: "core", why: "What's left goes to your index-fund core" });
+  }
+  return { items, total };
+}
+

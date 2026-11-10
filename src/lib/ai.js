@@ -24,13 +24,13 @@ export function buildPrompt(s, { headlines = [] } = {}) {
   const bp = s.buyPlan;
   const lines = [
     `Ticker: ${s.ticker} (${s.name}), sector ${s.sector}. Price $${f2(s.price)}, beta ${f2(s.beta)}. Risk level ${s.risk}. Best-fit horizon: ${s.horizon}.`,
-    `Composite score ${s.composite}/100 = momentum & trend ${s.momentum}/30, earnings momentum ${s.earnings}/25, quality ${s.quality}/15, valuation ${s.value}/15, smart money & setup ${s.smart}/15.`,
+    `Composite score ${s.composite}/100 = momentum & trend ${s.momentum}/34, earnings momentum ${s.earnings}/25, quality ${s.quality}/15, valuation ${s.value}/15, smart money & setup ${s.smart}/11.`,
     `Momentum: 12-1 month ${p1(f.mom12_1)} (rank ${f.momRank12 != null ? Math.round(f.momRank12 * 100) + "th pct" : "n/a"}), 6-month ${p1(f.mom6)}, 3-month vs S&P ${p1(f.rs3)}. Above 200-day avg: ${f.above200 == null ? "n/a" : f.above200 ? "yes" : "no"}; ${p1(f.ext50)} vs 50-day; ${p1(f.fromHigh)} from 52-week high; 3-month volatility ${p1(f.vol63)} annualized.`,
     `Earnings: EPS estimate revisions last 4 weeks ${f.revUp ?? "n/a"} up / ${f.revDown ?? "n/a"} down; consensus change 1 month ${p1(f.consensusChange1m)}; expected EPS growth next year ${p1(f.epsGrowthNext)}; last quarters' surprises ${Array.isArray(f.surprises) ? f.surprises.map((x) => p1(x)).join(", ") : "n/a"}.`,
     `Quality: operating margin ${p1(f.opMargin)}, ROE ${p1(f.roe)}, FCF yield ${p1(f.fcfYield)}, net debt/market cap ${p1(f.netDebtToCap)}.`,
     `Valuation: PEG ${f2(s.peg)}, forward P/E ${f2(s.fwdPE)} vs sector ${s.sectorPE}, DCF $${f2(s.dcfValue)} (${p1(s.dcfUpside)} vs price, rough model).`,
     `Street & insiders: ${s.buyPct == null ? "no consensus" : Math.round(s.buyPct * 100) + "% Buy of " + s.analystCount} analysts, target $${f2(s.target12m)} (${p1(s.upside12m)}). Insider net 90d: $${Math.round(s.insider.net).toLocaleString("en-US")}.`,
-    `Entry timing: ${s.fvg.status === "None" ? "no active bullish FVG" : `${s.fvg.tf} bullish FVG ${s.fvg.status.toLowerCase()} at $${f2(s.fvg.lo)}-$${f2(s.fvg.hi)}`}; plan status "${s.plan.status}". Buy plan: ${bp ? bp.steps.map((x) => (x.when === "now" ? "1/3 now" : "1/3 at $" + f2(x.price))).join(", ") + `, stop $${f2(bp.stop)}` : "n/a"}.`,
+    `Entry timing: ${s.fvg.status === "None" ? "no active bullish FVG" : `${s.fvg.tf} bullish FVG ${s.fvg.status.toLowerCase()} at $${f2(s.fvg.lo)}-$${f2(s.fvg.hi)}`}; plan status "${s.plan.status}". Buy plan: ${bp ? bp.steps.map((x) => (x.when === "now" ? x.share + " now" : x.share + " at $" + f2(x.price))).join(", ") + `, stop $${f2(bp.stop)}` : "n/a"}.`,
   ];
   if ((s.newsFlags || []).length) lines.push("Negative headlines this week:\n" + s.newsFlags.map((n) => `- ${n.date} ${n.headline}`).join("\n"));
   if (headlines.length) lines.push("Recent analyst headlines:\n" + headlines.slice(0, 6).map((h) => `- ${h.date} ${h.firm}: ${h.headline || h.action + " " + (h.toRating || "")}${h.newTarget ? " (PT $" + h.newTarget + ")" : ""}`).join("\n"));
@@ -127,12 +127,12 @@ export function ruleSummary(s) {
   if ((s.newsFlags || []).length) bear.push("Negative headline this week: " + s.newsFlags[0].headline);
   if (s.risk === "High") bear.push("High risk: big swings, size it small");
   const bp = s.buyPlan;
-  const verdict = s.composite >= 78 && bp && !bp.hot ? "Buy setup"
-    : s.composite >= 66 ? (bp && bp.hot ? "Wait for entry" : "Accumulate")
+  const verdict = s.composite >= 75 ? (bp && bp.hot ? "Buy small, add on dips" : "Buy setup")
+    : s.composite >= 65 ? "Accumulate"
     : s.composite >= 50 ? "Watch" : "Avoid";
-  const parts = [["momentum", s.momentum / 30], ["earnings trend", s.earnings / 25], ["quality", s.quality / 15], ["valuation", s.value / 15], ["smart money", s.smart / 15]].sort((a, b) => b[1] - a[1]);
+  const parts = [["momentum", s.momentum / 34], ["earnings trend", s.earnings / 25], ["quality", s.quality / 15], ["valuation", s.value / 15], ["smart money", s.smart / 11]].sort((a, b) => b[1] - a[1]);
   const summary = `${s.ticker} scores ${s.composite}/100, led by ${parts[0][0]} and ${parts[1][0]}, weakest on ${parts[4][0]}. ` +
-    (bp ? (bp.hot ? `It's stretched right now, so wait for $${f2(bp.steps[0].price)} before buying.` : `Buy in thirds: now, then $${f2(bp.steps[1].price)} and $${f2(bp.steps[2].price)}.`) : "");
+    (bp ? (bp.hot ? `It's stretched, so start small now and add near $${f2(bp.steps[1].price)} and $${f2(bp.steps[2].price)}.` : `Buy in thirds: now, then $${f2(bp.steps[1].price)} and $${f2(bp.steps[2].price)}.`) : "");
   const watch = bp ? `The idea is wrong below $${f2(bp.stop)}.` : "";
   return { verdict, summary, bull: bull.slice(0, 3), bear: bear.slice(0, 3), watch, confidence: "rule-based", source: "rules" };
 }

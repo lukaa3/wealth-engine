@@ -100,11 +100,12 @@ for (let k = 0; k < dates.length - 1; k++) {
   const rk12 = percentileRanks(rows, "mom12_1"), rk6 = percentileRanks(rows, "mom6");
   const si = idxOf.SPY.get(d), spyMom3 = si >= 63 ? spy[si].close / spy[si - 63].close - 1 : 0;
   for (const r of rows) {
-    // Same formula as scoring.js "Momentum & trend" (30 pts) + FVG setup (≤ 6 pts).
-    const m12 = 10 * (rk12[r.ticker] ?? 0.5), m6 = 6 * (rk6[r.ticker] ?? 0.5);
+    // Same formula as scoring.js "Momentum & trend" (34 pts). oldScore = the first version (30 pts) for comparison.
+    const k12 = rk12[r.ticker] ?? 0.5, k6 = 6 * (rk6[r.ticker] ?? 0.5);
     const rs = r.mom3 != null ? lin(r.mom3 - spyMom3, -0.05, 0.1, 4) : 2;
-    const trend = (r.above200 ? 4 : 0) + (r.golden ? 3 : r.golden == null ? 1.5 : 0) + (r.fromHigh != null ? lin(r.fromHigh, -0.35, -0.12, 3) : 1.5);
-    r.momScore = m12 + m6 + rs + trend;
+    const t200 = (r.above200 ? 4 : 0) + (r.golden ? 3 : r.golden == null ? 1.5 : 0);
+    r.momScore = 16 * k12 + k6 + rs + t200 + (r.fromHigh != null ? lin(r.fromHigh, -0.35, -0.12, 1) : 0.5);
+    r.oldScore = 10 * k12 + k6 + rs + t200 + (r.fromHigh != null ? lin(r.fromHigh, -0.35, -0.12, 3) : 1.5);
     r.setupPts = Math.min(6, (FVG_SETUP[r.fvgTf + "|" + r.fvgStatus] || 0) + (r.entryLive ? 1 : 0));
     r.rs3 = r.mom3 != null ? r.mom3 - spyMom3 : null;
   }
@@ -116,6 +117,7 @@ console.log(`Scored ${snapshots.length} month-ends (${snapshots[0].date} → ${s
 /* ---------------- 3. Strategies ---------------- */
 const STRATS = {
   "Site momentum & trend score": (rows) => rows.slice().sort((a, b) => b.momScore - a.momScore),
+  "First version of the score (30 pts)": (rows) => rows.slice().sort((a, b) => b.oldScore - a.oldScore),
   "Score + FVG timing": (rows) => rows.slice().sort((a, b) => b.momScore + b.setupPts - (a.momScore + a.setupPts)),
   "Score, skip stretched (>15% over 50-day)": (rows) => rows.filter((r) => !(r.ext50 > 0.15)).sort((a, b) => b.momScore - a.momScore),
   "Score, calmer stocks only (lower half volatility)": (rows) => {
