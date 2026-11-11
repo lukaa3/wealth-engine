@@ -53,7 +53,7 @@ async function history(t) {
 }
 
 let listed = [];
-try { listed = await loadListedStocks({ minCap: MINCAP, minPrice: 3 }); } catch (e) { console.error("No stock list:", e.message); process.exit(1); }
+try { listed = await loadListedStocks({ minCap: MINCAP, minPrice: MINCAP >= 2e9 ? 5 : 3 }); } catch (e) { console.error("No stock list:", e.message); process.exit(1); }
 listed.push({ ticker: "SPY", marketCap: 1e13 });
 console.log(`Short-term backtest: ${listed.length} stocks ($${MINCAP / 1e6}M+, $3+), ${YEARS} years`);
 const S = {};
@@ -194,7 +194,27 @@ function runWeekly(name, pick, holdDays, topN = 20) {
 
 const up200 = (x, i) => x.c[i] > x.s200[i];
 const strong = (x, i, t, k) => x.s50[i] > x.s200[i] && x.c[i] > x.s50[i] && rank6[t][k] >= 0.7;
-const SETUPS = [
+// BT_SET=refined runs follow-up variants on $2B+ stocks (set BT_MINCAP=2e9).
+const refined = env.BT_SET === "refined";
+const disasterStop = (n, k = 3) => (x, e, s) => {
+  const stop = x.o[e] - k * (x.atr[s] || x.c[s] * 0.03);
+  for (let j = e; j < Math.min(x.c.length, e + n); j++) if (x.l[j] <= stop) return { j, px: Math.min(x.o[j], stop) };
+  return exitTime(x, e, n);
+};
+const dipExit = (x, e) => { for (let j = e; j < Math.min(x.c.length, e + 10); j++) if (x.c[j] > x.s5[j]) return { j, px: x.c[j] }; const j = Math.min(x.c.length - 1, e + 9); return { j, px: x.c[j] }; };
+const SETUPS = refined ? [
+  runEvent("Dip (all): RSI(2)<10 above 200-day → exit above 5-day", (x, i) => up200(x, i) && x.rsi2[i] < 10, dipExit),
+  runEvent("Dip in leader: top-30% 6-mo momentum, RSI(2)<10 → exit above 5-day", (x, i, t, k) => up200(x, i) && x.rsi2[i] < 10 && rank6[t][k] >= 0.7, dipExit),
+  runEvent("Dip in leader + 3-ATR disaster stop", (x, i, t, k) => up200(x, i) && x.rsi2[i] < 10 && rank6[t][k] >= 0.7, (x, e, s) => {
+    const stop = x.o[e] - 3 * (x.atr[s] || x.c[s] * 0.03);
+    for (let j = e; j < Math.min(x.c.length, e + 10); j++) { if (x.l[j] <= stop) return { j, px: Math.min(x.o[j], stop) }; if (x.c[j] > x.s5[j]) return { j, px: x.c[j] }; }
+    const j = Math.min(x.c.length - 1, e + 9); return { j, px: x.c[j] }; }),
+  runEvent("Gap-up held → 40d", (x, i) => x.o[i] >= x.c[i - 1] * 1.04 && x.v[i] >= 3 * x.av50[i] && x.c[i] >= x.o[i] && up200(x, i), (x, e) => exitTime(x, e, 40), { cooldown: 5 }),
+  runEvent("Gap-up held → 40d with 3-ATR disaster stop", (x, i) => x.o[i] >= x.c[i - 1] * 1.04 && x.v[i] >= 3 * x.av50[i] && x.c[i] >= x.o[i] && up200(x, i), disasterStop(40), { cooldown: 5 }),
+  runWeekly("Momentum 4 wks, top 20", (x, i) => (x.c[i] > x.s50[i] ? ret(x, i, 21) : null), 20),
+  runWeekly("Momentum 4 wks, top 10", (x, i) => (x.c[i] > x.s50[i] ? ret(x, i, 21) : null), 20, 10),
+  runWeekly("Momentum 4 wks, top 20, only when SPY above its 200-day", (x, i, t, k) => (spy.c[k] > spy.s200[k] && x.c[i] > x.s50[i] ? ret(x, i, 21) : null), 20),
+] : [
   runEvent("Dip: RSI(2)<10 above 200-day → exit above 5-day (max 10d)", (x, i) => up200(x, i) && x.rsi2[i] < 10 && x.rsi2[i],
     (x, e) => { for (let j = e; j < Math.min(x.c.length, e + 10); j++) if (x.c[j] > x.s5[j]) return { j, px: x.c[j] }; const j = Math.min(x.c.length - 1, e + 9); return { j, px: x.c[j] }; }),
   runEvent("Dip in leader: 3 down days, strong trend → hold 5d", (x, i, t, k) => strong(x, i, t, k) && x.c[i] < x.c[i - 1] && x.c[i - 1] < x.c[i - 2] && x.c[i - 2] < x.c[i - 3],

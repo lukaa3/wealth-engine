@@ -6,6 +6,12 @@ on:
       years:
         description: "Years of history"
         default: "10"
+      set:
+        description: "Setups: all or refined"
+        default: "all"
+      mincap:
+        description: "Min market cap"
+        default: "3e8"
 permissions:
   contents: write
 concurrency:
@@ -23,12 +29,15 @@ jobs:
         run: node scripts/backtest-short.mjs
         env:
           BT_YEARS: ${{ inputs.years }}
+          BT_SET: ${{ inputs.set }}
+          BT_MINCAP: ${{ inputs.mincap }}
           NODE_OPTIONS: --max-old-space-size=8192
       - name: Save results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/backtest-short.json
+          [ "${{ inputs.set }}" = "refined" ] && mv public/data/backtest-short.json public/data/backtest-short-refined.json
+          git add public/data/backtest-short*.json
           git diff --cached --quiet && exit 0
           git commit -m "chore: short-term backtest results [skip ci]"
           for i in 1 2 3; do git pull --rebase -q origin "${GITHUB_REF_NAME}" && git push -q && exit 0; sleep 5; done
