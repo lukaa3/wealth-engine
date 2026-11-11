@@ -1,6 +1,7 @@
 /**
  * universe.js — the list of stocks the daily job scans.
- *   S&P 500 (from the open "datasets/s-and-p-500-companies" CSV on GitHub)
+ *   Every US-listed common stock worth $2B+ and priced $5+ (Nasdaq's free screener list, ~1,500–2,000 names)
+ *   + S&P 500 (from the open "datasets/s-and-p-500-companies" CSV on GitHub, in case the Nasdaq list fails)
  *   + Nasdaq-100 names outside the S&P 500 + popular high-momentum names
  *   + anything in WATCHLIST / EXTRA_TICKERS.
  * Tickers use the dot form (BRK.B); providers convert as needed.
@@ -58,14 +59,50 @@ function parseCsv(text) {
 }
 
 /** Returns [{ ticker, name, sector }] — never throws; falls back to the extras + fallback list. */
-export async function loadUniverse({ fetchImpl = fetch, extra = [], fallback = [], extras = true } = {}) {
+const NASDAQ_SCREENER = "https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=10000&download=true";
+const NQ_HEADERS = { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+  Accept: "application/json, text/plain, */*", Origin: "https://www.nasdaq.com", Referer: "https://www.nasdaq.com/" };
+const NQ_SECTOR = { Technology: "Technology", Telecommunications: "Technology", Finance: "Financials", "Health Care": "Healthcare",
+  "Consumer Discretionary": "Consumer", "Consumer Staples": "Consumer", Energy: "Energy" };
+// Not common stock: warrants, rights, units, preferreds, notes, and fund-like listings.
+const NOT_COMMON = /warrant|\bright(s)?\b|\bunits?\b|preferred|depositary shares? representing|% notes|notes due|debentures|\btrust\b.*\bunits?\b|closed[- ]end|\bETF\b|\bfund\b/i;
+
+/** Every US-listed common stock above a size and price floor, from Nasdaq's free screener (NYSE, Nasdaq, AMEX). */
+export async function loadListedStocks({ fetchImpl = fetch, minCap = 2e9, minPrice = 5 } = {}) {
+  const res = await fetchImpl(NASDAQ_SCREENER, { headers: NQ_HEADERS });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const j = await res.json();
+  const rows = (j && j.data && (j.data.rows || (j.data.table && j.data.table.rows))) || [];
+  const out = [];
+  for (const r of rows) {
+    const sym = String(r.symbol || "").trim().toUpperCase().replace("/", ".");
+    const cap = Number(String(r.marketCap || "").replace(/[$,]/g, "")) || 0;
+    const price = Number(String(r.lastsale || "").replace(/[$,]/g, "")) || 0;
+    if (!sym || /[\^ ]/.test(sym) || cap < minCap || price < minPrice || NOT_COMMON.test(r.name || "")) continue;
+    out.push({ ticker: sym, name: String(r.name || sym).replace(/\s+(Common Stock|Class [A-Z] (Common|Ordinary) (Stock|Shares)|Ordinary Shares|American Depositary Shares)\b.*$/i, "").trim() || sym,
+      sector: NQ_SECTOR[r.sector] || "Other", marketCap: cap });
+  }
+  return out;
+}
+
+export async function loadUniverse({ fetchImpl = fetch, extra = [], fallback = [], extras = true, broad = false } = {}) {
   const out = new Map();
+  if (broad) {
+    try {
+      const listed = await loadListedStocks({ fetchImpl });
+      listed.forEach((u) => out.set(u.ticker, u));
+      console.log(`Nasdaq list: ${listed.length} US stocks worth $2B+ and priced $5+`);
+    } catch (e) {
+      console.warn("Nasdaq stock list unavailable (" + e.message + "); scanning the S&P 500 + extras only.");
+    }
+  }
   try {
     const res = await fetchImpl(SP500_CSV);
     if (!res.ok) throw new Error("HTTP " + res.status);
     for (const r of parseCsv(await res.text())) {
       const t = (r.Symbol || "").toUpperCase();
-      if (t) out.set(t, { ticker: t, name: r.Security || t, sector: mapSector(r["GICS Sector"]) });
+      // S&P's sector labels are better than Nasdaq's, so they win when a stock is on both lists.
+      if (t) out.set(t, { ...(out.get(t) || {}), ticker: t, name: r.Security || t, sector: mapSector(r["GICS Sector"]) });
     }
   } catch (e) {
     console.warn("S&P 500 list unavailable (" + e.message + "); using the built-in list only.");

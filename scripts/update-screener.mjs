@@ -2,13 +2,15 @@
 /**
  * update-screener.mjs — background job (run by .github/workflows/deploy.yml on a schedule).
  *
- *  0. Market scan: daily charts for the whole universe (S&P 500 + Nasdaq-100 extras + popular names, ~550 stocks)
- *     from Yahoo's free chart feed → momentum (ranked vs the whole scan), trend, volatility and FVG setup for each
- *     → public/data/scan.json. Your holdings, the momentum leaders, big movers, live FVG entries and a rotating slice
- *     (DEEP_N, default 80) go on to step 1.
+ *  0. Market scan: daily charts for every US stock worth $2B+ and priced $5+ (~1,500–2,000, Nasdaq's list,
+ *     plus the S&P 500 and extras) from Yahoo's free chart feed → momentum (ranked vs the whole scan), trend,
+ *     volatility and FVG setup for each → public/data/scan.json. Your holdings, the momentum leaders, big movers,
+ *     live FVG entries, then the stocks with the oldest full check (DEEP_N, default 400) go on to step 1.
  *  1. Deep check: price targets, analyst consensus, EPS estimate revisions, earnings surprises, margins, cash flow
- *     (Nasdaq, free) plus Finnhub / FMP / Alpha Vantage to fill gaps. Stocks fully checked in the last 6 days stay
- *     on the site with today's price and chart.
+ *     (Nasdaq, free) plus Finnhub / FMP / Alpha Vantage to fill gaps. Stocks fully checked in the last 7 days stay
+ *     in the pool with today's price and chart, so the whole market is covered about every 5 days.
+ *     The full pool lives in cache/pool.json (kept between runs by the Actions cache, not committed); the site gets
+ *     the stocks scoring 50+ plus your holdings.
  *  2. Detects bullish FVGs, Fib depth and support, and derives stops, 1-mo / 6-mo targets and DCA zones.
  *  3. Scores everything with the same scorer the UI uses.
  *  4. Writes public/data/{screener,analyst,insider}.json (deployed with the site), and
@@ -66,23 +68,32 @@ const fileCache = {
 const P = createProviders(keys, {
   cache: fileCache, avCache: fileCache, quoteTtlMin: 5, fundamentalsTtlHours: 20,
   avMaxCalls: Number(env.AV_MAX_CALLS || 22), avMinGapMs: Number(env.AV_MIN_GAP_MS || 13000),
-  yahoo: env.SCAN !== "off", yahooGapMs: Number(env.YAHOO_GAP_MS || 350),
-  nasdaq: env.NASDAQ !== "off", nasdaqGapMs: Number(env.NASDAQ_GAP_MS || 250),
+  yahoo: env.SCAN !== "off", yahooGapMs: Number(env.YAHOO_GAP_MS || 220),
+  nasdaq: env.NASDAQ !== "off", nasdaqGapMs: Number(env.NASDAQ_GAP_MS || 220),
 });
 
 /* ------------------------------- 0. Market scan ------------------------------- */
 let tickers = watchlist.length ? watchlist : mockData.stocks.map((s) => s.ticker);
 const pre = {};
+/* ---- The pool: every stock fully checked in the last week (kept between runs by the Actions cache) ---- */
+const POOL_FILE = "cache/pool.json";
+let pool = { stocks: [], analyst: [], insider: [] };
+try { pool = { ...pool, ...JSON.parse(fs.readFileSync(POOL_FILE, "utf8")) }; } catch (e) {
+  try { pool.stocks = JSON.parse(fs.readFileSync(path.join(OUT_DIR, "screener.json"), "utf8")).stocks || []; } catch (e2) {}
+}
+const lastChecked = Object.fromEntries(pool.stocks.filter((r) => r.checked_at).map((r) => [r.ticker, r.checked_at]));
+console.log(`Pool: ${pool.stocks.length} stocks from earlier runs`);
+
 let scanRows = [];
 let universe = [];
 let ranks = { mom12: {}, mom6: {} };
 let spyMom3 = null;
 if (P.yahoo) {
-  universe = await loadUniverse({ extra: [...watchlist, ...list(env.EXTRA_TICKERS)], fallback: mockData.stocks });
+  universe = await loadUniverse({ extra: [...watchlist, ...list(env.EXTRA_TICKERS)], fallback: mockData.stocks, broad: env.BROAD !== "off" });
   universe.forEach((u) => { if (!baseByTicker[u.ticker]) baseByTicker[u.ticker] = { name: u.name, sector: u.sector }; });
   console.log(`Market scan: ${universe.length} stocks…`);
   let done = 0, failedScan = 0;
-  const rows = await mapLimit(universe, 2, async (u) => {
+  const rows = await mapLimit(universe, 3, async (u) => {
     try {
       const d = await P.yahoo.daily(u.ticker);
       pre[u.ticker] = d;
@@ -102,8 +113,7 @@ if (P.yahoo) {
     r.rs3 = r.mom3 != null && spyMom3 != null ? Math.round((r.mom3 - spyMom3) * 1000) / 1000 : null;
   });
   if (scanRows.length >= 20) {
-    const day = Math.floor(Date.now() / 864e5);
-    tickers = pickDeepSet(scanRows, { deepN: Number(env.DEEP_N || 80), always: [...HOLDINGS, ...watchlist], ranks, day });
+    tickers = pickDeepSet(scanRows, { deepN: Number(env.DEEP_N || 400), always: [...HOLDINGS, ...watchlist], ranks, lastChecked });
     console.log("Deep check:", tickers.join(", "));
   } else {
     console.warn("Market scan returned too little data; deep-checking the watchlist / default list instead.");
@@ -129,11 +139,7 @@ if (!stocks.length) { console.error("No stocks returned — check API keys / pla
 /* ---------------- Last known good: don't let a failed call wipe yesterday's value ---------------- */
 const CARRY = ["dcfValue", "peg", "fwdPE", "target12m", "buyPct", "analystCount"];
 const MAX_CARRY_DAYS = 7;
-let prevRows = {};
-try {
-  const old = JSON.parse(fs.readFileSync(path.join(OUT_DIR, "screener.json"), "utf8"));
-  prevRows = Object.fromEntries((old.stocks || []).map((r) => [r.ticker, r]));
-} catch (e) {}
+const prevRows = Object.fromEntries(pool.stocks.map((r) => [r.ticker, r]));
 let carried = 0;
 const today = new Date().toISOString().slice(0, 10);
 for (const s of stocks) {
@@ -152,7 +158,7 @@ for (const s of stocks) {
 if (carried) console.log(`Kept ${carried} last-known-good value(s) where today's call failed (max ${MAX_CARRY_DAYS} days)`);
 
 /* ------------- Keep stocks fully checked in the last few days (fundamentals change slowly) ------------- */
-const KEEP_DAYS = Number(env.KEEP_DAYS || 6);
+const KEEP_DAYS = Number(env.KEEP_DAYS || 7);
 const fresh = new Set(stocks.map((s) => s.ticker));
 const carriedTickers = [];
 for (const [t, r] of Object.entries(prevRows)) {
@@ -182,9 +188,9 @@ let insider = await buildLiveInsider(freshTickers, P).catch((e) => (console.warn
 {
   const keep = new Set(carriedTickers);
   const since30 = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
-  const readOld = (f) => { try { return JSON.parse(fs.readFileSync(path.join(OUT_DIR, f), "utf8")).items || []; } catch (e) { return []; } };
-  analyst = analyst.concat(readOld("analyst.json").map(rowToAction).filter((a) => keep.has(a.ticker) && a.date >= since30));
-  insider = insider.concat(readOld("insider.json").map(rowToInsider).filter((x) => keep.has(x.ticker)));
+  const readOld = (f, k) => { if (pool[k] && pool[k].length) return pool[k]; try { return JSON.parse(fs.readFileSync(path.join(OUT_DIR, f), "utf8")).items || []; } catch (e) { return []; } };
+  analyst = analyst.concat(readOld("analyst.json", "analyst").map(rowToAction).filter((a) => keep.has(a.ticker) && a.date >= since30));
+  insider = insider.concat(readOld("insider.json", "insider").map(rowToInsider).filter((x) => keep.has(x.ticker)));
 }
 // Bad-news headlines for your holdings and today's checks (same cached Finnhub news as the analyst feed).
 const newsFlags = await buildNewsFlags(freshTickers, P, { names }).catch((e) => (console.warn("news flags:", e.message), {}));
@@ -199,11 +205,7 @@ const targets = scored.slice().sort((a, b) => b.composite - a.composite).slice(0
 const byTicker = {};
 analyst.forEach((a) => (byTicker[a.ticker] = byTicker[a.ticker] || []).push(a));
 // Keep earlier takes for stocks that don't get a fresh one this run.
-let previous = {};
-try {
-  const old = JSON.parse(fs.readFileSync(path.join(OUT_DIR, "screener.json"), "utf8"));
-  previous = Object.fromEntries((old.stocks || []).filter((r) => r.ai_take).map((r) => [r.ticker, r.ai_take]));
-} catch (e) {}
+const previous = Object.fromEntries(pool.stocks.filter((r) => r.ai_take).map((r) => [r.ticker, r.ai_take]));
 scored.forEach((s) => { if (previous[s.ticker]) s.ai = { ...previous[s.ticker], stale: true }; });
 
 // Brief for the Claude step in the workflow (reads .ai/brief.md, writes .ai/claude_takes.json, merged by merge-ai-takes.mjs).
@@ -230,17 +232,30 @@ if (aiKey) {
 const rows = scored.map(stockToRow);
 const generatedAt = new Date().toISOString();
 
+// Full pool for the next run (Actions cache, not committed).
+fs.mkdirSync(path.dirname(POOL_FILE), { recursive: true });
+fs.writeFileSync(POOL_FILE, JSON.stringify({ generatedAt, stocks: rows, analyst: analyst.map(actionToRow), insider: insider.map(insiderToRow) }));
+
+// What the site loads: stocks scoring 50+ plus your holdings / watchlist, and only their analyst + insider items.
+const MIN_PUBLIC = Number(env.MIN_PUBLIC_SCORE || 50);
+const keepT = new Set([...HOLDINGS, ...watchlist]);
+const pubRows = rows.filter((r) => (r.composite_score ?? 0) >= MIN_PUBLIC || keepT.has(r.ticker));
+const pubT = new Set(pubRows.map((r) => r.ticker));
+const capPer = (items, n) => { const c = {}; return items.filter((x) => (c[x.ticker] = (c[x.ticker] || 0) + 1) <= n); };
+const pubAnalyst = capPer(analyst.filter((a) => pubT.has(a.ticker)).sort((a, b) => (b.date || "").localeCompare(a.date || "")), 8);
+const pubInsider = capPer(insider.filter((x) => pubT.has(x.ticker) && (x.value > 0 || Math.abs(x.value) >= 50000)).sort((a, b) => (b.date || "").localeCompare(a.date || "")), 12);
+
 fs.mkdirSync(OUT_DIR, { recursive: true });
-const write = (f, obj) => fs.writeFileSync(path.join(OUT_DIR, f), JSON.stringify(obj, null, 1));
-write("screener.json", { generatedAt, spyMom3, stocks: rows });
+const write = (f, obj) => fs.writeFileSync(path.join(OUT_DIR, f), JSON.stringify(obj));
+write("screener.json", { generatedAt, spyMom3, poolSize: rows.length, stocks: pubRows });
 if (scanRows.length) {
   const deepSet = new Set(stocks.map((s) => s.ticker));
-  write("scan.json", { generatedAt, universeSize: universe.length, scanned: scanRows.length,
+  write("scan.json", { generatedAt, universeSize: universe.length, scanned: scanRows.length, fullyChecked: rows.length,
     items: scanRows.map((r) => ({ ...r, deep: deepSet.has(r.ticker) })) });
 }
-if (analyst.length) write("analyst.json", { generatedAt, items: analyst.map(actionToRow) });
-if (insider.length) write("insider.json", { generatedAt, items: insider.map(insiderToRow) });
-console.log(`Wrote ${rows.length} stocks, ${analyst.length} analyst actions, ${insider.length} insider trades to ${OUT_DIR}/`);
+if (pubAnalyst.length) write("analyst.json", { generatedAt, items: pubAnalyst.map(actionToRow) });
+if (pubInsider.length) write("insider.json", { generatedAt, items: pubInsider.map(insiderToRow) });
+console.log(`Pool: ${rows.length} fully checked (${stocks.filter((s) => !s.carried).length} today, ${carriedTickers.length} from the last ${KEEP_DAYS} days). Site gets ${pubRows.length} (score ${MIN_PUBLIC}+ and holdings), ${pubAnalyst.length} analyst actions, ${pubInsider.length} insider trades.`);
 
 // Group failures by endpoint + reply so the log shows exactly what each provider said.
 const groups = {};

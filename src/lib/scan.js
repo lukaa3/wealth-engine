@@ -46,16 +46,16 @@ export function scanRow(meta, data) {
 }
 
 /**
- * Which stocks get the deep check (valuation, earnings estimates, quality, analysts, insiders):
+ * Which stocks get the deep check (valuation, earnings estimates, quality, analysts, insiders) today:
  *   1. your holdings + the watchlist (always),
  *   2. the strongest momentum + trend leaders (12-1 and 6-month momentum rank, above the 200-day average),
  *   3. the biggest 1-month movers on rising volume (so APP-style runs get a look),
- *   4. live FVG entries among decent-trend names (timing setups),
- *   5. a rotating slice of the rest, so steady long-term compounders get checked every few weeks even when
- *      their momentum is quiet (results stay on the site for up to a week).
- * `ranks` = { mom12: {T: 0–1}, mom6: {T: 0–1} } from percentileRanks().
+ *   4. live FVG entries among decent-trend names,
+ *   5. then everything else, oldest full check first (never-checked first), until deepN is reached.
+ *      With deepN ≈ 400 and results kept for a week, every stock gets a full check about every 5 days.
+ * `ranks` = { mom12: {T: 0–1}, mom6: {T: 0–1} } from percentileRanks(); `lastChecked` = { T: "YYYY-MM-DD" }.
  */
-export function pickDeepSet(rows, { deepN = 80, momentumN = 10, leadersN = 35, fvgN = 5, rotateN = 15, always = [], ranks = {}, day = 0 } = {}) {
+export function pickDeepSet(rows, { deepN = 400, momentumN = 25, leadersN = 120, fvgN = 10, always = [], ranks = {}, lastChecked = {} } = {}) {
   const have = new Set(rows.map((r) => r.ticker));
   const chosen = new Set(always.filter((t) => have.has(t)));
   const add = (t) => { if (chosen.size < deepN) chosen.add(t); };
@@ -65,10 +65,8 @@ export function pickDeepSet(rows, { deepN = 80, momentumN = 10, leadersN = 35, f
   const movers = liquid.filter((r) => r.ret20 != null && (r.volRatio || 0) >= 1).sort((a, b) => b.ret20 - a.ret20).slice(0, momentumN);
   const entries = liquid.filter((r) => r.entryLive && r.above200 !== false).sort((a, b) => pre(b) - pre(a)).slice(0, fvgN);
   [...leaders, ...movers, ...entries].forEach((r) => add(r.ticker));
-  const rest = liquid.filter((r) => !chosen.has(r.ticker)).sort((a, b) => (a.ticker < b.ticker ? -1 : 1));
-  if (rest.length) {
-    const start = (day * rotateN) % rest.length;
-    for (let i = 0; i < Math.min(rotateN, rest.length); i++) add(rest[(start + i) % rest.length].ticker);
-  }
+  const rest = liquid.filter((r) => !chosen.has(r.ticker))
+    .sort((a, b) => (lastChecked[a.ticker] || "").localeCompare(lastChecked[b.ticker] || "") || pre(b) - pre(a));
+  for (const r of rest) { if (chosen.size >= deepN) break; add(r.ticker); }
   return Array.from(chosen);
 }

@@ -310,7 +310,7 @@ function InvestmentCard({ s, onOpen }) {
 function Methodology() {
   const [open, setOpen] = useState(false);
   const rows = [
-    ["34", "Momentum & trend", "The strongest-proven signal for the next 3–12 months, and the one our 10-year backtest confirmed: stocks that went up the most over the past year (skipping the last month) tend to keep going. Ranked against ~550 stocks, plus 6-month momentum, strength vs the S&P 500, and trend (above the 200-day average, 50-day above 200-day)."],
+    ["34", "Momentum & trend", "The strongest-proven signal for the next 3–12 months, and the one our 10-year backtest confirmed: stocks that went up the most over the past year (skipping the last month) tend to keep going. Ranked against every scanned stock (~2,000), plus 6-month momentum, strength vs the S&P 500, and trend (above the 200-day average, 50-day above 200-day)."],
     ["25", "Earnings momentum", "Prices follow earnings. Analysts raising their EPS estimates (last 4 weeks), the 1-month change in the consensus, expected EPS growth next year, and beating estimates in recent quarters."],
     ["15", "Quality", "Profitable, efficient companies hold up better when markets drop: operating margin, return on equity, free cash flow, and not too much debt."],
     ["15", "Valuation", "Don't overpay for growth: PEG ratio, forward P/E vs the sector, and a rough cash-flow DCF (skipped for banks)."],
@@ -338,7 +338,7 @@ function Methodology() {
             <div><span className="font-medium text-slate-200">Backtest (2016–2026, S&amp;P 500, top 20 monthly):</span> the momentum & trend score made about 32%/yr vs 15% for SPY and 17% for all stocks equally, in both 5-year halves. FVG setups added nothing to picking. Real results will be lower: the test only includes today's index members, so it misses companies that collapsed. Earnings, quality and valuation couldn't be tested (no free history).</div>
           </div>
           <p className="text-xs text-slate-500">Score ≥ {L.HIGH_CONVICTION} = Top pick · {L.RECOMMEND}–{L.HIGH_CONVICTION - 1} = Recommended · {L.WATCH}–{L.RECOMMEND - 1} = Watchlist. A number we couldn't get counts as neutral (half credit) and the card says "Partial data". No method guarantees profits; this one leans on the signals with the best long-run track record.</p>
-          <p className="text-xs text-slate-500">Every weekday the job scans ~550 stocks (S&amp;P 500, Nasdaq-100, popular momentum names), then fully checks about 80: your holdings, the momentum leaders, big movers, live FVG entries and a rotating slice of everything else. Full checks stay on the site for up to 6 days.</p>
+          <p className="text-xs text-slate-500">Every weekday the job scans every US stock worth $2B+ and priced $5+ (about 1,500–2,000), then fully checks about 400: your holdings and the momentum leaders every day, plus everything else in rotation, oldest check first. Full checks are kept for 7 days, so the whole market is covered about every 5 days. The site shows the ones scoring 50+ plus your holdings.</p>
         </div>
       )}
     </Card>
@@ -368,7 +368,7 @@ function MarketScan({ scan, byTicker, onOpen }) {
     return (
       <Card className="p-4 text-sm text-slate-400">
         <div className="flex items-center gap-2 font-semibold text-white"><Icon name="Radar" size={16} className="text-indigo-300" />Market scan</div>
-        <p className="mt-1">The daily job scans about 550 stocks (S&amp;P 500, Nasdaq-100 and popular momentum names) for FVG setups and big movers. Results show here after the first run.</p>
+        <p className="mt-1">The daily job scans every US stock worth $2B+ (about 1,500–2,000) for momentum, trend and FVG setups. Results show here after the first run.</p>
       </Card>
     );
   }
@@ -385,7 +385,7 @@ function MarketScan({ scan, byTicker, onOpen }) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-semibold text-white"><Icon name="Radar" size={18} className="text-indigo-400" />Market scan</h2>
-          <p className="text-sm text-slate-400">{scan.scanned} stocks scanned on {fmtDate((scan.generatedAt || "").slice(0, 10))} · {items.filter((r) => r.fvgStatus !== "None").length} with a bullish FVG · {live} live entries. Highlighted rows got the full check above.</p>
+          <p className="text-sm text-slate-400">{scan.scanned} stocks scanned on {fmtDate((scan.generatedAt || "").slice(0, 10))} · {items.filter((r) => r.fvgStatus !== "None").length} with a bullish FVG · {live} live entries. Highlighted rows got a full check today; {scan.fullyChecked || "—"} stocks have one from the last week.</p>
         </div>
         <Segmented label="Scan view" value={view} onChange={(v) => { setView(v); setMore(false); }}
           options={[{ value: "movers", label: "Top movers (1 mo)", icon: "Rocket" }, { value: "leaders", label: "Momentum leaders (12 mo)", icon: "TrendingUp" }, { value: "setups", label: "FVG setups", icon: "Crosshair" }]} />
@@ -435,8 +435,19 @@ function MarketScan({ scan, byTicker, onOpen }) {
   );
 }
 
+function MoreButton({ shown, total, onMore }) {
+  if (shown >= total) return null;
+  return (
+    <div className="mt-3 text-center">
+      <button type="button" onClick={onMore} className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-700">Show more ({total - shown} left)</button>
+    </div>
+  );
+}
+
 function Picks({ scored, byTicker, scan, onOpen }) {
   const [sort, setSort] = useState("composite");
+  const [lim, setLim] = useState({ top: 12, mid: 12, watch: 30 });
+  const more = (k, n) => setLim((x) => ({ ...x, [k]: x[k] + n }));
   const [horizon, setHorizon] = useState("all");
   const [risk, setRisk] = useState("all");
   const fits = (s) => (horizon === "all" || s.horizon === horizon) && (risk === "all" || s.risk === risk);
@@ -455,7 +466,7 @@ function Picks({ scored, byTicker, scan, onOpen }) {
         <Stat label="Top picks" value={qualified.filter((s) => s.composite >= L.HIGH_CONVICTION).length} sub={"score ≥ " + L.HIGH_CONVICTION + " · " + qualified.length + " recommended"} icon="Award" />
         <Stat label="By horizon" value={n("swing") + " · " + n("core") + " · " + n("long")} sub="swing · core · long-term" icon="CalendarRange" />
         <Stat label="Buyable now" value={buyNow} sub="recommended and not stretched" valueTone="up" icon="ShoppingCart" />
-        <Stat label="Checked" value={scored.length} sub={scan ? "fully, of " + scan.scanned + " scanned" : "fully checked"} icon="ScanSearch" />
+        <Stat label="Fully checked" value={scan && scan.fullyChecked ? scan.fullyChecked : scored.length} sub={scan ? "of " + scan.scanned + " scanned · " + scored.length + " score 50+" : "fully checked"} icon="ScanSearch" />
       </div>
 
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -470,8 +481,9 @@ function Picks({ scored, byTicker, scan, onOpen }) {
         <h2 className="flex items-center gap-2 text-lg font-semibold text-white"><Icon name="Award" size={18} className="text-indigo-400" />Top Picks<span className="rounded bg-indigo-500/20 px-1.5 py-0.5 text-xs font-semibold text-indigo-300">{L.HIGH_CONVICTION}+</span></h2>
         <p className="mb-3 text-sm text-slate-400">Strong on most of the five factors at once: the best-backed ideas right now.</p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {top.map((s) => <InvestmentCard key={s.ticker} s={s} onOpen={onOpen} />)}
+          {top.slice(0, lim.top).map((s) => <InvestmentCard key={s.ticker} s={s} onOpen={onOpen} />)}
         </div>
+        <MoreButton shown={lim.top} total={top.length} onMore={() => more("top", 12)} />
         {top.length === 0 && <Card className="p-6 text-center text-sm text-slate-400">No top picks match these filters right now.</Card>}
       </div>
 
@@ -479,8 +491,9 @@ function Picks({ scored, byTicker, scan, onOpen }) {
         <h2 className="flex items-center gap-2 text-lg font-semibold text-white"><Icon name="Layers" size={18} className="text-emerald-400" />Recommended<span className="rounded bg-slate-700 px-1.5 py-0.5 text-xs font-semibold text-slate-300">{L.RECOMMEND}–{L.HIGH_CONVICTION - 1}</span></h2>
         <p className="mb-3 text-sm text-slate-400">Good overall, with one or two weaker factors (see the bars on each card).</p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {mid.map((s) => <InvestmentCard key={s.ticker} s={s} onOpen={onOpen} />)}
+          {mid.slice(0, lim.mid).map((s) => <InvestmentCard key={s.ticker} s={s} onOpen={onOpen} />)}
         </div>
+        <MoreButton shown={lim.mid} total={mid.length} onMore={() => more("mid", 12)} />
         {mid.length === 0 && <Card className="p-6 text-center text-sm text-slate-400">Nothing in this band matches these filters.</Card>}
       </div>
 
@@ -494,11 +507,12 @@ function Picks({ scored, byTicker, scan, onOpen }) {
                 <th className="px-4 py-2.5 font-medium">Ticker</th><th className="px-3 py-2.5 font-medium">Score</th><th className="px-3 py-2.5 text-right font-medium">Price</th>
                 <th className="px-3 py-2.5 font-medium">Horizon</th><th className="px-3 py-2.5 font-medium">Risk</th><th className="px-3 py-2.5 text-right font-medium">12-mo momentum</th><th className="px-3 py-2.5 font-medium">Plan</th>
               </tr></thead>
-              <tbody>{watch.map((s) => <WatchRow key={s.ticker} s={s} onOpen={onOpen} />)}</tbody>
+              <tbody>{watch.slice(0, lim.watch).map((s) => <WatchRow key={s.ticker} s={s} onOpen={onOpen} />)}</tbody>
             </table>
           </Card>
         ) : <Card className="p-6 text-center text-sm text-slate-400">No stocks in this band right now.</Card>}
-        <p className="mt-3 text-xs text-slate-500">{scored.filter((s) => s.composite < L.WATCH).length} fully-checked stocks scored below {L.WATCH} and are hidden.</p>
+        {watch.length > 0 && <MoreButton shown={lim.watch} total={watch.length} onMore={() => more("watch", 50)} />}
+        <p className="mt-3 text-xs text-slate-500">Stocks scoring below {L.WATCH} are hidden.</p>
       </div>
 
       <MarketScan scan={scan} byTicker={byTicker} onOpen={onOpen} />

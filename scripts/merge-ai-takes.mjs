@@ -24,8 +24,16 @@ for (const row of data.stocks) {
   row.ai_take = { ...t, model: "Claude (Pro plan)", source: "ai", generatedAt: now };
   merged++;
 }
-fs.writeFileSync(file, JSON.stringify(data, null, 1));
+fs.writeFileSync(file, JSON.stringify(data));
 console.log(`Merged ${merged} Claude takes into ${file}`);
+// Keep them in the full pool too, so they carry over to the next runs.
+try {
+  const POOL = "cache/pool.json";
+  const pool = JSON.parse(fs.readFileSync(POOL, "utf8"));
+  const fresh = Object.fromEntries(data.stocks.filter((r) => r.ai_take && r.ai_take.generatedAt === now).map((r) => [r.ticker, r.ai_take]));
+  pool.stocks.forEach((r) => { if (fresh[r.ticker]) r.ai_take = fresh[r.ticker]; });
+  fs.writeFileSync(POOL, JSON.stringify(pool));
+} catch (e) {}
 
 if (merged && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
   const rows = data.stocks.filter((r) => r.ai_take && r.ai_take.generatedAt === now).map((r) => ({ ticker: r.ticker, ai_take: r.ai_take }));

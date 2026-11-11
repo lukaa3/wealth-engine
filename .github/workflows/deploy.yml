@@ -22,6 +22,7 @@ concurrency:
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 120   # the full scan + ~400 deep checks take ~30-45 min
     env:
       HAS_CLAUDE: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
     environment:
@@ -33,6 +34,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      # The pool of fully checked stocks (cache/pool.json) and the API cache live in the Actions cache, not in git.
+      - name: Restore data cache
+        if: github.event_name != 'push'
+        uses: actions/cache/restore@v4
+        with:
+          path: cache
+          key: data-cache-${{ github.run_id }}
+          restore-keys: data-cache-
 
       - name: Refresh market data (scheduled / manual runs only)
         if: github.event_name != 'push'
@@ -62,9 +72,11 @@ jobs:
           claude_args: "--allowedTools Read,Write --max-turns 8"
           prompt: |
             Read .ai/brief.md. It has one section per stock (## TICKER) with the screener's data:
-            scores, the HTF bullish FVG setup, stop and targets, valuation, analyst consensus and recent analyst headlines.
+            the multi-factor score (momentum, earnings estimate trends, quality, valuation, smart money), risk level,
+            best-fit horizon, the buy plan with its stop, and recent analyst headlines.
 
-            For EVERY ticker in the brief, write a short note for a trader holding about 1 month (swing) or about 6 months (position).
+            For EVERY ticker in the brief, write a short note for a young investor holding from a few weeks to a few years,
+            matching the stock's best-fit horizon. Weigh momentum and earnings-estimate trends most; treat the FVG as timing only.
             Use ONLY the data in the brief. Do not add news, numbers or events that are not there. If data is missing, say so.
             Plain language, no hype, no guarantees, no telling anyone to buy or sell.
 
@@ -85,12 +97,19 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node scripts/merge-ai-takes.mjs
 
+      - name: Save data cache
+        if: always() && github.event_name != 'push'
+        uses: actions/cache/save@v4
+        with:
+          path: cache
+          key: data-cache-${{ github.run_id }}
+
       - name: Commit refreshed data
         if: github.event_name != 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data cache 2>/dev/null || git add public/data
+          git add public/data
           git diff --cached --quiet || (git commit -m "chore: refresh screener data [skip ci]" && git push)
 
       - name: Install & build
