@@ -1,0 +1,24 @@
+name: Check a stock
+# Manual: full check + score for any ticker(s), printed in the run log.
+on:
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: "Tickers, comma-separated (e.g. MU, AMD)"
+        required: true
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/check-stock.mjs
+        env:
+          TICKERS: ${{ inputs.tickers }}
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
