@@ -242,7 +242,7 @@ const keepT = new Set([...HOLDINGS, ...watchlist]);
 const pubRows = rows.filter((r) => (r.composite_score ?? 0) >= MIN_PUBLIC || keepT.has(r.ticker));
 const pubT = new Set(pubRows.map((r) => r.ticker));
 const capPer = (items, n) => { const c = {}; return items.filter((x) => (c[x.ticker] = (c[x.ticker] || 0) + 1) <= n); };
-const pubAnalyst = capPer(analyst.filter((a) => pubT.has(a.ticker)).sort((a, b) => (b.date || "").localeCompare(a.date || "")), 8);
+const pubAnalyst = capPer(analyst.filter((a) => pubT.has(a.ticker)).sort((a, b) => (b.date || "").localeCompare(a.date || "")), 5);
 const pubInsider = capPer(insider.filter((x) => pubT.has(x.ticker) && (x.value > 0 || Math.abs(x.value) >= 50000)).sort((a, b) => (b.date || "").localeCompare(a.date || "")), 12);
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
