@@ -79,19 +79,23 @@ export async function loadListedStocks({ fetchImpl = fetch, minCap = 2e9, minPri
     const cap = Number(String(r.marketCap || "").replace(/[$,]/g, "")) || 0;
     const price = Number(String(r.lastsale || "").replace(/[$,]/g, "")) || 0;
     if (!sym || /[\^ ]/.test(sym) || cap < minCap || price < minPrice || NOT_COMMON.test(r.name || "")) continue;
-    out.push({ ticker: sym, name: String(r.name || sym).replace(/\s+(Common Stock|Class [A-Z] (Common|Ordinary) (Stock|Shares)|Ordinary Shares|American Depositary Shares)\b.*$/i, "").trim() || sym,
+    out.push({ ticker: sym, price, name: String(r.name || sym).replace(/\s+(Common Stock|Class [A-Z] (Common|Ordinary) (Stock|Shares)|Ordinary Shares|American Depositary Shares)\b.*$/i, "").trim() || sym,
       sector: NQ_SECTOR[r.sector] || "Other", marketCap: cap });
   }
   return out;
 }
 
-export async function loadUniverse({ fetchImpl = fetch, extra = [], fallback = [], extras = true, broad = false } = {}) {
+/**
+ * broad: every listed US stock worth $2B+ and priced $5+. smallCaps: also $300M–$2B priced $3+ (tagged small: true;
+ * used for short-term trades only — long-term picks and full checks stay $2B+). No penny stocks.
+ */
+export async function loadUniverse({ fetchImpl = fetch, extra = [], fallback = [], extras = true, broad = false, smallCaps = false } = {}) {
   const out = new Map();
   if (broad) {
     try {
-      const listed = await loadListedStocks({ fetchImpl });
-      listed.forEach((u) => out.set(u.ticker, u));
-      console.log(`Nasdaq list: ${listed.length} US stocks worth $2B+ and priced $5+`);
+      const listed = await loadListedStocks({ fetchImpl, minCap: smallCaps ? 3e8 : 2e9, minPrice: 3 });
+      listed.forEach((u) => { if (u.marketCap >= 2e9 && u.price < 5) return; out.set(u.ticker, u.marketCap < 2e9 ? { ...u, small: true } : u); });
+      console.log(`Nasdaq list: ${listed.filter((u) => u.marketCap >= 2e9).length} US stocks worth $2B+${smallCaps ? `, ${listed.filter((u) => u.marketCap < 2e9).length} small caps ($300M–$2B, $3+)` : ""}`);
     } catch (e) {
       console.warn("Nasdaq stock list unavailable (" + e.message + "); scanning the S&P 500 + extras only.");
     }
@@ -102,7 +106,7 @@ export async function loadUniverse({ fetchImpl = fetch, extra = [], fallback = [
     for (const r of parseCsv(await res.text())) {
       const t = (r.Symbol || "").toUpperCase();
       // S&P's sector labels are better than Nasdaq's, so they win when a stock is on both lists.
-      if (t) out.set(t, { ...(out.get(t) || {}), ticker: t, name: r.Security || t, sector: mapSector(r["GICS Sector"]) });
+      if (t) { const prev = out.get(t) || {}; delete prev.small; out.set(t, { ...prev, ticker: t, name: r.Security || t, sector: mapSector(r["GICS Sector"]) }); }
     }
   } catch (e) {
     console.warn("S&P 500 list unavailable (" + e.message + "); using the built-in list only.");

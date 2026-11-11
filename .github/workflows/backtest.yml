@@ -38,5 +38,5 @@ jobs:
           git add public/data/backtest.json
           git diff --cached --quiet && exit 0
           git commit -m "chore: backtest results [skip ci]"
-          for i in 1 2 3; do git pull --rebase -q origin "${GITHUB_REF_NAME}" && git push -q && exit 0; sleep 5; done
+          for i in 1 2 3; do git pull --rebase --autostash -q origin "${GITHUB_REF_NAME}" && git push -q && exit 0; sleep 5; done
           exit 1

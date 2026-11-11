@@ -29,6 +29,7 @@ import { mockData } from "../src/mockData.js";
 import { createProviders, createCache } from "../src/lib/providers.js";
 import { buildLiveUniverse, buildLiveAnalystFeed, buildLiveInsider, refreshFromChart, buildNewsFlags } from "../src/lib/liveData.js";
 import { percentileRanks } from "../src/lib/factors.js";
+import { shortFacts, detectSetups } from "../src/lib/shortterm.js";
 import { scoreUniverse } from "../src/scoring.js";
 import { stockToRow, rowToStock, actionToRow, insiderToRow, rowToAction, rowToInsider } from "../src/lib/schema.js";
 import { analyzeMany, buildPrompt } from "../src/lib/ai.js";
@@ -89,7 +90,7 @@ let universe = [];
 let ranks = { mom12: {}, mom6: {} };
 let spyMom3 = null;
 if (P.yahoo) {
-  universe = await loadUniverse({ extra: [...watchlist, ...list(env.EXTRA_TICKERS)], fallback: mockData.stocks, broad: env.BROAD !== "off" });
+  universe = await loadUniverse({ extra: [...watchlist, ...list(env.EXTRA_TICKERS)], fallback: mockData.stocks, broad: env.BROAD !== "off", smallCaps: env.SMALL_CAPS === "on" }); // small caps lost money in the short-term backtest: off unless asked
   universe.forEach((u) => { if (!baseByTicker[u.ticker]) baseByTicker[u.ticker] = { name: u.name, sector: u.sector }; });
   console.log(`Market scan: ${universe.length} stocks…`);
   let done = 0, failedScan = 0;
@@ -104,8 +105,9 @@ if (P.yahoo) {
   process.stdout.write("\n");
   scanRows = rows.filter((r) => r && r.ticker);
   console.log(`Scanned ${scanRows.length} (${failedScan} failed). Live FVG entries: ${scanRows.filter((r) => r.entryLive).length}, any bullish FVG: ${scanRows.filter((r) => r.fvgStatus !== "None").length}`);
-  // Momentum is judged relative to the market: rank every stock's 12-1 and 6-month return against the whole scan.
-  ranks = { mom12: percentileRanks(scanRows, "mom12_1"), mom6: percentileRanks(scanRows, "mom6") };
+  // Momentum is judged relative to the market: rank every $2B+ stock's 12-1 and 6-month return (small caps are short-term only).
+  const bigRows = scanRows.filter((r) => !r.small);
+  ranks = { mom12: percentileRanks(bigRows, "mom12_1"), mom6: percentileRanks(bigRows, "mom6") };
   const spy = scanRows.find((r) => r.ticker === "SPY");
   spyMom3 = spy ? spy.mom3 : null;
   scanRows.forEach((r) => {
@@ -250,8 +252,37 @@ const write = (f, obj) => fs.writeFileSync(path.join(OUT_DIR, f), JSON.stringify
 write("screener.json", { generatedAt, spyMom3, poolSize: rows.length, stocks: pubRows });
 if (scanRows.length) {
   const deepSet = new Set(stocks.map((s) => s.ticker));
-  write("scan.json", { generatedAt, universeSize: universe.length, scanned: scanRows.length, fullyChecked: rows.length,
-    items: scanRows.map((r) => ({ ...r, deep: deepSet.has(r.ticker) })) });
+  // Small caps only appear on the Short-term page (short.json), unless you hold them.
+  write("scan.json", { generatedAt, universeSize: universe.filter((u) => !u.small).length, scanned: scanRows.filter((r) => !r.small).length, fullyChecked: rows.length,
+    items: scanRows.filter((r) => !r.small || keepT.has(r.ticker)).map((r) => ({ ...r, deep: deepSet.has(r.ticker) })) });
+
+  /* ---------------- Short-term setups (days to weeks), incl. small caps ---------------- */
+  let earnings = {};
+  if (P.finnhub && P.finnhub.earningsCalendar) {
+    const to = new Date(Date.now() + 70 * 864e5).toISOString().slice(0, 10);
+    earnings = await P.finnhub.earningsCalendar(today, to).catch((e) => (console.warn("earnings calendar:", e.message), {}));
+  }
+  const rank6All = percentileRanks(scanRows, "mom6");
+  const facts = {};
+  for (const r of scanRows) if (!r.fund && pre[r.ticker]) facts[r.ticker] = shortFacts(pre[r.ticker].candles);
+  // Top 1-month gainers among heavily traded stocks ($5M+/day) above their 50-day: the weekly momentum list.
+  const momTop = new Set(scanRows.filter((r) => facts[r.ticker] && facts[r.ticker].dollarVol >= 5e6 && r.price >= 5 && facts[r.ticker].sma50 && r.price > facts[r.ticker].sma50 && facts[r.ticker].ret21 != null)
+    .sort((a, b) => facts[b.ticker].ret21 - facts[a.ticker].ret21).slice(0, 20).map((r) => r.ticker));
+  const shortItems = [];
+  for (const r of scanRows) {
+    const f = facts[r.ticker];
+    if (!f || !(f.dollarVol >= 2e6) || r.price < 3) continue; // tradable: $2M+ a day
+    const setups = detectSetups(f, r.price, { rank6: rank6All[r.ticker] ?? null, momTop: momTop.has(r.ticker) });
+    if (!setups.length) continue;
+    const pick = (o, ks) => Object.fromEntries(ks.map((k) => [k, o[k] == null ? null : typeof o[k] === "number" ? Math.round(o[k] * 1000) / 1000 : o[k]]));
+    shortItems.push({ ticker: r.ticker, name: r.name, sector: r.sector, small: !!r.small, price: r.price, setups, rank6: rank6All[r.ticker] ?? null,
+      ret5: r.ret5, ret20: r.ret20, vol63: r.vol63, earningsDate: earnings[r.ticker] || null,
+      facts: pick(f, ["atr", "rsi2", "sma5", "sma50", "sma200", "gapToday", "volX", "ret21", "dollarVol"]) });
+  }
+  const holdEarn = Object.fromEntries([...keepT].filter((t) => earnings[t]).map((t) => [t, earnings[t]]));
+  write("short.json", { generatedAt, scanned: scanRows.length, smallCaps: scanRows.filter((r) => r.small).length, earnings: holdEarn, items: shortItems });
+  const cnt = {}; shortItems.forEach((x) => x.setups.forEach((k) => (cnt[k] = (cnt[k] || 0) + 1)));
+  console.log(`Short-term: ${shortItems.length} setups today (${Object.entries(cnt).map(([k, v]) => v + " " + k).join(", ")}); earnings dates for ${Object.keys(earnings).length} companies`);
 }
 if (pubAnalyst.length) write("analyst.json", { generatedAt, items: pubAnalyst.map(actionToRow) });
 if (pubInsider.length) write("insider.json", { generatedAt, items: pubInsider.map(insiderToRow) });

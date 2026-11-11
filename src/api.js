@@ -129,6 +129,16 @@ export async function fetchScan(settings, { signal } = {}) {
   return { data: null, source: "mock" };
 }
 
+/** Today's short-term setups (public/data/short.json). */
+export async function fetchShort(settings, { signal } = {}) {
+  if (settings.mode === "mock") return { data: null, source: "mock" };
+  try {
+    const j = await staticJson(settings, "short.json", signal);
+    if (j && Array.isArray(j.items)) return { data: j, source: "static-json" };
+  } catch (e) { if (e.name === "AbortError") throw e; }
+  return { data: null, source: "mock" };
+}
+
 /* -------------------------------------- Hooks -------------------------------------- */
 /** Async resource with optional polling. Re-runs when `depKey` (e.g. the settings) changes. */
 function useResource(fetcher, fallback, depKey, { pollMs = 0 } = {}) {
@@ -180,6 +190,12 @@ export function useScan(settings) {
   return { ...r, data: r.data && r.data.data };
 }
 
+export function useShort(settings) {
+  const f = useCallback((o) => fetchShort(settings, o), [settings]);
+  const r = useResource(f, { data: null, source: "mock" }, settings);
+  return { ...r, data: r.data && r.data.data };
+}
+
 /** Settings drawer state (persisted per browser). */
 export function useSettings() {
   const [settings, setSettings] = useState(loadSettings);
@@ -201,9 +217,12 @@ function loadHoldings() {
 }
 
 const UPDATED_KEY = "wealth-engine-portfolio-updated";
+const TRADES_KEY = "wealth-engine-trades-v1";
 const SYNC_KEY = "wealth-engine-sync-code";
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+const loadTrades = () => { try { const t = JSON.parse(lsGet(TRADES_KEY) || "[]"); return Array.isArray(t) ? t : []; } catch (e) { return []; } };
+const cleanTrades = (list) => (Array.isArray(list) ? list : []).filter((t) => t && t.ticker && t.date).map((t) => ({ ...t, ticker: String(t.ticker).toUpperCase() }));
 const cleanHoldings = (list) => (Array.isArray(list) ? list : []).filter((h) => h && h.ticker)
   .map((h) => ({ id: h.id || newId(), ticker: String(h.ticker).toUpperCase(), shares: Number(h.shares) || 0, cost: Number(h.cost) || 0 }));
 const syncClient = createSyncClient(SYNC_CONFIG);
@@ -213,7 +232,7 @@ const syncClient = createSyncClient(SYNC_CONFIG);
  * kept the same on every device through Supabase (see lib/sync.js).
  */
 export function usePortfolio() {
-  const [state, setState] = useState(() => ({ holdings: loadHoldings(), updatedAt: lsGet(UPDATED_KEY), local: false }));
+  const [state, setState] = useState(() => ({ holdings: loadHoldings(), trades: loadTrades(), updatedAt: lsGet(UPDATED_KEY), local: false }));
   const [code, setCode] = useState(() => lsGet(SYNC_KEY));
   const [sync, setSync] = useState({ status: lsGet(SYNC_KEY) ? "syncing" : "off", at: null, error: null, note: null });
   const stateRef = useRef(state);
@@ -222,10 +241,15 @@ export function usePortfolio() {
   // Persist locally on every change.
   useEffect(() => {
     lsSet(STORE_KEY, JSON.stringify(state.holdings));
+    lsSet(TRADES_KEY, JSON.stringify(state.trades || []));
     lsSet(UPDATED_KEY, state.updatedAt);
   }, [state]);
 
-  const edit = useCallback((fn) => setState((s) => ({ holdings: fn(s.holdings), updatedAt: new Date().toISOString(), local: true })), []);
+  const edit = useCallback((fn) => setState((s) => ({ ...s, holdings: fn(s.holdings), updatedAt: new Date().toISOString(), local: true })), []);
+  const editTrades = useCallback((fn) => setState((s) => ({ ...s, trades: fn(s.trades || []), updatedAt: new Date().toISOString(), local: true })), []);
+  /** Short-term trades you've taken: { id, ticker, setup, date, price, sellBy, stop }. */
+  const addTrade = useCallback((t) => editTrades((prev) => [...prev, { id: newId(), ...t }]), [editTrades]);
+  const closeTrade = useCallback((id) => editTrades((prev) => prev.filter((t) => t.id !== id)), [editTrades]);
   const addHolding = useCallback(({ ticker, shares, cost }) => edit((prev) => {
     const i = prev.findIndex((h) => h.ticker === ticker);
     if (i < 0) return [...prev, { id: newId(), ticker, shares, cost: ticker === "CASH" ? 1 : cost }];
@@ -242,7 +266,7 @@ export function usePortfolio() {
     if (!remote || !remote.data) return false;
     const mine = stateRef.current.updatedAt ? Date.parse(stateRef.current.updatedAt) : 0;
     if (Date.parse(remote.updated_at) > mine) {
-      setState({ holdings: cleanHoldings(remote.data.holdings), updatedAt: remote.updated_at, local: false });
+      setState({ holdings: cleanHoldings(remote.data.holdings), trades: cleanTrades(remote.data.trades), updatedAt: remote.updated_at, local: false });
       return true;
     }
     return false;
@@ -255,7 +279,7 @@ export function usePortfolio() {
       if (remote) applyRemote(remote);
       else { // nothing saved under this code yet → upload this device's portfolio
         const s = stateRef.current;
-        await syncClient.save(c, { holdings: s.holdings }, s.updatedAt || new Date().toISOString());
+        await syncClient.save(c, { holdings: s.holdings, trades: s.trades || [] }, s.updatedAt || new Date().toISOString());
       }
       setSync((x) => ({ ...x, status: "synced", at: new Date(), error: null }));
     } catch (e) { setSync((x) => ({ ...x, status: "error", error: e.message })); }
@@ -267,7 +291,7 @@ export function usePortfolio() {
     setSync((x) => ({ ...x, status: "syncing" }));
     const t = setTimeout(async () => {
       try {
-        const stored = await syncClient.save(code, { holdings: state.holdings }, state.updatedAt);
+        const stored = await syncClient.save(code, { holdings: state.holdings, trades: state.trades || [] }, state.updatedAt);
         if (stored) applyRemote(stored); // another device edited later → take theirs
         setSync((x) => ({ ...x, status: "synced", at: new Date(), error: null }));
       } catch (e) { setSync((x) => ({ ...x, status: "error", error: e.message })); }
@@ -318,6 +342,7 @@ export function usePortfolio() {
   const syncLink = code ? window.location.origin + window.location.pathname + "#portfolio&sync=" + code : null;
   return {
     holdings: state.holdings, addHolding, updateHolding, deleteHolding, resetPortfolio,
+    trades: state.trades || [], addTrade, closeTrade,
     sync: { available: !!syncClient, code, link: syncLink, ...sync, start: startSync, join: joinSync, stop: stopSync, refresh: () => pull(code) },
   };
 }

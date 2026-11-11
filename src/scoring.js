@@ -36,7 +36,6 @@ export const FACTORS = [
 ];
 
 export const HORIZON_INFO = {
-  swing: { label: "Swing", span: "1–3 months", icon: "Zap" },
   core: { label: "Core", span: "3–12 months", icon: "CalendarRange" },
   long: { label: "Long-term", span: "1–3+ years", icon: "Sprout" },
 };
@@ -209,7 +208,8 @@ export function scoreStock(s, sectorPE, insider) {
   const longFit = Math.round((quality / 15) * 35 + (eGrow / 7) * 15 + lin(f.revenueGrowth ?? 0, 0, 0.2, 10) + (value / 15) * 25
     + (f.above200 ? 10 : 0) + (m12 / 16) * 5 - (riskLevel(s) === "High" ? 10 : 0));
   const fits = { swing: swingFit, core: coreFit, long: longFit };
-  const horizon = Object.keys(fits).sort((a, b) => fits[b] - fits[a])[0];
+  // Long-term page: Core vs Long-term. Swing-style trades live on the Short-term page (their own tested setups).
+  const horizon = fits.long > fits.core ? "long" : "core";
   const risk = riskLevel(s);
   const bp = buyPlan(s, horizon);
   const [zLo, zHi] = s.buyZone || [null, null];

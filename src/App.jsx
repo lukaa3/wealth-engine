@@ -1,11 +1,13 @@
 /**
- * App.jsx — Wealth & Stock Intelligence Engine (UI): multi-factor stock picks (swing / core / long-term), portfolio advisor.
+ * App.jsx — Wealth & Stock Intelligence Engine (UI): long-term picks (core / long-term), short-term trades (backtested
+ * setups with time exits), analyst & insider intelligence, portfolio advisor.
  */
 import React, { useState, useMemo, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import * as LucideIcons from "lucide-react";
 import { SECTORS, SECTOR_COLORS, SOURCE_URLS, insiderSourceUrl } from "./mockData.js";
 import { LIMITS, FACTORS, HORIZON_INFO, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio, suggestedSize, planNewMoney } from "./scoring.js";
-import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, usePortfolio, useSettings, clearLiveCache } from "./api.js";
+import { SETUPS, RULED_OUT, tradePlanFor } from "./lib/shortterm.js";
+import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, useShort, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
 import { ruleSummary } from "./lib/ai.js";
 
@@ -185,7 +187,6 @@ const SORTS = [
 ];
 const HORIZONS = [
   { value: "all", label: "All" },
-  { value: "swing", label: "Swing · 1–3 mo", icon: "Zap" },
   { value: "core", label: "Core · 3–12 mo", icon: "CalendarRange" },
   { value: "long", label: "Long-term · 1–3+ yr", icon: "Sprout" },
 ];
@@ -331,7 +332,7 @@ function Methodology() {
             </div>
           ))}
           <div className="space-y-1.5 rounded-lg bg-slate-900/50 p-3 text-sm text-slate-400">
-            <div><span className="font-medium text-slate-200">Horizon label:</span> each stock gets a fit score for <span className="text-slate-200">Swing (1–3 months)</span>: short-term strength, estimate raises and a live entry; <span className="text-slate-200">Core (3–12 months)</span>: the overall score; and <span className="text-slate-200">Long-term (1–3+ years)</span>: quality, growth and fair price. It's labeled with the best fit.</div>
+            <div><span className="font-medium text-slate-200">Horizon label:</span> (shorter trades are on the Short-term tab) each stock gets a fit score for <span className="text-slate-200">Core (3–12 months)</span>: the overall score; and <span className="text-slate-200">Long-term (1–3+ years)</span>: quality, growth and fair price. It's labeled with the best fit.</div>
             <div><span className="font-medium text-slate-200">Risk:</span> High = big price swings, losing money, small company or under $5. Low = calm, profitable. Being young, a mix with some High-risk names is fine; keep each one small.</div>
             <div><span className="font-medium text-slate-200">How to buy:</span> buy in thirds at real support levels below the price (FVG, 50-day average, pullback levels, 200-day average). If the stock is stretched far above its 50-day, start with a smaller first piece (1/5): in the backtest, waiting cost more than it saved. The stop is where the idea is wrong.</div>
             <div><span className="font-medium text-slate-200">How much:</span> keep about half your money in index funds. Each pick gets 8% of your portfolio if Low risk, 5% Medium, 3% High, and 25% more for Top picks (max 10%), so no single stock can sink you. Check picks about every 3 months.</div>
@@ -464,7 +465,7 @@ function Picks({ scored, byTicker, scan, onOpen }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Top picks" value={qualified.filter((s) => s.composite >= L.HIGH_CONVICTION).length} sub={"score ≥ " + L.HIGH_CONVICTION + " · " + qualified.length + " recommended"} icon="Award" />
-        <Stat label="By horizon" value={n("swing") + " · " + n("core") + " · " + n("long")} sub="swing · core · long-term" icon="CalendarRange" />
+        <Stat label="By horizon" value={n("core") + " · " + n("long")} sub="core (3–12 mo) · long-term (1–3+ yr)" icon="CalendarRange" />
         <Stat label="Buyable now" value={buyNow} sub="recommended and not stretched" valueTone="up" icon="ShoppingCart" />
         <Stat label="Fully checked" value={scan && scan.fullyChecked ? scan.fullyChecked : scored.length} sub={scan ? "of " + scan.scanned + " scanned · " + scored.length + " score 50+" : "fully checked"} icon="ScanSearch" />
       </div>
@@ -517,6 +518,148 @@ function Picks({ scored, byTicker, scan, onOpen }) {
 
       <MarketScan scan={scan} byTicker={byTicker} onOpen={onOpen} />
       <Methodology />
+    </div>
+  );
+}
+
+
+/* ===================== Tab: Short-term Trades ===================== */
+const SHORT_BUDGET = 0.22; // share of the portfolio for short-term trades (you chose ~20-25%)
+const todayISO = () => new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
+
+function SetupStats({ st }) {
+  if (!st) return <span className="text-xs text-amber-300">Experimental: still being tested</span>;
+  return (
+    <span className="text-xs text-slate-400">
+      10-yr backtest: <span className="font-semibold text-emerald-300">{spct(st.avg)}</span> per trade ({spct(st.vsSpy)} vs SPY) · wins {Math.round(st.win * 100)}% · worst drop {Math.round(st.maxDD * 100)}%
+    </span>
+  );
+}
+
+function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen }) {
+  const plan = tradePlanFor(setupKey, x.price, x.facts, { total, budgetPct: SHORT_BUDGET, earningsDate: x.earningsDate, today });
+  const full = byTicker[x.ticker];
+  const why = setupKey === "momentum" ? "Up " + spct(x.facts.ret21, 0) + " in a month"
+    : setupKey === "gap" ? "Gapped up " + spct(x.facts.gapToday, 1) + " on " + (x.facts.volX || 0).toFixed(1) + "x volume"
+    : "RSI-2 at " + Math.round(x.facts.rsi2 || 0) + " after a pullback";
+  return (
+    <div className="flex flex-col rounded-xl border border-slate-700/60 bg-slate-800 p-3.5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex items-baseline gap-2"><span className="text-base font-bold text-white">{x.ticker}</span><span className="text-sm tabular-nums text-slate-300">{px(x.price)}</span></div>
+          <div className="truncate text-xs text-slate-400">{x.name}</div>
+        </div>
+        {full ? <button type="button" onClick={() => onOpen(x.ticker)} title="Long-term score: open the full breakdown"><ScoreBadge score={full.composite} size="sm" /></button> : null}
+      </div>
+      <div className="mt-2 text-sm text-emerald-300">{why}</div>
+      {plan.earnings && <div className="mt-1.5 flex items-center gap-1 rounded bg-amber-500/10 px-2 py-1 text-xs text-amber-300"><Icon name="CalendarClock" size={12} />Earnings {fmtDate(plan.earnings.date)} ({plan.earnings.days} days): a big move either way is possible</div>}
+      <div className="mt-2 space-y-0.5 text-xs text-slate-300">
+        <div><span className="text-slate-500">Buy:</span> {plan.size ? <span className="font-semibold text-white">~{usd(plan.size)}</span> : Math.round(plan.sizePct * 1000) / 10 + "% of portfolio"} now (~{px(x.price)})</div>
+        <div><span className="text-slate-500">Sell:</span> {setupKey === "dip" ? "first close above the 5-day avg (~" + px(x.facts.sma5) + "), max 10 days" : "on " + fmtDate(plan.sellBy)}</div>
+        <div><span className="text-slate-500">Early exit:</span> only on bad company news (no stop-loss: tested worse)</div>
+      </div>
+      <div className="mt-auto pt-2.5">
+        {owned ? <span className="inline-flex items-center gap-1 text-xs text-emerald-300"><Icon name="Check" size={13} />In your open trades</span>
+          : <button type="button" onClick={() => onBuy({ ticker: x.ticker, setup: setupKey, date: todayISO(), price: x.price, sellBy: plan.sellBy, sma5: x.facts.sma5 || null })}
+              className="rounded-lg border border-emerald-500/40 px-2.5 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-500/10">I bought this</button>}
+      </div>
+    </div>
+  );
+}
+
+function OpenTrades({ trades, priceBook, onClose }) {
+  if (!trades.length) return null;
+  const today = todayISO();
+  return (
+    <Card className="overflow-x-auto">
+      <div className="px-4 pt-3 text-sm font-semibold text-white">My open short-term trades</div>
+      <table className="mt-2 w-full min-w-[640px] text-sm">
+        <thead><tr className="border-b border-slate-700/60 text-left text-xs uppercase tracking-wide text-slate-400">
+          <th className="px-4 py-2 font-medium">Trade</th><th className="px-3 py-2 text-right font-medium">Bought</th><th className="px-3 py-2 text-right font-medium">Now</th><th className="px-3 py-2 text-right font-medium">P/L</th><th className="px-3 py-2 font-medium">What to do</th><th className="px-3 py-2" />
+        </tr></thead>
+        <tbody>
+          {trades.slice().sort((a, b) => (a.sellBy || "").localeCompare(b.sellBy || "")).map((t) => {
+            const now = priceBook[t.ticker] ? priceBook[t.ticker].price : null;
+            const pl = now ? now / t.price - 1 : null;
+            const daysLeft = t.sellBy ? Math.round((Date.parse(t.sellBy) - Date.parse(today)) / 864e5) : null;
+            const status = t.setup === "dip" && now && t.sma5 && now > t.sma5 ? ["Sell: bounced above the 5-day", "bg-emerald-500 text-slate-900"]
+              : daysLeft != null && daysLeft <= 0 ? ["Sell today: time's up", "bg-amber-500 text-slate-900"]
+              : ["Hold · sell " + fmtDate(t.sellBy) + " (" + daysLeft + "d)", "bg-slate-700 text-slate-200"];
+            return (
+              <tr key={t.id} className="border-b border-slate-700/40 last:border-0">
+                <td className="px-4 py-2.5"><div className="font-semibold text-white">{t.ticker}</div><div className="text-xs text-slate-400">{(SETUPS[t.setup] || {}).label} · {fmtDate(t.date)}</div></td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">{px(t.price)}</td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-slate-200">{now ? px(now) : "—"}</td>
+                <td className={"px-3 py-2.5 text-right tabular-nums " + tone(pl)}>{pl == null ? "—" : spct(pl)}</td>
+                <td className="px-3 py-2.5"><span className={"rounded-md px-2 py-0.5 text-xs font-semibold " + status[1]}>{status[0]}</span></td>
+                <td className="px-3 py-2.5 text-right"><button type="button" onClick={() => onClose(t.id)} className="text-xs text-slate-400 hover:text-white" title="Remove once you've sold">Sold / remove</button></td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="px-4 pb-3 pt-1 text-xs text-slate-500">Prices update after each nightly run. Syncs to your other devices if sync is on.</p>
+    </Card>
+  );
+}
+
+function ShortTermTab({ data, byTicker, priceBook, pf, total, onOpen }) {
+  const [showOut, setShowOut] = useState(false);
+  const [showAll, setShowAll] = useState({});
+  const items = (data && data.items) || [];
+  const today = data && data.generatedAt ? data.generatedAt.slice(0, 10) : todayISO();
+  const owned = new Set(pf.trades.map((t) => t.ticker));
+  const lists = {
+    momentum: items.filter((x) => x.setups.includes("momentum")).sort((a, b) => (b.facts.ret21 || 0) - (a.facts.ret21 || 0)),
+    gap: items.filter((x) => x.setups.includes("gap")).sort((a, b) => (b.facts.gapToday || 0) - (a.facts.gapToday || 0)),
+    dip: items.filter((x) => x.setups.includes("dip")).sort((a, b) => (b.rank6 || 0) - (a.rank6 || 0)).slice(0, 12),
+  };
+  const budget = total * SHORT_BUDGET;
+  return (
+    <div className="space-y-6">
+      <Card className="p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-white"><Icon name="Zap" size={18} className="text-amber-300" />Short-term trades</h2>
+            <p className="mt-1 max-w-3xl text-sm text-slate-400">Only setups that beat simply holding SPY in a 10-year backtest. They use <span className="text-slate-200">time-based exits</span> (tested better than tight stops or profit targets): buy, then sell on the date shown. Expect lots of small losses mixed with bigger wins; about half of trades win.</p>
+          </div>
+          <div className="rounded-lg bg-slate-900/60 px-3 py-2 text-sm">
+            <div className="text-slate-400">Short-term budget (~{Math.round(SHORT_BUDGET * 100)}%)</div>
+            <div className="font-semibold text-white">{total ? usd(budget) : "add holdings to see $"}</div>
+            <div className="text-xs text-slate-500">up to 8 trades{total ? " · ~" + usd(budget / 8) + " each" : ""}</div>
+          </div>
+        </div>
+      </Card>
+
+      <OpenTrades trades={pf.trades} priceBook={priceBook} onClose={pf.closeTrade} />
+
+      {!data && <Card className="p-6 text-center text-sm text-slate-400">Short-term setups appear after the next nightly run.</Card>}
+      {data && ["momentum", "gap", "dip"].filter((k) => SETUPS[k] && !SETUPS[k].disabled).map((k) => (
+        <div key={k}>
+          <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold text-white">{SETUPS[k].label}<span className="rounded bg-slate-700 px-1.5 py-0.5 text-xs font-medium text-slate-300">hold {SETUPS[k].span}</span>{SETUPS[k].experimental && <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-xs text-amber-300">experimental</span>}</h3>
+          <p className="mt-0.5 text-sm text-slate-400">{SETUPS[k].blurb} {SETUPS[k].rule}</p>
+          <div className="mb-3 mt-1"><SetupStats st={SETUPS[k].stats} /></div>
+          {lists[k].length ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {(showAll[k] ? lists[k] : lists[k].slice(0, 8)).map((x) => <ShortCard key={k + x.ticker} x={x} setupKey={k} byTicker={byTicker} total={total} today={today} owned={owned.has(x.ticker)} onBuy={pf.addTrade} onOpen={onOpen} />)}
+            </div>
+          ) : <Card className="p-4 text-center text-sm text-slate-400">No {SETUPS[k].label.toLowerCase()} setups today.</Card>}
+          {lists[k].length > 8 && <button type="button" onClick={() => setShowAll({ ...showAll, [k]: !showAll[k] })} className="mt-2 text-sm text-indigo-300 hover:text-indigo-200">{showAll[k] ? "Show top 8 only" : "Show all " + lists[k].length + " (top 8 are the strongest)"}</button>}
+        </div>
+      ))}
+
+      <Card className="overflow-hidden">
+        <button type="button" onClick={() => setShowOut(!showOut)} aria-expanded={showOut} className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-slate-200 hover:bg-slate-700/40">
+          <span className="flex items-center gap-2"><Icon name="FlaskConical" size={15} className="text-indigo-300" />What the backtest ruled out, and the fine print</span>
+          <Icon name="ChevronDown" size={16} className={"transition " + (showOut ? "rotate-180" : "")} />
+        </button>
+        {showOut && (
+          <div className="space-y-2 border-t border-slate-700/60 px-4 py-3 text-sm">
+            {RULED_OUT.map(([k, d]) => <div key={k}><span className="font-medium text-slate-100">{k}:</span> <span className="text-slate-400">{d}</span></div>)}
+            <p className="text-xs text-slate-500">Backtest: 2016–2026, US stocks worth $2B+, buy at the next day's open, 0.1% cost per side. It only includes stocks listed today (companies that collapsed are missing), so real results will be lower. Each trade is 1/8 of the short-term budget so no single trade can do much damage. Not financial advice.</p>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
@@ -1270,7 +1413,8 @@ function SettingsDrawer({ settings, onSave, onClose, status }) {
 
 /* ================================ Shell ================================ */
 const TABS = [
-  { id: "picks", label: "Stock Picks", short: "Picks", icon: "Target" },
+  { id: "picks", label: "Long-term Picks", short: "Long-term", icon: "Target" },
+  { id: "short", label: "Short-term Trades", short: "Short-term", icon: "Zap" },
   { id: "intelligence", label: "Analyst & Insider Intelligence", short: "Intel", icon: "Newspaper" },
   { id: "portfolio", label: "Portfolio & Advisor", short: "Portfolio", icon: "Briefcase" },
 ];
@@ -1288,6 +1432,7 @@ export default function App() {
   const feedRaw = useAnalystFeed(settings);
   const insiderRaw = useInsiderActivity(settings);
   const scanRes = useScan(settings);
+  const shortRes = useShort(settings);
   // Never blend sample analyst/insider rows into real stock data: if the screener is live but a feed fell back to samples, show it empty.
   const liveScreener = screener.source !== "mock";
   const blank = (r, msg) => ({ ...r, data: { ...r.data, items: [] }, notes: [msg, ...(r.notes || [])] });
@@ -1361,6 +1506,7 @@ export default function App() {
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {tab === "picks" && <Picks scored={scored} byTicker={byTicker} scan={screener.source !== "mock" ? scanRes.data : null} onOpen={setOpen} />}
+        {tab === "short" && <ShortTermTab data={shortRes.data} byTicker={byTicker} priceBook={priceBook} pf={pf} total={analysis.total} onOpen={setOpen} />}
         {tab === "intelligence" && <Intelligence scored={scored} byTicker={byTicker} feedRes={feed} txRes={insider} onOpen={setOpen} />}
         {tab === "portfolio" && <PortfolioTab scored={scored} byTicker={byTicker} priceBook={priceBook} pf={pf} a={analysis} onOpen={setOpen} />}
       </main>

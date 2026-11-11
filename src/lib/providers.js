@@ -128,6 +128,13 @@ export function createProviders(keys, opts = {}) {
       const d = await getJSON(`${FINNHUB}/stock/insider-transactions?symbol=${t}&from=${fromDate}&token=${keys.finnhubKey}`, o("fh:ins:" + t, fTtl / 2));
       return (d && d.data) || [];
     },
+    /** Upcoming earnings for ALL companies in a date range (one call): { TICKER: "YYYY-MM-DD" }. */
+    earningsCalendar: async (fromDate, toDate) => {
+      const d = await getJSON(`${FINNHUB}/calendar/earnings?from=${fromDate}&to=${toDate}&token=${keys.finnhubKey}`, o("fh:ecal:" + fromDate + ":" + toDate, 6 * 3600e3));
+      const out = {};
+      ((d && d.earningsCalendar) || []).forEach((e) => { if (e.symbol && e.date && (!out[e.symbol] || e.date < out[e.symbol])) out[e.symbol.replace("-", ".")] = e.date; });
+      return out;
+    },
   };
 
   // Alpha Vantage free = 25 calls/day: cap calls per run and stop once it reports a limit.

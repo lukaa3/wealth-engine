@@ -32,7 +32,7 @@ export function scanRow(meta, data) {
   }
   const f = chartFactors(c, price) || {};
   return {
-    ticker: meta.ticker, name: data.name || meta.name, sector: meta.sector, fund: !!meta.fund, price: r3(price),
+    ticker: meta.ticker, name: data.name || meta.name, sector: meta.sector, fund: !!meta.fund, small: !!meta.small, price: r3(price),
     ret5: r3(ret(c, 5)), ret20: r3(ret(c, 20)), ret60: r3(ret(c, 60)),
     volRatio: avgVol ? r3((last.volume || 0) / avgVol) : null,
     fromHigh: r3(price / hi52 - 1),
@@ -59,7 +59,7 @@ export function pickDeepSet(rows, { deepN = 400, momentumN = 25, leadersN = 120,
   const have = new Set(rows.map((r) => r.ticker));
   const chosen = new Set(always.filter((t) => have.has(t)));
   const add = (t) => { if (chosen.size < deepN) chosen.add(t); };
-  const liquid = rows.filter((r) => r.price >= 5 && !r.fund); // funds/ETFs are held, not picked
+  const liquid = rows.filter((r) => r.price >= 5 && !r.fund && !r.small); // funds/ETFs are held, small caps are short-term only
   const pre = (r) => 0.5 * ((ranks.mom12 || {})[r.ticker] ?? 0.5) + 0.3 * ((ranks.mom6 || {})[r.ticker] ?? 0.5) + (r.above200 ? 0.2 : 0);
   const leaders = liquid.slice().sort((a, b) => pre(b) - pre(a)).slice(0, leadersN);
   const movers = liquid.filter((r) => r.ret20 != null && (r.volRatio || 0) >= 1).sort((a, b) => b.ret20 - a.ret20).slice(0, momentumN);
