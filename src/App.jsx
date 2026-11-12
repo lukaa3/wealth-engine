@@ -169,6 +169,7 @@ function BuyPlanBox({ s }) {
           </li>
         ))}
       </ol>
+      <p className="mt-1.5 flex gap-1.5 text-xs text-sky-300"><Icon name="CalendarClock" size={13} className="mt-0.5 shrink-0" /><span><span className="font-semibold">Lower prices don't come within ~4 weeks? Buy the rest anyway.</span> <span className="text-sky-300/70">Tested: waiting forever cost ~10% a year, because strong stocks often never dip.</span></span></p>
       <div className="mt-2 grid gap-1 border-t border-slate-700/60 pt-2 text-xs">
         <div className="flex gap-1.5 text-rose-300"><Icon name="XCircle" size={13} className="mt-0.5 shrink-0" /><span><span className="font-semibold">Stop adding / exit below {px(bp.stop)}</span> <span className="text-rose-300/70">({spct(bp.stopPct, 0)})</span>: the idea is wrong there.</span></div>
         <div className="flex gap-1.5 text-emerald-300"><Icon name="Flag" size={13} className="mt-0.5 shrink-0" /><span>{bp.take.text}</span></div>
@@ -334,7 +335,7 @@ function Methodology() {
           <div className="space-y-1.5 rounded-lg bg-slate-900/50 p-3 text-sm text-slate-400">
             <div><span className="font-medium text-slate-200">Horizon label:</span> (shorter trades are on the Short-term tab) each stock gets a fit score for <span className="text-slate-200">Core (3–12 months)</span>: the overall score; and <span className="text-slate-200">Long-term (1–3+ years)</span>: quality, growth and fair price. It's labeled with the best fit.</div>
             <div><span className="font-medium text-slate-200">Risk:</span> High = big price swings, losing money, small company or under $5. Low = calm, profitable. Being young, a mix with some High-risk names is fine; keep each one small.</div>
-            <div><span className="font-medium text-slate-200">How to buy:</span> buy in thirds at real support levels below the price (FVG, 50-day average, pullback levels, 200-day average). If the stock is stretched far above its 50-day, start with a smaller first piece (1/5): in the backtest, waiting cost more than it saved. The stop is where the idea is wrong.</div>
+            <div><span className="font-medium text-slate-200">How to buy:</span> buy the first piece now and set the other two at real support levels below the price (FVG, 50-day average, pullback levels, 200-day average). If those prices don't come within about 4 weeks, buy the rest at the market price. In the 10-year test this matched or beat buying everything at once (+34% vs +34% over a year, higher median), while waiting for the dips with no deadline did much worse (+24%), because strong stocks often never come back down. Stretched stocks start with a smaller first piece (1/5). The stop is where the idea is wrong.</div>
             <div><span className="font-medium text-slate-200">How much:</span> keep about half your money in index funds. Each pick gets 8% of your portfolio if Low risk, 5% Medium, 3% High, and 25% more for Top picks (max 10%), so no single stock can sink you. Check picks about every 3 months.</div>
             <div><span className="font-medium text-slate-200">Backtest (2016–2026, S&amp;P 500, top 20 monthly):</span> the momentum & trend score made about 32%/yr vs 15% for SPY and 17% for all stocks equally, in both 5-year halves. FVG setups added nothing to picking. Real results will be lower: the test only includes today's index members, so it misses companies that collapsed. Earnings, quality and valuation couldn't be tested (no free history).</div>
           </div>
@@ -1323,7 +1324,7 @@ function NewMoneyPlanner({ a, scored, onOpen }) {
               <div className="text-xs text-slate-400">{x.kind === "core" ? x.why : "Target " + usd(x.target) + " (" + Math.round(x.pct * 100) + "%) · score " + x.stock.composite + " · " + x.stock.risk.toLowerCase() + " risk" + (x.later.length ? " · next buys at " + x.later.map(px).join(", ") : "")}</div>
             </div>
           ))}
-          <p className="text-xs text-slate-500">Each pick gets its first piece now; the rest of its target comes later at the listed prices or from future money. Fractional shares are fine.</p>
+          <p className="text-xs text-slate-500">Each pick gets its first piece now; the rest comes at the listed prices, or at the market price if they don't come within ~4 weeks. Fractional shares are fine.</p>
         </div>
       )}
     </Card>

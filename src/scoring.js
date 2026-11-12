@@ -106,6 +106,8 @@ export function buyPlan(s, horizon = "core") {
   const ext = isNum(f.ext50) ? f.ext50 : 0;
   const hot = ext > 0.15 || (f.rsi14 != null && f.rsi14 >= 75);
   // Backtest: skipping stretched leaders cost returns (strong stocks kept going), so even then start small now.
+  // Entry test (10 yrs, top 20 every 3 months): thirds at these levels with no deadline +24%/yr vs all-at-once +34%;
+  // with a ~4-week deadline (then buy at market) +34.4%, higher median. So the plan carries a 4-week deadline.
   const steps = [{ when: "now", price: p, why: hot ? "small starter: strong stocks often keep running" : levels[0] && levels[0].v >= p * 0.97 ? "just above the " + levels[0].why : "trend is healthy, start the position" }];
   let last = p;
   for (const l of levels) {
