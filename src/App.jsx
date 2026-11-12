@@ -564,6 +564,19 @@ function MarketScan({ scan, byTicker, onOpen }) {
   );
 }
 
+/** True on screens 768px+ (md). Lets big lists render one layout instead of hiding a second copy with CSS. */
+function useIsDesktop() {
+  const q = "(min-width: 768px)";
+  const [on, setOn] = useState(() => typeof window !== "undefined" && window.matchMedia ? window.matchMedia(q).matches : true);
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const m = window.matchMedia(q), f = () => setOn(m.matches);
+    m.addEventListener ? m.addEventListener("change", f) : m.addListener(f);
+    return () => (m.removeEventListener ? m.removeEventListener("change", f) : m.removeListener(f));
+  }, []);
+  return on;
+}
+
 function MoreButton({ shown, total, onMore }) {
   if (shown >= total) return null;
   return (
@@ -975,6 +988,8 @@ function LiveBar({ res, label, onRefresh }) {
 function InsiderPanel({ scored, txRes }) {
   const [filter, setFilter] = useState("all");
   const [hidePlanned, setHidePlanned] = useState(false);
+  const [shownTx, setShownTx] = useState(50);
+  useEffect(() => setShownTx(50), [filter, hidePlanned]);
   const items = txRes.data.items;
   const names = scored.filter((s) => s.insider.net !== 0).sort((a, b) => b.insider.net - a.insider.net);
   const buyers = names.filter((s) => s.insider.net > 0), sellers = names.filter((s) => s.insider.net < 0).reverse();
@@ -1030,7 +1045,7 @@ function InsiderPanel({ scored, txRes }) {
               <th className="px-3 py-2.5 font-medium">Type</th><th className="px-3 py-2.5 text-right font-medium">Shares</th><th className="px-3 py-2.5 text-right font-medium">Value</th><th className="px-4 py-2.5 font-medium">Filing</th>
             </tr></thead>
             <tbody>
-              {rows.map((t, i) => (
+              {rows.slice(0, shownTx).map((t, i) => (
                 <tr key={t.date + t.ticker + i} className="border-b border-slate-700/40 last:border-0 hover:bg-slate-700/25">
                   <td className="whitespace-nowrap px-4 py-2.5 text-slate-400">{fmtDate(t.date)}</td>
                   <td className="px-3 py-2.5 font-semibold text-white">{t.ticker}</td>
@@ -1048,6 +1063,7 @@ function InsiderPanel({ scored, txRes }) {
           </table>
           {rows.length === 0 && <div className="p-6 text-center text-sm text-slate-400">No insider trades match these filters.</div>}
         </div>
+        <div className="pb-3"><MoreButton shown={shownTx} total={rows.length} onMore={() => setShownTx(shownTx + 50)} /></div>
       </Card>
     </div>
   );
@@ -1057,6 +1073,9 @@ function Intelligence({ scored, byTicker, feedRes, txRes, onOpen }) {
   const [action, setAction] = useState("All");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("date");
+  const [shown, setShown] = useState(40); // the feed has thousands of rows: render a page at a time
+  const desktop = useIsDesktop();
+  useEffect(() => setShown(40), [action, q, sort]);
   const items = feedRes.data.items;
   const rows = useMemo(() => {
     let r = items.filter((a) => action === "All" || a.action === action);
@@ -1065,11 +1084,14 @@ function Intelligence({ scored, byTicker, feedRes, txRes, onOpen }) {
     const d = (a) => (a.oldTarget ? Math.abs(a.newTarget - a.oldTarget) / a.oldTarget : 0);
     return r.slice().sort((a, b) => (sort === "date" ? b.date.localeCompare(a.date) : d(b) - d(a)));
   }, [items, action, q, sort]);
-  const counts = items.reduce((m, a) => ((m[a.action] = (m[a.action] || 0) + 1), m), {});
-  const moves = items.filter((a) => a.oldTarget);
-  const avgPt = moves.reduce((s, a) => s + (a.newTarget - a.oldTarget) / a.oldTarget, 0) / (moves.length || 1);
-  const netInsider = txRes.data.items.reduce((a, t) => a + t.value, 0);
-  const netBuyerCount = scored.filter((s) => s.insider.net > 0).length;
+  const page = rows.slice(0, shown);
+  const { counts, avgPt } = useMemo(() => {
+    const counts = items.reduce((m, a) => ((m[a.action] = (m[a.action] || 0) + 1), m), {});
+    const moves = items.filter((a) => a.oldTarget);
+    return { counts, avgPt: moves.reduce((s, a) => s + (a.newTarget - a.oldTarget) / a.oldTarget, 0) / (moves.length || 1) };
+  }, [items]);
+  const netInsider = useMemo(() => txRes.data.items.reduce((a, t) => a + t.value, 0), [txRes.data]);
+  const netBuyerCount = useMemo(() => scored.filter((s) => s.insider.net > 0).length, [scored]);
 
   return (
     <div className="space-y-6">
@@ -1106,14 +1128,14 @@ function Intelligence({ scored, byTicker, feedRes, txRes, onOpen }) {
           </div>
         </div>
 
-        <Card className="hidden overflow-x-auto md:block">
+        {desktop ? <Card className="overflow-x-auto">
           <table className="w-full min-w-[980px] text-sm">
             <thead><tr className="border-b border-slate-700/60 text-left text-xs uppercase tracking-wide text-slate-400">
               <th className="px-4 py-2.5 font-medium">Ticker</th><th className="px-3 py-2.5 font-medium">Rating firm</th><th className="px-3 py-2.5 font-medium">Action</th>
               <th className="px-3 py-2.5 font-medium">Price target shift</th><th className="px-3 py-2.5 font-medium">Headline / rationale</th><th className="px-3 py-2.5 font-medium">Insiders 90d</th><th className="px-4 py-2.5 font-medium">Source article</th>
             </tr></thead>
             <tbody>
-              {rows.map((a, i) => {
+              {page.map((a, i) => {
                 const s = byTicker[a.ticker];
                 return (
                   <tr key={a.date + a.ticker + a.firm + i} className="border-b border-slate-700/40 align-top last:border-0 hover:bg-slate-700/25">
@@ -1136,10 +1158,9 @@ function Intelligence({ scored, byTicker, feedRes, txRes, onOpen }) {
             </tbody>
           </table>
           {rows.length === 0 && <div className="p-8 text-center text-sm text-slate-400">No analyst actions match these filters.</div>}
-        </Card>
-
-        <div className="space-y-3 md:hidden">
-          {rows.map((a, i) => {
+        </Card> : (
+        <div className="space-y-3">
+          {page.map((a, i) => {
             const s = byTicker[a.ticker];
             return (
               <Card key={a.date + a.ticker + a.firm + i} className="p-4">
@@ -1155,7 +1176,9 @@ function Intelligence({ scored, byTicker, feedRes, txRes, onOpen }) {
               </Card>
             );
           })}
-        </div>
+          {rows.length === 0 && <Card className="p-6 text-center text-sm text-slate-400">No analyst actions match these filters.</Card>}
+        </div>)}
+        <MoreButton shown={shown} total={rows.length} onMore={() => setShown(shown + 40)} />
       </div>
 
       <InsiderPanel scored={scored} txRes={txRes} />
