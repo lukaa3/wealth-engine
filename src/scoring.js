@@ -370,9 +370,10 @@ export function adviseHolding(r, s, chart, { downgrades = [], today = new Date()
   if (action === "Hold") {
     if (s) {
       const bp = s.buyPlan;
-      if (s.composite >= LIMITS.RECOMMEND && f.above200 && bp && r.weight < LIMITS.POSITION_TARGET) {
+      const size = suggestedSize(s, r.total);
+      if (s.composite >= LIMITS.RECOMMEND && f.above200 && bp && r.weight < size.pct * 0.8) {
         action = "Buy more";
-        why.push("Score " + s.composite + " and in an uptrend: add up to about " + Math.round(LIMITS.POSITION_TARGET * 100) + "% of your portfolio, all at once; rethink below " + dollars(bp.stop));
+        why.push("Score " + s.composite + " and in an uptrend, but smaller than its size: add about " + dollars(size.amount - r.value) + " to reach ~" + (Math.round(size.pct * 1000) / 10) + "% of your portfolio");
       } else {
         why.push(s.composite >= LIMITS.RECOMMEND ? "Still a pick (score " + s.composite + "): keep holding. Next check-up " + fmtDay(check.date)
           : "Score " + s.composite + ": fine to hold, not a top add right now");
@@ -470,14 +471,15 @@ export function analyzePortfolio(holdings, byTicker, sectors, sectorColors, pric
 }
 
 /**
- * How big a position should be, as a share of the whole portfolio. With roughly half in index funds and 8–15 picks,
- * no single stock can sink you: Low risk 8%, Medium 5%, High 3%; Top picks get 25% more (max 10%).
+ * How big a position should be, as a share of the whole portfolio. The plan: ~50% index funds, ~22% short-term
+ * trades, ~28% long-term picks. At these sizes that's about 9 picks (the backtest held 20; fewer = bumpier):
+ * Low risk 4%, Medium 3%, High 2%; Top picks get 25% more (max 5%).
  */
-export const SIZE_BY_RISK = { Low: 0.08, Medium: 0.05, High: 0.03 };
+export const SIZE_BY_RISK = { Low: 0.04, Medium: 0.03, High: 0.02 };
 export function suggestedSize(s, total) {
-  let pct = SIZE_BY_RISK[s.risk] || 0.05;
+  let pct = SIZE_BY_RISK[s.risk] || 0.03;
   if (s.composite >= LIMITS.HIGH_CONVICTION) pct *= 1.25;
-  pct = Math.min(pct, 0.1);
+  pct = Math.min(pct, 0.05);
   return { pct, amount: total > 0 ? total * pct : null };
 }
 
