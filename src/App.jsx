@@ -141,7 +141,7 @@ function FitBars({ s }) {
   );
 }
 
-/** The plan in plain words: buy in thirds at real price levels, where the idea is wrong, where to take profit. */
+/** The plan in plain words: how much to buy (all at once), where the idea is wrong, where to take profit. */
 function BuyPlanBox({ s }) {
   const total = useContext(PortfolioValue);
   const bp = s.buyPlan;
@@ -151,27 +151,18 @@ function BuyPlanBox({ s }) {
   return (
     <div className="rounded-lg bg-slate-900/60 p-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-400"><Icon name="ListChecks" size={12} />How to buy · {h.label.toLowerCase()} hold</span>
+        <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-400"><Icon name="ListChecks" size={12} />Plan · {h.label.toLowerCase()} hold</span>
         {s.plan.status === "live" && <span className="rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-slate-900" title={"FVG " + px(s.fvg.lo) + "–" + px(s.fvg.hi) + ", reward:risk " + s.plan.rr.toFixed(1) + ":1"}>FVG entry live</span>}
       </div>
-      <p className="mt-1.5 text-xs text-slate-300">
-        <span className="font-semibold text-white">Position size: {Math.round(size.pct * 100)}% of your portfolio</span>
-        {size.amount ? <> (about <span className="font-semibold text-white">{usd(size.amount)}</span> in total, first buy ~{usd(size.amount * bp.steps[0].part)})</> : " (add your holdings in the Portfolio tab to see dollars)"}
-        <span className="text-slate-500"> · {s.risk} risk{s.composite >= L.HIGH_CONVICTION ? " · Top pick" : ""}</span>
-      </p>
+      <div className="mt-1.5 text-sm">
+        <span className="font-semibold text-emerald-300">Buy now, all at once: </span>
+        <span className="font-semibold text-white">{size.amount ? "~" + usd(size.amount) : Math.round(size.pct * 100) + "% of your portfolio"}</span>
+        <span className="block text-xs text-slate-400">{size.amount ? Math.round(size.pct * 100) + "% of your portfolio · " : ""}~{px(s.price)} · {s.risk} risk{s.composite >= L.HIGH_CONVICTION ? " · Top pick" : ""}</span>
+      </div>
+      {!size.amount && <p className="mt-0.5 text-xs text-slate-500">Add your holdings in the Portfolio tab to see dollars.</p>}
       {bp.note && <p className="mt-1.5 flex gap-1.5 text-xs text-amber-300"><Icon name="Hourglass" size={13} className="mt-0.5 shrink-0" />{bp.note}</p>}
-      <ol className="mt-2 space-y-1">
-        {bp.steps.map((x, i) => (
-          <li key={i} className="grid grid-cols-[2.25rem_5.5rem_1fr] items-baseline gap-2 text-sm">
-            <span className="text-xs font-semibold text-slate-400">{x.share}</span>
-            <span className={"font-semibold tabular-nums " + (x.when === "now" ? "text-emerald-300" : "text-slate-100")}>{x.when === "now" ? "Now" : "at " + px(x.price)}</span>
-            <span className="truncate text-xs text-slate-400">{size.amount ? usd(size.amount * x.part) + " · " : ""}{x.when === "now" ? "~" + px(x.price) + " · " : ""}{x.why}</span>
-          </li>
-        ))}
-      </ol>
-      <p className="mt-1.5 flex gap-1.5 text-xs text-sky-300"><Icon name="CalendarClock" size={13} className="mt-0.5 shrink-0" /><span><span className="font-semibold">Lower prices don't come within ~4 weeks? Buy the rest anyway.</span> <span className="text-sky-300/70">Tested: waiting forever cost ~10% a year, because strong stocks often never dip.</span></span></p>
       <div className="mt-2 grid gap-1 border-t border-slate-700/60 pt-2 text-xs">
-        <div className="flex gap-1.5 text-rose-300"><Icon name="XCircle" size={13} className="mt-0.5 shrink-0" /><span><span className="font-semibold">Stop adding / exit below {px(bp.stop)}</span> <span className="text-rose-300/70">({spct(bp.stopPct, 0)})</span>: the idea is wrong there.</span></div>
+        <div className="flex gap-1.5 text-rose-300"><Icon name="XCircle" size={13} className="mt-0.5 shrink-0" /><span><span className="font-semibold">Rethink below {px(bp.stop)}</span> <span className="text-rose-300/70">({spct(bp.stopPct, 0)})</span>: the idea is wrong there.</span></div>
         <div className="flex gap-1.5 text-emerald-300"><Icon name="Flag" size={13} className="mt-0.5 shrink-0" /><span>{bp.take.text}</span></div>
       </div>
     </div>
@@ -335,7 +326,7 @@ function Methodology() {
           <div className="space-y-1.5 rounded-lg bg-slate-900/50 p-3 text-sm text-slate-400">
             <div><span className="font-medium text-slate-200">Horizon label:</span> (shorter trades are on the Short-term tab) each stock gets a fit score for <span className="text-slate-200">Core (3–12 months)</span>: the overall score; and <span className="text-slate-200">Long-term (1–3+ years)</span>: quality, growth and fair price. It's labeled with the best fit.</div>
             <div><span className="font-medium text-slate-200">Risk:</span> High = big price swings, losing money, small company or under $5. Low = calm, profitable. Being young, a mix with some High-risk names is fine; keep each one small.</div>
-            <div><span className="font-medium text-slate-200">How to buy:</span> buy the first piece now and set the other two at real support levels below the price (FVG, 50-day average, pullback levels, 200-day average). If those prices don't come within about 4 weeks, buy the rest at the market price. In the 10-year test this matched or beat buying everything at once (+34% vs +34% over a year, higher median), while waiting for the dips with no deadline did much worse (+24%), because strong stocks often never come back down. Stretched stocks start with a smaller first piece (1/5). The stop is where the idea is wrong.</div>
+            <div><span className="font-medium text-slate-200">How to buy:</span> buy the whole position at once. In the 10-year test, buying all at once returned +34% over a year; buying in thirds at lower prices did +24%, because strong stocks often never come back down (and even with a 4-week deadline it only tied, for a lot more work). Stretched stocks did best of all when bought at once. The "rethink" price is where the idea is wrong.</div>
             <div><span className="font-medium text-slate-200">How much:</span> keep about half your money in index funds. Each pick gets 8% of your portfolio if Low risk, 5% Medium, 3% High, and 25% more for Top picks (max 10%), so no single stock can sink you. Check picks about every 3 months.</div>
             <div><span className="font-medium text-slate-200">Backtest (2016–2026, S&amp;P 500, top 20 monthly):</span> the momentum & trend score made about 32%/yr vs 15% for SPY and 17% for all stocks equally, in both 5-year halves. FVG setups added nothing to picking. Real results will be lower: the test only includes today's index members, so it misses companies that collapsed. Earnings, quality and valuation couldn't be tested (no free history).</div>
           </div>
@@ -358,7 +349,7 @@ function WatchRow({ s, onOpen }) {
       <td className="px-3 py-2.5 text-xs text-slate-300">{h.label}</td>
       <td className="px-3 py-2.5 text-xs"><span className={"rounded px-1.5 py-0.5 ring-1 " + RISK_STYLE[s.risk]}>{s.risk}</span></td>
       <td className={"px-3 py-2.5 text-right tabular-nums " + tone(s.factors && s.factors.mom12_1)}>{spct(s.factors && s.factors.mom12_1, 0)}</td>
-      <td className="px-3 py-2.5 text-xs text-slate-300">{first ? (s.buyPlan.hot ? "Small starter now" : "Buy 1/3 now") : "—"}</td>
+      <td className="px-3 py-2.5 text-xs text-slate-300">{first ? "Buy now" : "—"}</td>
     </tr>
   );
 }
@@ -460,14 +451,14 @@ function Picks({ scored, byTicker, scan, onOpen }) {
   const mid = order(scored.filter((s) => s.composite >= L.RECOMMEND && s.composite < L.HIGH_CONVICTION && fits(s)));
   const watch = order(scored.filter((s) => s.composite >= L.WATCH && s.composite < L.RECOMMEND && fits(s)));
   const n = (h) => qualified.filter((s) => s.horizon === h).length;
-  const buyNow = qualified.filter((s) => s.buyPlan && !s.buyPlan.hot).length;
+  const buyNow = qualified.filter((s) => s.buyPlan).length;
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Top picks" value={qualified.filter((s) => s.composite >= L.HIGH_CONVICTION).length} sub={"score ≥ " + L.HIGH_CONVICTION + " · " + qualified.length + " recommended"} icon="Award" />
         <Stat label="By horizon" value={n("core") + " · " + n("long")} sub="core (3–12 mo) · long-term (1–3+ yr)" icon="CalendarRange" />
-        <Stat label="Buyable now" value={buyNow} sub="recommended and not stretched" valueTone="up" icon="ShoppingCart" />
+        <Stat label="Buyable now" value={buyNow} sub="recommended · buy all at once" valueTone="up" icon="ShoppingCart" />
         <Stat label="Fully checked" value={scan && scan.fullyChecked ? scan.fullyChecked : scored.length} sub={scan ? "of " + scan.scanned + " scanned · " + scored.length + " score 50+" : "fully checked"} icon="ScanSearch" />
       </div>
 
@@ -1189,7 +1180,7 @@ function AdviceFeed({ a, onOpen }) {
                 <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><Icon name="Lightbulb" size={15} />Idea: {f.stock.ticker}{f.light ? " (you're light in " + f.sector + ")" : ""}</div>
                 <button type="button" onClick={() => onOpen(f.stock.ticker)} className="flex items-center gap-2 rounded-md bg-slate-900/60 px-2 py-1 text-sm font-semibold text-white ring-1 ring-slate-700 hover:ring-indigo-500">{f.stock.ticker}<ScoreBadge score={f.stock.composite} size="sm" /></button>
               </div>
-              <p className="mt-1 text-sm text-slate-300">{f.stock.name}: {(HORIZON_INFO[f.stock.horizon] || HORIZON_INFO.core).label.toLowerCase()} pick, {f.stock.risk.toLowerCase()} risk. {f.stock.buyPlan ? (f.stock.buyPlan.hot ? "Stretched: start small; " : "Buyable now; ") + "stop " + px(f.stock.buyPlan.stop) + "." : ""}</p>
+              <p className="mt-1 text-sm text-slate-300">{f.stock.name}: {(HORIZON_INFO[f.stock.horizon] || HORIZON_INFO.core).label.toLowerCase()} pick, {f.stock.risk.toLowerCase()} risk. {f.stock.buyPlan ? "Buy the position at once; rethink below " + px(f.stock.buyPlan.stop) + "." : ""}</p>
             </div>
           );
         })}
@@ -1311,7 +1302,7 @@ function NewMoneyPlanner({ a, scored, onOpen }) {
         </label>
       </div>
       {cash <= 0 ? (
-        <p className="mt-2 text-sm text-slate-400">Type an amount and I'll split it: about half tops up your index funds (until they're ~50% of your money), the rest goes into the first buy of the best picks, sized by risk.</p>
+        <p className="mt-2 text-sm text-slate-400">Type an amount and I'll split it: about half tops up your index funds (until they're ~50% of your money), the rest buys the best picks, sized by risk.</p>
       ) : (
         <div className="mt-3 space-y-2">
           {plan.items.map((x) => (
@@ -1321,10 +1312,10 @@ function NewMoneyPlanner({ a, scored, onOpen }) {
                 <button type="button" onClick={() => x.stock && onOpen(x.ticker)} className="text-sm font-semibold text-white hover:text-indigo-200">{x.ticker}</button>
                 <span className="text-xs text-slate-400">{x.kind === "core" ? "index-fund core" : x.kind === "add" ? "add to your position" : "new position"}</span>
               </div>
-              <div className="text-xs text-slate-400">{x.kind === "core" ? x.why : "Target " + usd(x.target) + " (" + Math.round(x.pct * 100) + "%) · score " + x.stock.composite + " · " + x.stock.risk.toLowerCase() + " risk" + (x.later.length ? " · next buys at " + x.later.map(px).join(", ") : "")}</div>
+              <div className="text-xs text-slate-400">{x.kind === "core" ? x.why : "Target " + usd(x.target) + " (" + Math.round(x.pct * 100) + "%) · score " + x.stock.composite + " · " + x.stock.risk.toLowerCase() + " risk" + (x.amount < x.target - 1 ? " · rest from future money" : "")}</div>
             </div>
           ))}
-          <p className="text-xs text-slate-500">Each pick gets its first piece now; the rest comes at the listed prices, or at the market price if they don't come within ~4 weeks. Fractional shares are fine.</p>
+          <p className="text-xs text-slate-500">Buy each one all at once (tested better than waiting for dips). Fractional shares are fine.</p>
         </div>
       )}
     </Card>

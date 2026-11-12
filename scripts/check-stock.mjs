@@ -42,7 +42,7 @@ for (const t of tickers) {
     rows.forEach((r) => console.log(`    ${r.label.padEnd(24)} ${String(r.value).padEnd(44)} ${r.pts}/${r.max}`));
   }
   const bp = sc.buyPlan;
-  console.log("Buy plan:", bp.steps.map((x) => `${x.share} ${x.when === "now" ? "now ~$" + x.price.toFixed(2) : "at $" + x.price} (${x.why})`).join(" | "));
+  console.log("Buy plan: all now ~$" + bp.steps[0].price.toFixed(2) + " (" + bp.steps[0].why + "), rethink below $" + bp.stop);
   console.log("Stop:", "$" + bp.stop, "(" + p1(bp.stopPct) + ")", "· Take profit:", bp.take.text, bp.note ? "· " + bp.note : "");
   console.log("Size:", Math.round(suggestedSize(sc, 0).pct * 100) + "% of portfolio");
   console.log("Verdict:", rs.verdict, "·", rs.summary);

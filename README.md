@@ -2,7 +2,7 @@
 
 A multi-factor stock screener and portfolio advisor: momentum & trend, earnings-estimate momentum, quality, valuation,
 smart money (insiders, analysts) and HTF bullish FVG entry timing. Each pick is labeled Swing (1–3 mo), Core (3–12 mo)
-or Long-term (1–3+ yr) with a Low/Medium/High risk tag and a buy-in-thirds plan.
+or Long-term (1–3+ yr) with a Low/Medium/High risk tag and a simple buy-now plan (all at once, which beat buying in thirds in the backtest).
 React + Tailwind CSS v4 + Lucide React, built with Vite, hosted free on **GitHub Pages**.
 
 It always works out of the box on sample data (`src/mockData.js`). Add free API keys and/or a scheduled

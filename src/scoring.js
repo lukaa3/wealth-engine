@@ -105,21 +105,16 @@ export function buyPlan(s, horizon = "core") {
 
   const ext = isNum(f.ext50) ? f.ext50 : 0;
   const hot = ext > 0.15 || (f.rsi14 != null && f.rsi14 >= 75);
-  // Backtest: skipping stretched leaders cost returns (strong stocks kept going), so even then start small now.
-  // Entry test (10 yrs, top 20 every 3 months): thirds at these levels with no deadline +24%/yr vs all-at-once +34%;
-  // with a ~4-week deadline (then buy at market) +34.4%, higher median. So the plan carries a 4-week deadline.
-  const steps = [{ when: "now", price: p, why: hot ? "small starter: strong stocks often keep running" : levels[0] && levels[0].v >= p * 0.97 ? "just above the " + levels[0].why : "trend is healthy, start the position" }];
-  let last = p;
-  for (const l of levels) {
-    if (steps.length >= 3) break;
-    if (l.v <= last * 0.97) { steps.push({ when: "at", price: r2(l.v), why: l.why }); last = l.v; }
-  }
-  while (steps.length < 3) { const v = r2(last * 0.95); steps.push({ when: "at", price: v, why: "about 5% lower" }); last = v; }
-  const deepest = steps[steps.length - 1].price;
-  // The line where the idea is wrong: under the deepest buy (tighter for swings, wider for long holds).
+  // Entry test (10 yrs, top 20 every 3 months, 12-month hold): buying all at once +34%; thirds at these levels with no
+  // deadline +24% (strong stocks often never dip); thirds with a 4-week deadline +34.4% (a tie). So: buy it all now.
+  // Stretched stocks did best of all when bought at once, so they get no special treatment.
+  const steps = [{ when: "now", price: p, why: hot ? "stretched, but strong stocks often keep running" : "trend is healthy" }];
+  // The line where the idea is wrong: under the second support level below the price (or ~10% lower).
+  const deep = levels.filter((l) => l.v <= p * 0.97)[1] || levels.filter((l) => l.v <= p * 0.97)[0];
+  const base = deep ? deep.v : p * 0.9;
   const cushion = horizon === "swing" ? 0.97 : horizon === "long" ? 0.9 : 0.94;
-  let stop = r2(deepest * cushion);
-  if (horizon === "swing" && s.stop != null && s.stop < deepest && s.stop > deepest * 0.85) stop = s.stop;
+  let stop = r2(base * cushion);
+  if (horizon === "swing" && s.stop != null && s.stop < base && s.stop > base * 0.85) stop = s.stop;
 
   const take = horizon === "swing"
     ? { price: s.target1m, text: "Sell about half at " + dollars(s.target1m) + " (" + sp(rel(s.target1m, p)) + "), let the rest run with the stop raised to your average cost" }
@@ -127,11 +122,10 @@ export function buyPlan(s, horizon = "core") {
       ? { price: s.target12m, text: (s.target12m ? "Street target " + dollars(s.target12m) + " (" + sp(rel(s.target12m, p)) + "). " : "") + "Hold while the trend and earnings stay strong; trim if it grows past 20% of your portfolio" }
       : { price: s.target6m, text: "First target " + dollars(s.target6m) + " (" + sp(rel(s.target6m, p)) + "); trim a quarter if it runs 25%+ above its 50-day average" };
 
-  const shares = hot ? [0.2, 0.4, 0.4] : [1 / 3, 1 / 3, 1 / 3];
   return {
-    steps: steps.map((x, i) => ({ ...x, part: shares[i], share: hot ? ["1/5", "2/5", "2/5"][i] : "1/3" })),
+    steps: steps.map((x) => ({ ...x, part: 1, share: "All" })),
     stop, stopPct: rel(stop, p), take, hot, ext,
-    note: hot ? "Stretched " + sp(ext) + " above its 50-day average" + (f.rsi14 >= 75 ? " (RSI " + f.rsi14 + ")" : "") + ": start with a small piece now, add the rest on pullbacks." : null,
+    note: hot ? "Stretched " + sp(ext) + " above its 50-day average: expect bigger swings at first. In the test, buying stretched leaders at once still did best." : null,
   };
 }
 
@@ -343,12 +337,11 @@ export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
   if (action === "Hold") {
     if (s) {
       const bp = s.buyPlan;
-      const nowBuy = bp && !bp.hot;
-      if (s.composite >= LIMITS.RECOMMEND && f.above200 && nowBuy && r.weight < LIMITS.POSITION_TARGET) {
+      if (s.composite >= LIMITS.RECOMMEND && f.above200 && bp && r.weight < LIMITS.POSITION_TARGET) {
         action = "Buy more";
-        why.push("Score " + s.composite + ", in an uptrend and at a buy level. Next adds: " + bp.steps.slice(1).map((x) => dollars(x.price)).join(", ") + "; stop " + dollars(bp.stop));
+        why.push("Score " + s.composite + " and in an uptrend: add up to about " + Math.round(LIMITS.POSITION_TARGET * 100) + "% of your portfolio, all at once; rethink below " + dollars(bp.stop));
       } else {
-        why.push(s.composite >= LIMITS.RECOMMEND ? (bp && bp.hot ? "Strong, but stretched right now; keep any add small, bigger adds near " + dollars(bp.steps[1].price) : "Strong score (" + s.composite + "); keep holding")
+        why.push(s.composite >= LIMITS.RECOMMEND ? "Strong score (" + s.composite + "); keep holding"
           : "Score " + s.composite + ": fine to hold, not a top add right now");
       }
     } else if (f.above200 && isNum(f.ext50) && Math.abs(f.ext50) <= 0.03 && r.weight < (isIndex ? 0.5 : LIMITS.POSITION_TARGET)) {
@@ -457,7 +450,7 @@ export function suggestedSize(s, total) {
 
 /**
  * "I have $X to invest" → what to buy now. Tops up the index-fund core toward ~50% (with up to half the money),
- * then funds the first buy of: holdings marked Buy more, Top picks you don't own, then Recommended ones —
+ * then funds the buy of: holdings marked Buy more, Top picks you don't own, then Recommended ones —
  * each sized by suggestedSize(), at most 2 new names per sector. Leftover goes to the core fund.
  */
 export function planNewMoney(cash, a, scored, { coreTarget = 0.5, maxBuys = 6 } = {}) {
@@ -481,7 +474,7 @@ export function planNewMoney(cash, a, scored, { coreTarget = 0.5, maxBuys = 6 } 
   const cands = [
     ...a.rows.filter((r) => r.stock && r.advice && r.advice.action === "Buy more").map((r) => r.stock).sort(desc),
     ...scored.filter((s) => !held[s.ticker] && s.composite >= LIMITS.HIGH_CONVICTION).sort(desc),
-    ...scored.filter((s) => !held[s.ticker] && s.composite >= LIMITS.RECOMMEND && s.composite < LIMITS.HIGH_CONVICTION && s.buyPlan && !s.buyPlan.hot).sort(desc),
+    ...scored.filter((s) => !held[s.ticker] && s.composite >= LIMITS.RECOMMEND && s.composite < LIMITS.HIGH_CONVICTION && s.buyPlan).sort(desc),
   ];
   const seen = new Set();
   for (const s of cands) {
@@ -493,10 +486,8 @@ export function planNewMoney(cash, a, scored, { coreTarget = 0.5, maxBuys = 6 } 
     const have = held[s.ticker] ? held[s.ticker].value : 0;
     const need = size.amount - have;
     if (need < 10) continue;
-    const first = s.buyPlan ? s.buyPlan.steps[0].part : 1 / 3;
-    const now = Math.min(left, Math.max(10, need * first));
-    items.push({ ticker: s.ticker, amount: now, kind: held[s.ticker] ? "add" : "new", target: size.amount, pct: size.pct, stock: s,
-      later: s.buyPlan ? s.buyPlan.steps.slice(1).map((x) => x.price) : [] });
+    const now = Math.min(left, Math.max(10, need));
+    items.push({ ticker: s.ticker, amount: now, kind: held[s.ticker] ? "add" : "new", target: size.amount, pct: size.pct, stock: s, later: [] });
     if (!held[s.ticker]) bySector[s.sector] = (bySector[s.sector] || 0) + 1;
     left -= now;
   }
