@@ -129,20 +129,6 @@ function HorizonChip({ s }) {
   const h = HORIZON_INFO[s.horizon] || HORIZON_INFO.core;
   return <span title="The holding period this stock's strengths fit best" className="inline-flex items-center gap-1 rounded-md bg-indigo-500/15 px-2 py-0.5 text-xs font-semibold text-indigo-200 ring-1 ring-indigo-500/30"><Icon name={h.icon} size={12} />{h.label} · {h.span}</span>;
 }
-function FitBars({ s }) {
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      {Object.entries(HORIZON_INFO).map(([k, h]) => (
-        <div key={k} className={"rounded-lg p-2 " + (s.horizon === k ? "bg-indigo-500/15 ring-1 ring-indigo-500/40" : "bg-slate-900/50")}>
-          <div className="text-[10px] uppercase tracking-wide text-slate-400">{h.label}</div>
-          <div className="text-sm font-semibold tabular-nums text-slate-100">{s.fits[k]}<span className="text-xs text-slate-500">/100</span></div>
-          <div className="text-[10px] text-slate-500">{h.span}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /** The plan in plain words: how much to buy (all at once), where the idea is wrong, where to take profit. */
 function BuyPlanBox({ s }) {
   const total = useContext(PortfolioValue);
@@ -150,6 +136,17 @@ function BuyPlanBox({ s }) {
   if (!bp) return null;
   const h = HORIZON_INFO[s.horizon] || HORIZON_INFO.core;
   const size = suggestedSize(s, total);
+  if (s.composite < L.RECOMMEND) {
+    // Only Recommended (65+) and Top picks (75+) are buys; that's what was backtested.
+    const watch = s.composite >= L.WATCH;
+    return (
+      <div className="rounded-lg bg-slate-900/60 p-3">
+        <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><Icon name="ListChecks" size={12} />Plan</div>
+        <div className="mt-1.5 text-sm font-semibold text-slate-200">{watch ? "Not a buy yet" : "Not a buy"}: score {s.composite}, picks start at {L.RECOMMEND}</div>
+        <p className="mt-0.5 text-xs text-slate-400">{watch ? "It's on the watchlist. If the score climbs to " + L.RECOMMEND + "+, it becomes a buy and shows a plan here." : "Skip it for now."} If you own it, hold until the next 3-month check-up and sell it then if it's still under {L.RECOMMEND}.</p>
+      </div>
+    );
+  }
   return (
     <div className="rounded-lg bg-slate-900/60 p-3">
       <div className="flex items-center justify-between gap-2">
@@ -1582,7 +1579,6 @@ function StockModal({ s, onClose }) {
         <div className="mt-3"><UpdateBox s={s} /></div>
         <div className="mt-3"><AiTake s={s} full /></div>
         <div className="mt-3"><BuyPlanBox s={s} /></div>
-        <div className="mt-3"><FitBars s={s} /></div>
         {(s.newsFlags || []).length > 0 && (
           <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">Headlines to check</div>
