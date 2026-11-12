@@ -24,7 +24,7 @@ export const SETUPS = {
     span: "about 2 months",
     holdDays: 40,
     blurb: "Jumped 4%+ at the open on 3x normal volume and held the gain into the close, while above its 200-day average. Big news gaps tend to keep drifting the same way for weeks.",
-    rule: "Buy now, sell about 2 months (40 trading days) later.",
+    rule: "Buy within 5 trading days of the jump, sell about 2 months (40 trading days) after you buy.",
     stats: { avg: 0.0311, vsSpy: 0.0117, win: 0.547, pf: 1.53, first: 0.0409, second: 0.0242, cagr10: 0.156, maxDD: -0.384 },
   },
   dip: {
@@ -74,6 +74,30 @@ const round2 = (x) => Math.round(x * 100) / 100;
  * Today's short-term facts for one stock (daily candles oldest → newest). Light: called for every scanned stock.
  * → { atr, rsi2, sma5, sma50, sma200, gapToday, volX, newHigh, ret21, dollarVol } or null.
  */
+/**
+ * Most recent gap-up signal in the last `days` trading days. Chase test (10 yrs): buying 1–5 days after the jump did
+ * about as well as the next morning (+0.9–1.2% vs SPY per trade either way), and paying more than the signal-day close
+ * didn't hurt — so a gap-up stays buyable for 5 trading days.
+ */
+export function recentGap(c, days = 5) {
+  const n = c ? c.length : 0;
+  for (let d = 0; d < days; d++) {
+    const i = n - 1 - d;
+    if (i < 201) break;
+    const b = c[i], p = c[i - 1];
+    if (!p.close || b.close < b.open) continue;
+    const gap = b.open / p.close - 1;
+    if (gap < 0.04) continue;
+    let v = 0; for (let j = i - 50; j < i; j++) v += c[j].volume || 0; v /= 50;
+    const volX = v ? (b.volume || 0) / v : 0;
+    if (volX < 3) continue;
+    let s = 0; for (let j = i - 199; j <= i; j++) s += c[j].close; s /= 200;
+    if (b.close <= s) continue;
+    return { date: b.date, gap: Math.round(gap * 1000) / 1000, volX: Math.round(volX * 10) / 10, daysAgo: d, close: b.close };
+  }
+  return null;
+}
+
 export function shortFacts(c) {
   if (!c || c.length < 60) return null;
   const n = c.length, last = c[n - 1], prev = c[n - 2];
@@ -84,7 +108,7 @@ export function shortFacts(c) {
     atr: atr14(c), rsi2: rsi2(c), sma5: sma(c, 5), sma50: sma(c, 50), sma200: sma(c, 200),
     gapToday: prev.close ? last.open / prev.close - 1 : null, heldGap: last.close >= last.open,
     volX: vol50 ? (last.volume || 0) / vol50 : null, newHigh: prevHi != null && last.close > prevHi,
-    ret21: n > 21 ? last.close / c[n - 22].close - 1 : null, dollarVol: dv,
+    ret21: n > 21 ? last.close / c[n - 22].close - 1 : null, dollarVol: dv, gapSig: recentGap(c, 5),
   };
 }
 
@@ -96,7 +120,7 @@ export function detectSetups(f, price, { rank6 = null, momTop = false } = {}) {
   if (!f || !price) return [];
   const out = [];
   const above200 = f.sma200 != null && price > f.sma200;
-  if (f.gapToday != null && f.gapToday >= 0.04 && f.volX >= 3 && f.heldGap && above200) out.push("gap");
+  if (f.gapSig) out.push("gap"); // jumped within the last 5 trading days (see recentGap)
   if (f.newHigh && f.volX >= 1.5 && rank6 != null && rank6 >= 0.7) out.push("breakout");
   if (momTop && f.sma50 != null && price > f.sma50) out.push("momentum");
   if (above200 && f.rsi2 != null && f.rsi2 < 10 && rank6 != null && rank6 >= 0.7) out.push("dip");

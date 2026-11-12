@@ -675,6 +675,7 @@ function RuleRow({ ok, label, value }) {
 }
 
 function shortRules(x, k) {
+  const g = x.facts && x.facts.gapSig;
   const f = x.facts, p = x.price;
   const vs = (m) => (m ? spct(p / m - 1, 0) : "n/a");
   const common = [
@@ -686,8 +687,9 @@ function shortRules(x, k) {
     ...common,
   ];
   if (k === "gap") return [
-    { ok: (f.gapToday || 0) >= 0.04, label: "Opened 4%+ above yesterday's close:", value: spct(f.gapToday, 1) },
-    { ok: (f.volX || 0) >= 3, label: "Volume at least 3x normal (real news, big buyers):", value: (f.volX || 0).toFixed(1) + "x" },
+    { ok: !!g, label: "Opened 4%+ above the day before" + (g ? " on " + fmtDate(g.date) + ":" : ":"), value: g ? spct(g.gap, 1) : "n/a" },
+    { ok: !!g && g.volX >= 3, label: "Volume at least 3x normal that day (real news, big buyers):", value: g ? g.volX.toFixed(1) + "x" : "n/a" },
+    { ok: !!g, label: g && g.daysAgo > 0 ? "Still in the 5-day buy window (" + (5 - g.daysAgo) + " trading day" + (5 - g.daysAgo === 1 ? "" : "s") + " left; buying late worked about as well in the test)" : "Jumped today: buy tomorrow or within 5 trading days" },
     { ok: true, label: "Held the gain into the close (didn't fade)" },
     { ok: f.sma200 && p > f.sma200, label: "Above its 200-day average (long uptrend):", value: vs(f.sma200) },
     ...common,
@@ -785,7 +787,7 @@ function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen, 
   const plan = tradePlanFor(setupKey, x.price, x.facts, { total, budgetPct: SHORT_BUDGET, earningsDate: x.earningsDate, today });
   const full = byTicker[x.ticker];
   const why = setupKey === "momentum" ? "Up " + spct(x.facts.ret21, 0) + " in a month"
-    : setupKey === "gap" ? "Gapped up " + spct(x.facts.gapToday, 1) + " on " + (x.facts.volX || 0).toFixed(1) + "x volume"
+    : setupKey === "gap" ? (x.facts.gapSig ? "Gapped up " + spct(x.facts.gapSig.gap, 1) + " on " + x.facts.gapSig.volX.toFixed(1) + "x volume " + (x.facts.gapSig.daysAgo ? fmtDate(x.facts.gapSig.date) + " · buy window: " + (5 - x.facts.gapSig.daysAgo) + " more day" + (5 - x.facts.gapSig.daysAgo === 1 ? "" : "s") : "today") : "Gapped up " + spct(x.facts.gapToday, 1))
     : "RSI-2 at " + Math.round(x.facts.rsi2 || 0) + " after a pullback";
   return (
     <div className="flex flex-col rounded-xl border border-slate-700/60 bg-slate-800 p-3.5">
@@ -863,7 +865,7 @@ function ShortTermTab({ data, byTicker, priceBook, pf, total, onOpen }) {
   const owned = new Set(pf.trades.map((t) => t.ticker));
   const lists = {
     momentum: items.filter((x) => x.setups.includes("momentum")).sort((a, b) => (b.facts.ret21 || 0) - (a.facts.ret21 || 0)),
-    gap: items.filter((x) => x.setups.includes("gap")).sort((a, b) => (b.facts.gapToday || 0) - (a.facts.gapToday || 0)),
+    gap: items.filter((x) => x.setups.includes("gap")).sort((a, b) => ((a.facts.gapSig || {}).daysAgo ?? 9) - ((b.facts.gapSig || {}).daysAgo ?? 9) || ((b.facts.gapSig || {}).gap || 0) - ((a.facts.gapSig || {}).gap || 0)),
     dip: items.filter((x) => x.setups.includes("dip")).sort((a, b) => (b.rank6 || 0) - (a.rank6 || 0)).slice(0, 12),
   };
   const budget = total * SHORT_BUDGET;

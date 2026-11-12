@@ -125,7 +125,10 @@ export function buyPlan(s, horizon = "core") {
   return {
     steps: steps.map((x) => ({ ...x, part: 1, share: "All" })),
     stop, stopPct: rel(stop, p), take, hot, ext,
-    note: hot ? "Stretched " + sp(ext) + " above its 50-day average: expect bigger swings at first. In the test, buying stretched leaders at once still did best." : null,
+    // Chase test (10 yrs, quarterly top 20): skipping stretched picks lowered returns at every cutoff (20–60% above the
+    // 50-day: 36–39.5%/yr vs 40%). Only the 60%+ group's 12-month edge was smaller (+4% vs SPY, vs +16–47% for the rest).
+    note: ext > 0.6 ? "Extremely stretched (" + sp(ext) + " above its 50-day average): still beat SPY in the test, but by less over a year, with big swings. Fine to buy; a smaller size is reasonable."
+      : hot ? "Stretched " + sp(ext) + " above its 50-day average: expect bigger swings at first. You're not too late: in the test, skipping stretched picks lowered returns." : null,
   };
 }
 

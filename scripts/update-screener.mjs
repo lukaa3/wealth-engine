@@ -100,7 +100,7 @@ async function buildShortContext() {
     if (!setups.length) continue;
     items.push({ ticker: r.ticker, name: r.name, sector: r.sector, small: !!r.small, price: r.price, setups, rank6: rank6All[r.ticker] ?? null,
       ret5: r.ret5, ret20: r.ret20, vol63: r.vol63, earningsDate: earnings[r.ticker] || null,
-      facts: pick(f, ["atr", "rsi2", "sma5", "sma50", "sma200", "gapToday", "volX", "ret21", "dollarVol"]) });
+      facts: pick(f, ["atr", "rsi2", "sma5", "sma50", "sma200", "gapToday", "volX", "ret21", "dollarVol", "gapSig"]) });
   }
   return { earnings, recentEarnings, facts, items };
 }
