@@ -11,7 +11,7 @@ const FUNDS = (process.env.FUNDS || "SPY,QQQ,IWM,XLV,VFH,VDC,XLY,XLU").split(","
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function hist(t) {
-  for (let a = 0; a < 8; a++) {
+  for (let a = 0; a < 2; a++) {
     const host = a % 2 ? "query2" : "query1";
     const res = await fetch(`https://${host}.finance.yahoo.com/v8/finance/chart/${t}?period1=${Math.floor(Date.now() / 1000 - 21.2 * 31557600)}&period2=${Math.floor(Date.now() / 1000)}&interval=1d&events=div%7Csplit`, { headers: { "User-Agent": UA, Accept: "application/json" } }).catch((e) => (console.warn(t, host, "fetch error:", e.message, e.cause && e.cause.code), null));
     if (res && !res.ok) console.warn(t, host, "HTTP", res.status, (await res.text()).slice(0, 120));
@@ -26,8 +26,36 @@ async function hist(t) {
   throw new Error(t + " rate limited");
 }
 
+// Fallback: Nasdaq daily closes + cash dividends, reinvested on the ex-date (total return, like adjusted prices).
+const NQ = { "User-Agent": UA, Accept: "application/json, text/plain, */*", Origin: "https://www.nasdaq.com", Referer: "https://www.nasdaq.com/" };
+const num = (x) => Number(String(x || "").replace(/[$,]/g, ""));
+const us2iso = (d) => { const [m, dd, y] = d.split("/"); return `${y}-${m}-${dd}`; };
+async function nqJson(url) {
+  for (let a = 0; a < 4; a++) {
+    const res = await fetch(url, { headers: NQ }).catch(() => null);
+    if (res && res.ok) return res.json();
+    await sleep(2000 * (a + 1));
+  }
+  throw new Error("nasdaq " + url);
+}
+async function histNasdaq(t) {
+  const to = new Date().toISOString().slice(0, 10), from = new Date(Date.now() - 21.2 * 31557600000).toISOString().slice(0, 10);
+  const h = await nqJson(`https://api.nasdaq.com/api/quote/${t}/historical?assetclass=etf&fromdate=${from}&limit=9999&todate=${to}`);
+  const rows = ((h.data && h.data.tradesTable && h.data.tradesTable.rows) || []).map((r) => [us2iso(r.date), num(r.close)]).filter(([, c]) => c > 0).sort((x, y) => x[0].localeCompare(y[0]));
+  const dv = await nqJson(`https://api.nasdaq.com/api/quote/${t}/dividends?assetclass=etf`);
+  const divs = new Map();
+  ((dv.data && dv.data.dividends && dv.data.dividends.rows) || []).forEach((r) => { if (r.exOrEffDate && r.exOrEffDate !== "N/A") divs.set(us2iso(r.exOrEffDate), (divs.get(us2iso(r.exOrEffDate)) || 0) + num(r.amount)); });
+  let units = 1;
+  const m = new Map();
+  for (const [d, c] of rows) { if (divs.has(d)) units *= 1 + divs.get(d) / c; m.set(d, units * c); }
+  console.log(t, "nasdaq:", rows.length, "days,", divs.size, "dividends");
+  return m;
+}
 const data = {};
-for (const t of FUNDS) { data[t] = await hist(t); await sleep(400); }
+for (const t of FUNDS) {
+  try { data[t] = await hist(t); } catch (e) { data[t] = await histNasdaq(t); }
+  await sleep(400);
+}
 const days = [...data.SPY.keys()].filter((d) => FUNDS.every((t) => data[t].has(d))).sort();
 for (const t of FUNDS) console.log(t, "from", [...data[t].keys()][0]);
 console.log(`Common history: ${days[0]} → ${days[days.length - 1]} (${days.length} days)`);
