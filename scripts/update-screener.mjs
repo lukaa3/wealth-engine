@@ -30,7 +30,7 @@ import { createProviders, createCache } from "../src/lib/providers.js";
 import { buildLiveUniverse, buildLiveAnalystFeed, buildLiveInsider, refreshFromChart, buildNewsFlags } from "../src/lib/liveData.js";
 import { percentileRanks } from "../src/lib/factors.js";
 import { shortFacts, detectSetups } from "../src/lib/shortterm.js";
-import { scoreUniverse } from "../src/scoring.js";
+import { scoreUniverse, LIMITS } from "../src/scoring.js";
 import { stockToRow, rowToStock, actionToRow, insiderToRow, rowToAction, rowToInsider } from "../src/lib/schema.js";
 import { analyzeMany, buildPrompt } from "../src/lib/ai.js";
 import { loadUniverse, HOLDINGS } from "../src/lib/universe.js";
@@ -72,6 +72,37 @@ const P = createProviders(keys, {
   yahoo: env.SCAN !== "off", yahooGapMs: Number(env.YAHOO_GAP_MS || 220),
   nasdaq: env.NASDAQ !== "off", nasdaqGapMs: Number(env.NASDAQ_GAP_MS || 220),
 });
+
+const today = new Date().toISOString().slice(0, 10);
+/* ---- Short-term context (setups, facts, earnings) — built right after the scan, used for priority + short.json ---- */
+let shortCtx = null;
+async function buildShortContext() {
+  let earnings = {}, recentEarnings = {};
+  if (P.finnhub && P.finnhub.earningsCalendar) {
+    const day = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+    earnings = await P.finnhub.earningsCalendar(today, day(70)).catch((e) => (console.warn("earnings calendar:", e.message), {}));
+    recentEarnings = await P.finnhub.earningsCalendar(day(-4), day(-1)).catch(() => ({}));
+    Object.entries(earnings).forEach(([t, d]) => { if (d <= today) recentEarnings[t] = d; }); // reporting today
+  }
+  const rank6All = percentileRanks(scanRows, "mom6");
+  const facts = {};
+  for (const r of scanRows) if (!r.fund && pre[r.ticker]) facts[r.ticker] = shortFacts(pre[r.ticker].candles);
+  // Top 1-month gainers among heavily traded stocks ($5M+/day) above their 50-day: the weekly momentum list.
+  const momTop = new Set(scanRows.filter((r) => facts[r.ticker] && facts[r.ticker].dollarVol >= 5e6 && r.price >= 5 && facts[r.ticker].sma50 && r.price > facts[r.ticker].sma50 && facts[r.ticker].ret21 != null)
+    .sort((a, b) => facts[b.ticker].ret21 - facts[a.ticker].ret21).slice(0, 20).map((r) => r.ticker));
+  const items = [];
+  const pick = (o, ks) => Object.fromEntries(ks.map((k) => [k, o[k] == null ? null : typeof o[k] === "number" ? Math.round(o[k] * 1000) / 1000 : o[k]]));
+  for (const r of scanRows) {
+    const f = facts[r.ticker];
+    if (!f || !(f.dollarVol >= 2e6) || r.price < 3) continue; // tradable: $2M+ a day
+    const setups = detectSetups(f, r.price, { rank6: rank6All[r.ticker] ?? null, momTop: momTop.has(r.ticker) });
+    if (!setups.length) continue;
+    items.push({ ticker: r.ticker, name: r.name, sector: r.sector, small: !!r.small, price: r.price, setups, rank6: rank6All[r.ticker] ?? null,
+      ret5: r.ret5, ret20: r.ret20, vol63: r.vol63, earningsDate: earnings[r.ticker] || null,
+      facts: pick(f, ["atr", "rsi2", "sma5", "sma50", "sma200", "gapToday", "volX", "ret21", "dollarVol"]) });
+  }
+  return { earnings, recentEarnings, facts, items };
+}
 
 /* ------------------------------- 0. Market scan ------------------------------- */
 let tickers = watchlist.length ? watchlist : mockData.stocks.map((s) => s.ticker);
@@ -115,8 +146,24 @@ if (P.yahoo) {
     r.rs3 = r.mom3 != null && spyMom3 != null ? Math.round((r.mom3 - spyMom3) * 1000) / 1000 : null;
   });
   if (scanRows.length >= 20) {
-    tickers = pickDeepSet(scanRows, { deepN: Number(env.DEEP_N || 400), always: [...HOLDINGS, ...watchlist], ranks, lastChecked });
-    console.log("Deep check:", tickers.join(", "));
+    shortCtx = await buildShortContext();
+    // Tonight's priority: everything the site shows (long-term picks, today's short-term trades) plus anything where
+    // something significant just happened (big 1-day move or volume spike, earnings in the last few days).
+    // These get the full check every night; the normal 400-stock rotation still runs on top, so it never slows down.
+    const bigOk = (r) => r.price >= 5 && !r.fund && !r.small;
+    const longPage = pool.stocks.filter((r) => (r.composite_score ?? 0) >= LIMITS.RECOMMEND).map((r) => r.ticker);
+    const shortPage = shortCtx.items.filter((x) => !x.small).map((x) => x.ticker);
+    const dayMove = (t) => { const c = pre[t] && pre[t].candles; return c && c.length > 2 ? c[c.length - 1].close / c[c.length - 2].close - 1 : null; };
+    const bigMoves = scanRows.filter((r) => bigOk(r) && dayMove(r.ticker) != null && shortCtx.facts[r.ticker]
+        && (Math.abs(dayMove(r.ticker)) >= 0.05 || ((shortCtx.facts[r.ticker].volX || 0) >= 3 && Math.abs(dayMove(r.ticker)) >= 0.025)))
+      .sort((x, y) => Math.abs(dayMove(y.ticker)) - Math.abs(dayMove(x.ticker))).slice(0, 80).map((r) => r.ticker);
+    const justReported = scanRows.filter((r) => bigOk(r) && shortCtx.recentEarnings[r.ticker])
+      .sort((x, y) => ((shortCtx.facts[y.ticker] || {}).dollarVol || 0) - ((shortCtx.facts[x.ticker] || {}).dollarVol || 0)).slice(0, 80).map((r) => r.ticker);
+    const priority = [...new Set([...longPage, ...shortPage, ...bigMoves, ...justReported])];
+    console.log(`Priority tonight: ${priority.length} (long-term page ${longPage.length}, short-term ${shortPage.length}, big moves ${bigMoves.length}, just reported ${justReported.length})`);
+    const deepN = Math.min(Number(env.DEEP_MAX || 650), Number(env.DEEP_N || 400) + priority.length);
+    tickers = pickDeepSet(scanRows, { deepN, always: [...HOLDINGS, ...watchlist, ...priority], ranks, lastChecked });
+    console.log("Deep check:", tickers.length, "stocks:", tickers.join(", "));
   } else {
     console.warn("Market scan returned too little data; deep-checking the watchlist / default list instead.");
   }
@@ -143,7 +190,6 @@ const CARRY = ["dcfValue", "peg", "fwdPE", "target12m", "buyPct", "analystCount"
 const MAX_CARRY_DAYS = 7;
 const prevRows = Object.fromEntries(pool.stocks.map((r) => [r.ticker, r]));
 let carried = 0;
-const today = new Date().toISOString().slice(0, 10);
 for (const s of stocks) {
   const r = prevRows[s.ticker];
   if (!r) continue;
@@ -257,28 +303,8 @@ if (scanRows.length) {
     items: scanRows.filter((r) => !r.small || keepT.has(r.ticker)).map((r) => ({ ...r, deep: deepSet.has(r.ticker) })) });
 
   /* ---------------- Short-term setups (days to weeks), incl. small caps ---------------- */
-  let earnings = {};
-  if (P.finnhub && P.finnhub.earningsCalendar) {
-    const to = new Date(Date.now() + 70 * 864e5).toISOString().slice(0, 10);
-    earnings = await P.finnhub.earningsCalendar(today, to).catch((e) => (console.warn("earnings calendar:", e.message), {}));
-  }
-  const rank6All = percentileRanks(scanRows, "mom6");
-  const facts = {};
-  for (const r of scanRows) if (!r.fund && pre[r.ticker]) facts[r.ticker] = shortFacts(pre[r.ticker].candles);
-  // Top 1-month gainers among heavily traded stocks ($5M+/day) above their 50-day: the weekly momentum list.
-  const momTop = new Set(scanRows.filter((r) => facts[r.ticker] && facts[r.ticker].dollarVol >= 5e6 && r.price >= 5 && facts[r.ticker].sma50 && r.price > facts[r.ticker].sma50 && facts[r.ticker].ret21 != null)
-    .sort((a, b) => facts[b.ticker].ret21 - facts[a.ticker].ret21).slice(0, 20).map((r) => r.ticker));
-  const shortItems = [];
-  for (const r of scanRows) {
-    const f = facts[r.ticker];
-    if (!f || !(f.dollarVol >= 2e6) || r.price < 3) continue; // tradable: $2M+ a day
-    const setups = detectSetups(f, r.price, { rank6: rank6All[r.ticker] ?? null, momTop: momTop.has(r.ticker) });
-    if (!setups.length) continue;
-    const pick = (o, ks) => Object.fromEntries(ks.map((k) => [k, o[k] == null ? null : typeof o[k] === "number" ? Math.round(o[k] * 1000) / 1000 : o[k]]));
-    shortItems.push({ ticker: r.ticker, name: r.name, sector: r.sector, small: !!r.small, price: r.price, setups, rank6: rank6All[r.ticker] ?? null,
-      ret5: r.ret5, ret20: r.ret20, vol63: r.vol63, earningsDate: earnings[r.ticker] || null,
-      facts: pick(f, ["atr", "rsi2", "sma5", "sma50", "sma200", "gapToday", "volX", "ret21", "dollarVol"]) });
-  }
+  if (!shortCtx) shortCtx = await buildShortContext();
+  const { earnings, items: shortItems } = shortCtx;
   const holdEarn = Object.fromEntries([...keepT].filter((t) => earnings[t]).map((t) => [t, earnings[t]]));
   write("short.json", { generatedAt, scanned: scanRows.length, smallCaps: scanRows.filter((r) => r.small).length, earnings: holdEarn, items: shortItems });
   const cnt = {}; shortItems.forEach((x) => x.setups.forEach((k) => (cnt[k] = (cnt[k] || 0) + 1)));
