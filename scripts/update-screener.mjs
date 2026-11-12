@@ -313,9 +313,13 @@ const write = (f, obj) => fs.writeFileSync(path.join(OUT_DIR, f), JSON.stringify
 write("screener.json", { generatedAt, spyMom3, poolSize: rows.length, stocks: pubRows });
 if (scanRows.length) {
   const deepSet = new Set(stocks.map((s) => s.ticker));
+  // Score + rank (1 = best) for every fully checked stock, so the site's search can show where any stock stands.
+  const ranked = rows.filter((r) => r.composite_score != null).sort((a, b) => b.composite_score - a.composite_score);
+  const scoreOf = new Map(ranked.map((r, j) => [r.ticker, [r.composite_score, j + 1]]));
   // Small caps only appear on the Short-term page (short.json), unless you hold them.
   write("scan.json", { generatedAt, universeSize: universe.filter((u) => !u.small).length, scanned: scanRows.filter((r) => !r.small).length, fullyChecked: rows.length,
-    items: scanRows.filter((r) => !r.small || keepT.has(r.ticker)).map((r) => ({ ...r, deep: deepSet.has(r.ticker) })) });
+    rankedCount: ranked.length,
+    items: scanRows.filter((r) => !r.small || keepT.has(r.ticker)).map((r) => { const sr = scoreOf.get(r.ticker); return { ...r, deep: deepSet.has(r.ticker), sc: sr ? sr[0] : null, rk: sr ? sr[1] : null }; }) });
 
   /* ---------------- Short-term setups (days to weeks), incl. small caps ---------------- */
   if (!shortCtx) shortCtx = await buildShortContext();

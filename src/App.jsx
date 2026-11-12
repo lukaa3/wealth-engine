@@ -10,7 +10,7 @@ import { SETUPS, RULED_OUT, tradePlanFor } from "./lib/shortterm.js";
 import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, useShort, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
 import { ruleSummary } from "./lib/ai.js";
-import { updateAdvice } from "./lib/updates.js";
+import { updateAdvice, tierOf } from "./lib/updates.js";
 
 const L = LIMITS;
 /** Your portfolio's total value, so buy plans can say "about $X" instead of only "% of portfolio". */
@@ -200,6 +200,84 @@ function UpdateBox({ s, compact = false }) {
         </ul>
       ) : <div className="mt-0.5 text-xs text-slate-400">No big changes since the last check.</div>}
       {!compact && h && h.advice && h.advice.why[0] && <div className="mt-1 text-xs text-slate-400">Why: {h.advice.why[0]}</div>}
+    </div>
+  );
+}
+
+/* ===================== Search any stock (header) ===================== */
+const TIER_LABEL = ["Below the picks", "Watchlist", "Recommended", "Top pick"];
+const TIER_TONE = ["text-slate-400", "text-sky-300", "text-emerald-300", "text-amber-300"];
+
+function StockSearch({ scanItems, rankedCount, byTicker, shortItems, holdingRows, onOpen, onGoShort }) {
+  const [q, setQ] = useState("");
+  const [focus, setFocus] = useState(false);
+  const box = useRef(null);
+  useEffect(() => {
+    const away = (e) => { if (box.current && !box.current.contains(e.target)) setFocus(false); };
+    document.addEventListener("mousedown", away); document.addEventListener("touchstart", away);
+    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("touchstart", away); };
+  }, []);
+  const shortBy = useMemo(() => Object.fromEntries((shortItems || []).map((x) => [x.ticker, x])), [shortItems]);
+  const all = useMemo(() => {
+    const m = new Map();
+    (scanItems || []).forEach((r) => m.set(r.ticker, { ticker: r.ticker, name: r.name || "", price: r.price, fund: r.fund, sc: r.sc, rk: r.rk, ret20: r.ret20, above200: r.above200 }));
+    Object.values(byTicker).forEach((st) => { if (!m.has(st.ticker)) m.set(st.ticker, { ticker: st.ticker, name: st.name || "", price: st.price }); });
+    return [...m.values()];
+  }, [scanItems, byTicker]);
+  const results = useMemo(() => {
+    const qq = q.trim().toUpperCase();
+    if (!qq) return [];
+    const score = (r) => (r.ticker === qq ? 0 : r.ticker.startsWith(qq) ? 1 : r.name.toUpperCase().startsWith(qq) ? 2 : r.name.toUpperCase().includes(qq) ? 3 : 9);
+    return all.map((r) => [score(r), r]).filter(([v]) => v < 9).sort((a, b) => a[0] - b[0] || a[1].ticker.length - b[1].ticker.length).slice(0, 8).map(([, r]) => r);
+  }, [q, all]);
+  const pickRow = (r) => {
+    if (byTicker[r.ticker]) { onOpen(r.ticker); setQ(""); setFocus(false); }
+    else if (shortBy[r.ticker]) { onGoShort(); setQ(""); setFocus(false); }
+  };
+  return (
+    <div ref={box} className="relative w-full sm:w-72">
+      <label className="relative block">
+        <span className="sr-only">Search any stock</span>
+        <Icon name="Search" size={15} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+        <input value={q} onChange={(e) => { setQ(e.target.value); setFocus(true); }} onFocus={() => setFocus(true)}
+          onKeyDown={(e) => { if (e.key === "Enter" && results[0]) pickRow(results[0]); if (e.key === "Escape") { setQ(""); setFocus(false); } }}
+          placeholder="Search any stock (e.g. MU, Micron)" autoComplete="off" spellCheck={false}
+          className="w-full rounded-lg border border-slate-700 bg-slate-800 py-1.5 pl-8 pr-3 text-sm text-white placeholder:text-slate-500 focus:border-indigo-500 focus:outline-none" />
+      </label>
+      {focus && q.trim() && (
+        <div className="absolute right-0 z-50 mt-1 max-h-[70vh] w-full overflow-y-auto rounded-lg border border-slate-700 bg-slate-800 shadow-2xl sm:w-[26rem]">
+          {results.length === 0 ? (
+            <div className="p-3 text-sm text-slate-400">Not found. The site scans US stocks worth about $2B or more; tiny companies and non-US listings aren't included.</div>
+          ) : results.map((r) => {
+            const st = byTicker[r.ticker], sh = shortBy[r.ticker], own = !!holdingRows[r.ticker];
+            const sc = st ? st.composite : r.sc;
+            const t = tierOf(sc);
+            const clickable = !!(st || sh);
+            return (
+              <button key={r.ticker} type="button" onClick={() => pickRow(r)} disabled={!clickable}
+                className={"block w-full border-b border-slate-700/60 px-3 py-2.5 text-left last:border-0 " + (clickable ? "hover:bg-slate-700/60" : "cursor-default")}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="min-w-0 truncate"><span className="font-bold text-white">{r.ticker}</span> <span className="text-xs text-slate-400">{r.name}</span></div>
+                  {r.price != null && <span className="shrink-0 text-sm tabular-nums text-slate-300">{px(r.price)}</span>}
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                  {r.fund ? <span className="text-slate-400">Fund / ETF · not scored (part of your core)</span>
+                    : sc != null ? (
+                      <>
+                        <span className="inline-flex items-center gap-1"><ScoreBadge score={sc} size="sm" /><span className={"font-semibold " + TIER_TONE[t]}>{TIER_LABEL[t]}</span></span>
+                        {r.rk && rankedCount ? <span className="text-slate-500">#{r.rk} of {rankedCount.toLocaleString()}</span> : null}
+                        {st && <span className="text-slate-500">· {st.risk} risk</span>}
+                      </>
+                    ) : <span className="text-slate-400">Not fully checked yet (gets checked within ~5 days){r.above200 != null ? " · " + (r.above200 ? "in an uptrend" : "below its 200-day") : ""}</span>}
+                  {sh && <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-300">Short-term: {sh.setups.map((k) => (SETUPS[k] || {}).label).filter(Boolean).join(", ")}</span>}
+                  {own && <span className="rounded bg-indigo-500/15 px-1.5 py-0.5 font-medium text-indigo-300">You own it</span>}
+                </div>
+                {clickable && <div className="mt-1 text-[11px] text-indigo-300">{st ? "Open full breakdown →" : "See it on the Short-term page →"}</div>}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1630,6 +1708,10 @@ export default function App() {
                 <h1 className="text-base font-bold leading-tight text-white sm:text-lg">Wealth &amp; Stock Intelligence Engine</h1>
                 <div className="text-[11px] leading-tight text-slate-400">Momentum · Earnings trend · Quality · Value · Smart money · as of {fmtDate(screener.data.asOf || new Date().toISOString().slice(0, 10))}</div>
               </div>
+            </div>
+            <div className="order-last w-full sm:order-none sm:w-auto">
+              <StockSearch scanItems={scanLive && scanLive.items} rankedCount={scanLive && scanLive.rankedCount} byTicker={byTicker}
+                shortItems={shortRes.data && shortRes.data.items} holdingRows={holdingRows} onOpen={setOpen} onGoShort={() => go("short")} />
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/30">
