@@ -20,6 +20,7 @@ import path from "node:path";
 import { loadUniverse } from "../src/lib/universe.js";
 import { scanRow } from "../src/lib/scan.js";
 import { percentileRanks } from "../src/lib/factors.js";
+import { buyPlan } from "../src/scoring.js";
 
 const env = process.env;
 const YEARS = Number(env.BT_YEARS || 10);
@@ -222,11 +223,58 @@ for (const f of FACTORS) {
 }
 const above = (flag) => { const v = []; snapshots.forEach((s) => { const g = s.rows.filter((r) => r.above200 === flag && r.fwd3 != null); if (g.length) v.push(mean(g.map((r) => r.fwd3))); }); return r4(mean(v)); };
 
+/* ---------------- 5. Entry test: buy all at once vs the site's "thirds at lower prices" plan ---------------- */
+// Every 3 months take the top picks; give each $1 and compare how it's spent. Same stock, same end date, so only
+// the way of buying differs. Dip orders fill on the first day the low touches the level (at the open if it gaps
+// below). Money that never gets spent sits in cash (0%). Exit at the close H trading days after the pick.
+function entryTest(H) {
+  const methods = { allNow: [], sitePlan: [], planThenMarket: [], thirdsMonthly: [] };
+  const split = { hot: { allNow: [], sitePlan: [] }, normal: { allNow: [], sitePlan: [] } };
+  let picks = 0, filled2 = 0, filled3 = 0, missedUp = 0;
+  for (let k = 0; k < snapshots.length; k += 3) {
+    const s = snapshots[k];
+    const top = STRATS["Site momentum & trend score"](s.rows).slice(0, TOP);
+    for (const r of top) {
+      const c = data[r.ticker], i = idxOf[r.ticker].get(s.date);
+      if (i == null || i + H >= c.length) continue;
+      const p0 = c[i].close, end = c[i + H].close;
+      const plan = buyPlan({ price: p0, factors: { ma50: r.ma50, ma200: r.ma200, ext50: r.ext50, rsi14: r.rsi14 },
+        fvg: r.fvgStatus !== "None" && r.fvgLo != null ? { status: r.fvgStatus, lo: r.fvgLo, hi: r.fvgHi } : null }, "core");
+      const steps = plan.steps;
+      // value at the end of $part bought at price px
+      const val = (part, px) => (part * end) / px * (1 - COST);
+      const fillDay = (level, from, to) => { for (let j = from; j <= to; j++) if (c[j].low <= level) return { j, px: Math.min(c[j].open, level) }; return null; };
+      picks++;
+      // 1. everything now
+      const a = val(1, p0);
+      // 2. site plan: first piece now, the rest only if the dip levels are reached before the end
+      let b = val(steps[0].part, p0), cFallback = val(steps[0].part, p0);
+      steps.slice(1).forEach((st, n) => {
+        const f = fillDay(st.price, i + 1, i + H);
+        if (f) { b += val(st.part, f.px); if (n === 0) filled2++; else filled3++; } else b += st.part;
+        const f1 = fillDay(st.price, i + 1, Math.min(i + 21, i + H));
+        cFallback += f1 ? val(st.part, f1.px) : val(st.part, c[Math.min(i + 21, i + H)].close);
+      });
+      if (!fillDay(steps[1].price, i + 1, i + H)) missedUp++;
+      // 4. thirds a month apart
+      const d = val(1 / 3, p0) + val(1 / 3, c[Math.min(i + 21, i + H)].close) + val(1 / 3, c[Math.min(i + 42, i + H)].close);
+      methods.allNow.push(a - 1); methods.sitePlan.push(b - 1); methods.planThenMarket.push(cFallback - 1); methods.thirdsMonthly.push(d - 1);
+      const g = plan.hot ? split.hot : split.normal; g.allNow.push(a - 1); g.sitePlan.push(b - 1);
+    }
+  }
+  const med = (a) => { const x = a.slice().sort((p, q) => p - q); return x[Math.floor(x.length / 2)]; };
+  const sum = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, { avg: r4(mean(v)), median: r4(med(v)), n: v.length }]));
+  const winsVsAll = r4(methods.sitePlan.filter((x, n) => x > methods.allNow[n]).length / picks);
+  return { holdDays: H, picks, methods: sum(methods), hot: sum(split.hot), normal: sum(split.normal),
+    secondPieceFilled: r4(filled2 / picks), thirdPieceFilled: r4(filled3 / picks), neverDipped: r4(missedUp / picks), sitePlanBeatAllNow: winsVsAll };
+}
+const entry = { note: "Return on each $1 meant for a pick; unspent money earns 0%.", "3 months": entryTest(63), "6 months": entryTest(126), "12 months": entryTest(252) };
+
 const out = {
   generatedAt: new Date().toISOString(), years: YEARS, top: TOP, costPerSide: COST,
   period: [snapshots[0].date, snapshots[snapshots.length - 1].date], months: snapshots.length, tickers: Object.keys(data).length - 1,
   universe: SP_ONLY ? "sp500" : "sp500+extras",
-  results, halves,
+  results, halves, entry,
   quintiles: {
     note: "Average forward return by score quintile (Q1 = lowest score, Q5 = highest), averaged over all months",
     momScore_1m: quintiles("momScore", "ret1"), momScore_3m: quintiles("momScore", "fwd3"), momScore_6m: quintiles("momScore", "fwd6"),
@@ -260,3 +308,10 @@ console.log(" FVG setup pts (1m)", out.quintiles.setupPts_1m.map(pct).join(" "))
 console.log("\nSignal strength (IC 1m / 3m / % positive months):");
 for (const [k, v] of Object.entries(ic)) console.log(" " + k.padEnd(10), String(v.ic1m).padStart(8), String(v.ic3m).padStart(8), pct(v.positiveMonths));
 console.log("\nAbove vs below 200-day, avg next 3 months:", pct(out.trend200_fwd3.above), pct(out.trend200_fwd3.below));
+console.log("\nEntry test: avg (median) return per pick by way of buying");
+for (const [h, e] of Object.entries(entry)) {
+  if (h === "note") continue;
+  console.log(` ${h} (${e.picks} picks; 2nd piece filled ${pct(e.secondPieceFilled)}, 3rd ${pct(e.thirdPieceFilled)}, never dipped ${pct(e.neverDipped)}, plan beat all-now ${pct(e.sitePlanBeatAllNow)})`);
+  for (const [k, v] of Object.entries(e.methods)) console.log("   " + k.padEnd(16) + pct(v.avg) + " (" + pct(v.median).trim() + ")");
+  console.log("   stretched picks: all-now" + pct(e.hot.allNow.avg) + " plan" + pct(e.hot.sitePlan.avg) + "  · normal picks: all-now" + pct(e.normal.allNow.avg) + " plan" + pct(e.normal.sitePlan.avg));
+}
