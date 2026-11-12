@@ -536,7 +536,124 @@ function SetupStats({ st }) {
   );
 }
 
-function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen }) {
+/** Pass/fail line for one rule a short-term setup checks. */
+function RuleRow({ ok, label, value }) {
+  return (
+    <div className="flex items-start gap-2 text-sm">
+      <Icon name={ok ? "CheckCircle2" : "Circle"} size={15} className={"mt-0.5 shrink-0 " + (ok ? "text-emerald-400" : "text-slate-500")} />
+      <span className="text-slate-300">{label}{value != null && <span className="ml-1 font-semibold tabular-nums text-white">{value}</span>}</span>
+    </div>
+  );
+}
+
+function shortRules(x, k) {
+  const f = x.facts, p = x.price;
+  const vs = (m) => (m ? spct(p / m - 1, 0) : "n/a");
+  const common = [
+    { ok: (f.dollarVol || 0) >= 5e6, label: "Heavily traded (easy to buy and sell):", value: "$" + Math.round((f.dollarVol || 0) / 1e6) + "M a day" },
+  ];
+  if (k === "momentum") return [
+    { ok: true, label: "One of the 20 biggest 1-month gainers out of ~2,000 stocks:", value: spct(f.ret21, 0) + " in a month" },
+    { ok: f.sma50 && p > f.sma50, label: "Still above its 50-day average (trend intact):", value: vs(f.sma50) },
+    ...common,
+  ];
+  if (k === "gap") return [
+    { ok: (f.gapToday || 0) >= 0.04, label: "Opened 4%+ above yesterday's close:", value: spct(f.gapToday, 1) },
+    { ok: (f.volX || 0) >= 3, label: "Volume at least 3x normal (real news, big buyers):", value: (f.volX || 0).toFixed(1) + "x" },
+    { ok: true, label: "Held the gain into the close (didn't fade)" },
+    { ok: f.sma200 && p > f.sma200, label: "Above its 200-day average (long uptrend):", value: vs(f.sma200) },
+    ...common,
+  ];
+  return common;
+}
+
+function ShortModal({ x, setupKey, byTicker, total, today, owned, onBuy, onClose, onOpenLong }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const k = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", k);
+    ref.current && ref.current.focus();
+    return () => window.removeEventListener("keydown", k);
+  }, [onClose]);
+  const S = SETUPS[setupKey], st = S.stats, f = x.facts;
+  const plan = tradePlanFor(setupKey, x.price, f, { total, budgetPct: SHORT_BUDGET, earningsDate: x.earningsDate, today });
+  const full = byTicker[x.ticker];
+  const dailyMove = f.atr && x.price ? f.atr / x.price : null;
+  const swing = plan.size && dailyMove ? plan.size * dailyMove : null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
+      <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={x.ticker + " short-term trade"} onClick={(e) => e.stopPropagation()}
+        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl border border-slate-700 bg-slate-800 p-5 shadow-2xl focus:outline-none sm:rounded-2xl">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-baseline gap-2"><span className="text-xl font-bold text-white">{x.ticker}</span><span className="tabular-nums text-slate-300">{px(x.price)}</span></div>
+            <div className="text-sm text-slate-400">{x.name} · {x.sector}</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-300">{S.label}</span>
+              <span className="rounded-md bg-slate-700 px-2 py-0.5 text-xs text-slate-300">hold {S.span}</span>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"><Icon name="X" size={18} /></button>
+        </div>
+
+        <div className="mt-4">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Why it's on the list</div>
+          <p className="mt-1 text-sm text-slate-400">{S.blurb}</p>
+          <div className="mt-2 space-y-1.5">{shortRules(x, setupKey).map((r) => <RuleRow key={r.label} {...r} />)}</div>
+        </div>
+
+        <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">The plan</div>
+          <div className="mt-1.5 space-y-1 text-sm text-slate-300">
+            <div><span className="text-slate-500">Buy:</span> {plan.size ? <span className="font-semibold text-white">~{usd(plan.size)}</span> : "1/8 of your short-term budget"} now, around {px(x.price)}</div>
+            <div><span className="text-slate-500">Sell:</span> <span className="font-semibold text-white">{fmtDate(plan.sellBy)}</span>, whatever the price. Don't hold longer hoping for more.</div>
+            <div><span className="text-slate-500">Sell early only if:</span> real bad news about the company (lawsuit, fraud, guidance cut). No stop-loss: every stop tested made results worse.</div>
+            {dailyMove != null && <div><span className="text-slate-500">Expect:</span> it usually moves about ±{Math.round(dailyMove * 1000) / 10}% a day{swing ? " (~" + usd(swing) + " on your position)" : ""}. Normal, don't panic-sell.</div>}
+          </div>
+          {plan.earnings && <div className="mt-2 flex items-center gap-1.5 rounded bg-amber-500/10 px-2 py-1 text-xs text-amber-300"><Icon name="CalendarClock" size={13} />Earnings {fmtDate(plan.earnings.date)} ({plan.earnings.days} days) falls inside the hold: a big jump or drop is possible that day.</div>}
+        </div>
+
+        {st && (
+          <div className="mt-4">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">What happened in 10 years of tests</div>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[["Avg trade", spct(st.avg, 1)], ["Beat SPY by", spct(st.vsSpy, 1)], ["Trades that won", Math.round(st.win * 100) + "%"], ["Worst drop", Math.round(st.maxDD * 100) + "%"]].map(([k, v]) => (
+                <div key={k} className="rounded-lg bg-slate-900/60 px-2.5 py-2"><div className="text-[11px] text-slate-500">{k}</div><div className="font-semibold tabular-nums text-white">{v}</div></div>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-slate-400">It's a numbers game: about half the trades lose, but the winners are bigger. One trade proves nothing; the edge shows up over many.</p>
+          </div>
+        )}
+
+        <div className="mt-4 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3 text-sm text-slate-300">
+          <div className="font-medium text-indigo-200">How this differs from long-term</div>
+          <p className="mt-1">Long-term picks are about the business: earnings growth, quality, value, analysts. Over a few weeks those barely move a stock, so short-term only looks at <span className="text-white">price and volume</span>: is a strong move likely to keep going? {setupKey === "momentum" ? "Already up a lot? That's the signal, not a problem: in the test, buying after the big month still beat SPY over the next 4 weeks." : "Already jumped? That's the signal: after big news gaps, stocks kept drifting up for weeks in the test."}</p>
+        </div>
+
+        {full ? (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-900/50 p-3">
+            <div className="flex items-center gap-2 text-sm text-slate-300"><ScoreBadge score={full.composite} size="sm" /><span>Long-term score {Math.round(full.composite)}, {(full.risk || "").toLowerCase()} risk</span></div>
+            <button type="button" onClick={() => onOpenLong(x.ticker)} className="text-sm text-indigo-300 hover:text-indigo-200">Long-term breakdown →</button>
+          </div>
+        ) : <p className="mt-4 text-xs text-slate-500">Not fully checked on the long-term side yet. That's fine: this trade doesn't depend on it.</p>}
+        {full && (full.newsFlags || []).length > 0 && (
+          <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">Headlines to check before buying</div>
+            <ul className="mt-1 space-y-0.5">{full.newsFlags.map((n) => <li key={n.headline} className="text-xs text-slate-300">• {n.url ? <a href={n.url} target="_blank" rel="noreferrer" className="hover:underline">{n.headline}</a> : n.headline}</li>)}</ul>
+          </div>
+        )}
+
+        <div className="mt-4">
+          {owned ? <span className="inline-flex items-center gap-1 text-sm text-emerald-300"><Icon name="Check" size={14} />In your open trades</span>
+            : <button type="button" onClick={() => { onBuy({ ticker: x.ticker, setup: setupKey, date: todayISO(), price: x.price, sellBy: plan.sellBy, sma5: f.sma5 || null }); onClose(); }}
+                className="rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-semibold text-slate-900 hover:bg-emerald-400">I bought this</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen, onDetails }) {
   const plan = tradePlanFor(setupKey, x.price, x.facts, { total, budgetPct: SHORT_BUDGET, earningsDate: x.earningsDate, today });
   const full = byTicker[x.ticker];
   const why = setupKey === "momentum" ? "Up " + spct(x.facts.ret21, 0) + " in a month"
@@ -545,10 +662,10 @@ function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen }
   return (
     <div className="flex flex-col rounded-xl border border-slate-700/60 bg-slate-800 p-3.5">
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-baseline gap-2"><span className="text-base font-bold text-white">{x.ticker}</span><span className="text-sm tabular-nums text-slate-300">{px(x.price)}</span></div>
+        <button type="button" onClick={onDetails} className="min-w-0 text-left">
+          <div className="flex items-baseline gap-2"><span className="text-base font-bold text-white hover:underline">{x.ticker}</span><span className="text-sm tabular-nums text-slate-300">{px(x.price)}</span></div>
           <div className="truncate text-xs text-slate-400">{x.name}</div>
-        </div>
+        </button>
         {full ? <button type="button" onClick={() => onOpen(x.ticker)} title="Long-term score: open the full breakdown"><ScoreBadge score={full.composite} size="sm" /></button> : null}
       </div>
       <div className="mt-2 text-sm text-emerald-300">{why}</div>
@@ -558,10 +675,11 @@ function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen }
         <div><span className="text-slate-500">Sell:</span> {setupKey === "dip" ? "first close above the 5-day avg (~" + px(x.facts.sma5) + "), max 10 days" : "on " + fmtDate(plan.sellBy)}</div>
         <div><span className="text-slate-500">Early exit:</span> only on bad company news (no stop-loss: tested worse)</div>
       </div>
-      <div className="mt-auto pt-2.5">
+      <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
         {owned ? <span className="inline-flex items-center gap-1 text-xs text-emerald-300"><Icon name="Check" size={13} />In your open trades</span>
           : <button type="button" onClick={() => onBuy({ ticker: x.ticker, setup: setupKey, date: todayISO(), price: x.price, sellBy: plan.sellBy, sma5: x.facts.sma5 || null })}
               className="rounded-lg border border-emerald-500/40 px-2.5 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-500/10">I bought this</button>}
+        <button type="button" onClick={onDetails} className="text-xs text-indigo-300 hover:text-indigo-200">Why + details →</button>
       </div>
     </div>
   );
@@ -606,6 +724,8 @@ function OpenTrades({ trades, priceBook, onClose }) {
 function ShortTermTab({ data, byTicker, priceBook, pf, total, onOpen }) {
   const [showOut, setShowOut] = useState(false);
   const [showAll, setShowAll] = useState({});
+  const [detail, setDetail] = useState(null);
+  const closeDetail = useCallback(() => setDetail(null), []);
   const items = (data && data.items) || [];
   const today = data && data.generatedAt ? data.generatedAt.slice(0, 10) : todayISO();
   const owned = new Set(pf.trades.map((t) => t.ticker));
@@ -632,6 +752,8 @@ function ShortTermTab({ data, byTicker, priceBook, pf, total, onOpen }) {
       </Card>
 
       <OpenTrades trades={pf.trades} priceBook={priceBook} onClose={pf.closeTrade} />
+      {detail && <ShortModal x={detail.x} setupKey={detail.k} byTicker={byTicker} total={total} today={today} owned={owned.has(detail.x.ticker)} onBuy={pf.addTrade}
+        onClose={closeDetail} onOpenLong={(t) => { setDetail(null); onOpen(t); }} />}
 
       {!data && <Card className="p-6 text-center text-sm text-slate-400">Short-term setups appear after the next nightly run.</Card>}
       {data && ["momentum", "gap", "dip"].filter((k) => SETUPS[k] && !SETUPS[k].disabled).map((k) => (
@@ -641,7 +763,7 @@ function ShortTermTab({ data, byTicker, priceBook, pf, total, onOpen }) {
           <div className="mb-3 mt-1"><SetupStats st={SETUPS[k].stats} /></div>
           {lists[k].length ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {(showAll[k] ? lists[k] : lists[k].slice(0, 8)).map((x) => <ShortCard key={k + x.ticker} x={x} setupKey={k} byTicker={byTicker} total={total} today={today} owned={owned.has(x.ticker)} onBuy={pf.addTrade} onOpen={onOpen} />)}
+              {(showAll[k] ? lists[k] : lists[k].slice(0, 8)).map((x) => <ShortCard key={k + x.ticker} x={x} setupKey={k} byTicker={byTicker} total={total} today={today} owned={owned.has(x.ticker)} onBuy={pf.addTrade} onOpen={onOpen} onDetails={() => setDetail({ x, k })} />)}
             </div>
           ) : <Card className="p-4 text-center text-sm text-slate-400">No {SETUPS[k].label.toLowerCase()} setups today.</Card>}
           {lists[k].length > 8 && <button type="button" onClick={() => setShowAll({ ...showAll, [k]: !showAll[k] })} className="mt-2 text-sm text-indigo-300 hover:text-indigo-200">{showAll[k] ? "Show top 8 only" : "Show all " + lists[k].length + " (top 8 are the strongest)"}</button>}
