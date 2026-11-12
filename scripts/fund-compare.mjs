@@ -40,11 +40,23 @@ async function nqJson(url) {
 }
 async function histNasdaq(t) {
   const to = new Date().toISOString().slice(0, 10), from = new Date(Date.now() - 21.2 * 31557600000).toISOString().slice(0, 10);
-  const h = await nqJson(`https://api.nasdaq.com/api/quote/${t}/historical?assetclass=etf&fromdate=${from}&limit=9999&todate=${to}`);
-  const rows = ((h.data && h.data.tradesTable && h.data.tradesTable.rows) || []).map((r) => [us2iso(r.date), num(r.close)]).filter(([, c]) => c > 0).sort((x, y) => x[0].localeCompare(y[0]));
-  const dv = await nqJson(`https://api.nasdaq.com/api/quote/${t}/dividends?assetclass=etf`);
+  // the API returns at most ~10 years per call, so ask in chunks
+  const seen = new Map();
+  for (let y = 0; y < 22; y += 9) {
+    const f = new Date(Date.now() - (y + 9) * 31557600000).toISOString().slice(0, 10), tt = new Date(Date.now() - y * 31557600000).toISOString().slice(0, 10);
+    const h = await nqJson(`https://api.nasdaq.com/api/quote/${t}/historical?assetclass=etf&fromdate=${f < from ? from : f}&limit=9999&todate=${y ? tt : to}`);
+    ((h.data && h.data.tradesTable && h.data.tradesTable.rows) || []).forEach((r) => { const c = num(r.close); if (c > 0) seen.set(us2iso(r.date), c); });
+    await sleep(300);
+  }
+  const rows = [...seen.entries()].sort((x, y) => x[0].localeCompare(y[0]));
+  let dvRows = [];
+  for (const ac of ["etf", "stocks"]) {
+    const dv = await nqJson(`https://api.nasdaq.com/api/quote/${t}/dividends?assetclass=${ac}`).catch(() => null);
+    dvRows = (dv && dv.data && dv.data.dividends && dv.data.dividends.rows) || [];
+    if (dvRows.length) break;
+  }
   const divs = new Map();
-  ((dv.data && dv.data.dividends && dv.data.dividends.rows) || []).forEach((r) => { if (r.exOrEffDate && r.exOrEffDate !== "N/A") divs.set(us2iso(r.exOrEffDate), (divs.get(us2iso(r.exOrEffDate)) || 0) + num(r.amount)); });
+  dvRows.forEach((r) => { if (r.exOrEffDate && r.exOrEffDate !== "N/A") divs.set(us2iso(r.exOrEffDate), (divs.get(us2iso(r.exOrEffDate)) || 0) + num(r.amount)); });
   let units = 1;
   const m = new Map();
   for (const [d, c] of rows) { if (divs.has(d)) units *= 1 + divs.get(d) / c; m.set(d, units * c); }
@@ -112,8 +124,8 @@ const end = days[days.length - 1];
 const out = { asOf: end, windows: {} };
 const pct = (x) => (x == null ? "  n/a" : ((x >= 0 ? " " : "") + (x * 100).toFixed(1) + "%").padStart(7));
 for (const yrsBack of [10, 20]) {
-  const from = new Date(Date.parse(end) - yrsBack * 31557600000).toISOString().slice(0, 10);
-  if (from < days[0]) continue;
+  let from = new Date(Date.parse(end) - yrsBack * 31557600000).toISOString().slice(0, 10);
+  if (from < days[0]) { if (Date.parse(days[0]) - Date.parse(from) > 10 * 864e5) continue; from = days[0]; }
   const spyS = series({ SPY: 1 }, from);
   out.windows[yrsBack + "y"] = {};
   console.log(`\n=== Last ${yrsBack} years (${from} → ${end}) — $1,000 grows to / yearly / worst drop / bumpiness / worst year / moves with SPY ===`);
