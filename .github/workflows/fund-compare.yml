@@ -1,0 +1,21 @@
+name: Fund compare
+# Manual: compares index/sector funds vs just SPY or QQQ over 10 and 20 years (results in the log).
+on:
+  workflow_dispatch:
+    inputs:
+      funds:
+        description: "Funds (comma-separated, SPY and QQQ required)"
+        default: "SPY,QQQ,IWM,XLV,VFH,VDC,XLY,XLU"
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/fund-compare.mjs
+        env:
+          FUNDS: ${{ inputs.funds }}
