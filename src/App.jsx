@@ -9,7 +9,7 @@ import { LIMITS, FACTORS, HORIZON_INFO, UNMANAGED_SECTORS, scoreUniverse, analyz
 import { SETUPS, RULED_OUT, tradePlanFor } from "./lib/shortterm.js";
 import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, useShort, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
-import { ruleSummary } from "./lib/ai.js";
+import { ruleSummary, PROMPT_VERSION } from "./lib/ai.js";
 import { updateAdvice, tierOf } from "./lib/updates.js";
 
 const L = LIMITS;
@@ -347,7 +347,7 @@ const VERDICT_STYLE = {
 };
 
 function AiTake({ s, full = false }) {
-  const t = s.ai || ruleSummary(s);
+  const t = s.ai && (s.ai.pv || 0) >= PROMPT_VERSION ? s.ai : ruleSummary(s); // older takes may say "wait for a dip"
   const isAi = t.source === "ai";
   const when = t.generatedAt ? fmtDate(t.generatedAt.slice(0, 10)) : null;
   return (

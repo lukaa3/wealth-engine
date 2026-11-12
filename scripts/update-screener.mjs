@@ -32,7 +32,7 @@ import { percentileRanks } from "../src/lib/factors.js";
 import { shortFacts, detectSetups } from "../src/lib/shortterm.js";
 import { scoreUniverse, LIMITS } from "../src/scoring.js";
 import { stockToRow, rowToStock, actionToRow, insiderToRow, rowToAction, rowToInsider } from "../src/lib/schema.js";
-import { analyzeMany, buildPrompt } from "../src/lib/ai.js";
+import { analyzeMany, buildPrompt, PROMPT_VERSION } from "../src/lib/ai.js";
 import { nextHist, stockUpdate } from "../src/lib/updates.js";
 import { loadUniverse, HOLDINGS } from "../src/lib/universe.js";
 import { scanRow, pickDeepSet } from "../src/lib/scan.js";
@@ -254,7 +254,8 @@ const targets = scored.slice().sort((a, b) => b.composite - a.composite).slice(0
 const byTicker = {};
 analyst.forEach((a) => (byTicker[a.ticker] = byTicker[a.ticker] || []).push(a));
 // Keep earlier takes for stocks that don't get a fresh one this run.
-const previous = Object.fromEntries(pool.stocks.filter((r) => r.ai_take).map((r) => [r.ticker, r.ai_take]));
+// (Takes written under older instructions are dropped so they get rewritten; see PROMPT_VERSION.)
+const previous = Object.fromEntries(pool.stocks.filter((r) => r.ai_take && (r.ai_take.pv || 0) >= PROMPT_VERSION).map((r) => [r.ticker, r.ai_take]));
 scored.forEach((s) => { if (previous[s.ticker]) s.ai = { ...previous[s.ticker], stale: true }; });
 
 // Brief for the Claude step in the workflow (reads .ai/brief.md, writes .ai/claude_takes.json, merged by merge-ai-takes.mjs).

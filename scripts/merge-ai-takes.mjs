@@ -5,7 +5,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { parseAiJson } from "../src/lib/ai.js";
+import { parseAiJson, PROMPT_VERSION } from "../src/lib/ai.js";
 
 const env = process.env;
 const OUT_DIR = env.OUT_DIR || "public/data";
@@ -21,7 +21,7 @@ for (const row of data.stocks) {
   const raw = takes[row.ticker];
   const t = raw && parseAiJson(JSON.stringify(raw));
   if (!t) continue;
-  row.ai_take = { ...t, model: "Claude (Pro plan)", source: "ai", generatedAt: now };
+  row.ai_take = { ...t, pv: PROMPT_VERSION, model: "Claude (Pro plan)", source: "ai", generatedAt: now };
   merged++;
 }
 fs.writeFileSync(file, JSON.stringify(data));
