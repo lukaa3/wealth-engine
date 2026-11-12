@@ -119,8 +119,8 @@ export function buyPlan(s, horizon = "core") {
   const take = horizon === "swing"
     ? { price: s.target1m, text: "Sell about half at " + dollars(s.target1m) + " (" + sp(rel(s.target1m, p)) + "), let the rest run with the stop raised to your average cost" }
     : horizon === "long"
-      ? { price: s.target12m, text: (s.target12m ? "Street target " + dollars(s.target12m) + " (" + sp(rel(s.target12m, p)) + "). " : "") + "Hold while the trend and earnings stay strong; trim if it grows past 20% of your portfolio" }
-      : { price: s.target6m, text: "First target " + dollars(s.target6m) + " (" + sp(rel(s.target6m, p)) + "); trim a quarter if it runs 25%+ above its 50-day average" };
+      ? { price: s.target12m, text: (s.target12m ? "Street target " + dollars(s.target12m) + " (" + sp(rel(s.target12m, p)) + "). " : "") + "Hold while the trend and earnings stay strong; only sell some if it grows past ~20% of your portfolio" }
+      : { price: s.target6m, text: (s.target6m ? "Street target " + dollars(s.target6m) + " (" + sp(rel(s.target6m, p)) + "). " : "") + "Hold through the dips and re-check every 3 months; only sell some if it grows past ~20% of your portfolio" };
 
   return {
     steps: steps.map((x) => ({ ...x, part: 1, share: "All" })),
@@ -316,9 +316,7 @@ export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
   if (action === "Hold" && !isIndex && r.weight > LIMITS.POSITION_LIMIT) {
     action = "Trim";
     why.push(Math.round(r.weight * 100) + "% of your portfolio in one name; trim about " + dollars(r.value - LIMITS.POSITION_TARGET * r.total) + " to get back to ~" + Math.round(LIMITS.POSITION_TARGET * 100) + "%");
-  } else if (action === "Hold" && stretched && r.plPct > 0.25) {
-    action = "Trim";
-    why.push("Up " + Math.round(r.plPct * 100) + "% and stretched " + sp(f.ext50) + " above its 50-day average: take some profit (about a quarter)");
+  // (No "take profit when stretched" rule: in the 10-year test selling 1/3 of stretched winners only tied with holding.)
   } else if (action === "Hold" && s && s.composite < LIMITS.REVIEW_SCORE && !trendBroken) {
     action = "Pause adding";
     why.push("Weak score (" + s.composite + "): hold what you have, don't add; " + (f.above200 === false
@@ -329,7 +327,7 @@ export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
   const weak = !s || s.composite < LIMITS.RECOMMEND;
   if ((action === "Hold" || action === "Buy more") && (news.length >= 2 || (news.length && weak) || downgrades.length >= 2 || revCut)) {
     action = "Review";
-    if (news.length) why.push("Negative headline" + (news.length > 1 ? "s" : "") + " this week: " + news[0].headline);
+    if (news.length) why.push("Negative headline" + (news.length > 1 ? "s" : "") + " this week: " + news[0].headline + ". Read it; unless it's serious (fraud, bankruptcy, losing its main business), hold: selling after big drops did worse in the test");
     if (downgrades.length) why.push(downgrades.length + " analyst downgrade" + (downgrades.length > 1 ? "s" : "") + " / target cut" + (downgrades.length > 1 ? "s" : "") + " in the last 30 days");
     if (revCut) why.push("Analysts are cutting EPS estimates (" + s.factors.revDown + " down vs " + (s.factors.revUp || 0) + " up)");
   }

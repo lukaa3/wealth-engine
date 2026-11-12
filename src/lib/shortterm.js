@@ -45,6 +45,7 @@ export const RULED_OUT = [
   ["Trades of a week or less", "1-week momentum, 1-week reversal and 5-day dip buys didn't beat simply holding SPY."],
   ["52-week-high breakouts", "About the same as SPY: +0.97% per trade vs SPY's +0.95% over the same days."],
   ["Quick dip trades (2–10 days)", "Buying sharp pullbacks in strong stocks won 64% of the time, but the average trade only matched SPY (+0.01%) and it means ~100 trades a week."],
+  ["Selling early after a big drop", "Getting out of a trade after a -5% day, a -10% week, a bad-news drop or a break of the 50-day all did worse per trade than holding to the sell date (gap-ups much worse)."],
   ["Stop-losses", "Tight stops, targets, 'sell half, trail the rest' and even wide 'disaster' stops (3× daily range) all made results worse. Fixed holding periods did best."],
   ["Only trading when the market is strong", "Skipping momentum trades while SPY was below its 200-day average didn't help (same edge, bigger worst drop)."],
   ["Selling part of a long-term winner", "Holding the long-term picks (39% a year) beat selling a third at +15%, +25% or +40% (33–38%)."],

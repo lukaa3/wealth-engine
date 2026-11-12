@@ -47,7 +47,7 @@ export function stockUpdate(s, hist, { today, dayMove = null, reportedOn = null,
     if (Math.abs(w) >= 0.1) add((w > 0 ? "Up " : "Down ") + fmtPct(w) + " this week", w > 0 ? "good" : "bad");
   }
   if (ref && ref[3] != null && f.above200 != null && ref[3] !== f.above200)
-    add(f.above200 ? "Back above its 200-day average (uptrend)" : "Fell below its 200-day average (trend weakening)", f.above200 ? "good" : "bad");
+    add(f.above200 ? "Back above its 200-day average (uptrend)" : "Fell below its 200-day average (not a sell signal by itself)", f.above200 ? "good" : "bad");
   if (reportedOn) {
     const sur = Array.isArray(f.surprises) && f.surprises.length ? f.surprises[0] : null;
     const fresh = sur != null && sur !== prevSurprise;
@@ -71,16 +71,16 @@ export function updateAdvice(s, holding) {
   if (holding && holding.advice) {
     const a = holding.advice.action, pl = holding.plPct || 0;
     if (a === "Sell") return pl >= 0 ? { text: "Sell and lock in the profit (" + fmtPct(pl) + ")", tone: "bad" } : { text: "Get out and take the loss (" + fmtPct(pl) + "): the trend broke", tone: "bad" };
-    if (a === "Trim") return { text: "Take some profit (you're " + fmtPct(pl) + ")", tone: "neutral" };
-    if (a === "Review") return { text: "Check the news before doing anything", tone: "bad" };
+    if (a === "Trim") return { text: "Too much of your money is in this one: sell a little (you're " + fmtPct(pl) + ")", tone: "neutral" };
+    if (a === "Review") return { text: "Read the news, but don't panic-sell: selling after drops did worse in the test", tone: "bad" };
     if (a === "Pause adding") return { text: "Hold, but don't add more", tone: "neutral" };
-    if (a === "Buy more") return { text: "Looking good: buy more", tone: "good" };
+    if (a === "Buy more") return { text: upd && upd.tone === "bad" ? "Buy more: buying strong picks after a drop did better in the test" : "Looking good: buy more", tone: "good" };
     const rough = upd && upd.tone === "bad";
-    return { text: (rough ? "Keep holding: a rough day, but the bigger picture is still strong" : "Keep holding") + (pl ? " (you're " + fmtPct(pl) + ")" : ""), tone: rough ? "neutral" : "good" };
+    return { text: (rough ? "Keep holding: in the test, selling after drops did worse" : "Keep holding") + (pl ? " (you're " + fmtPct(pl) + ")" : ""), tone: rough ? "neutral" : "good" };
   }
   const t = tierOf(s.composite);
   const upgraded = upd && upd.events.some((e) => e.text.startsWith("Upgraded"));
-  if (t >= 2) return { text: upgraded ? "New buy" : upd && upd.tone === "bad" ? "Still a buy, but check what happened first" : "Still a buy", tone: upd && upd.tone === "bad" ? "neutral" : "good" };
+  if (t >= 2) return { text: upgraded ? "New buy" : upd && upd.tone === "bad" ? "Still a buy: drops in strong picks were good times to buy in the test" : "Still a buy", tone: "good" };
   if (upd && upd.events.some((e) => e.text.startsWith("Dropped out"))) return { text: "No longer a pick: skip it for now", tone: "bad" };
   return { text: t === 1 ? "Watch only, not a buy yet" : "Not a buy", tone: "neutral" };
 }

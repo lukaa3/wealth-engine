@@ -363,6 +363,7 @@ function Methodology() {
             <div><span className="font-medium text-slate-200">Horizon label:</span> (shorter trades are on the Short-term tab) each stock gets a fit score for <span className="text-slate-200">Core (3–12 months)</span>: the overall score; and <span className="text-slate-200">Long-term (1–3+ years)</span>: quality, growth and fair price. It's labeled with the best fit.</div>
             <div><span className="font-medium text-slate-200">Risk:</span> High = big price swings, losing money, small company or under $5. Low = calm, profitable. Being young, a mix with some High-risk names is fine; keep each one small.</div>
             <div><span className="font-medium text-slate-200">How to buy:</span> buy the whole position at once. In the 10-year test, buying all at once returned +34% over a year; buying in thirds at lower prices did +24%, because strong stocks often never come back down (and even with a 4-week deadline it only tied, for a lot more work). Stretched stocks did best of all when bought at once. The "rethink" price is where the idea is wrong.</div>
+            <div><span className="font-medium text-slate-200">After you buy:</span> mostly leave it alone and re-check every 3 months. In the 10-year test, selling early after a bad day, a -10% week, a drop from the high or a break of the 200-day average all did worse than holding (16–28% a year vs 32%), and taking profit on stretched winners only tied. What did help: putting new money into picks that are still strong, even right after a drop.</div>
             <div><span className="font-medium text-slate-200">How much:</span> keep about half your money in index funds. Each pick gets 8% of your portfolio if Low risk, 5% Medium, 3% High, and 25% more for Top picks (max 10%), so no single stock can sink you. Check picks about every 3 months.</div>
             <div><span className="font-medium text-slate-200">Backtest (2016–2026, S&amp;P 500, top 20 monthly):</span> the momentum & trend score made about 32%/yr vs 15% for SPY and 17% for all stocks equally, in both 5-year halves. FVG setups added nothing to picking. Real results will be lower: the test only includes today's index members, so it misses companies that collapsed. Earnings, quality and valuation couldn't be tested (no free history).</div>
           </div>
@@ -635,7 +636,7 @@ function ShortModal({ x, setupKey, byTicker, total, today, owned, onBuy, onClose
           <div className="mt-1.5 space-y-1 text-sm text-slate-300">
             <div><span className="text-slate-500">Buy:</span> {plan.size ? <span className="font-semibold text-white">~{usd(plan.size)}</span> : "1/8 of your short-term budget"} now, around {px(x.price)}</div>
             <div><span className="text-slate-500">Sell:</span> <span className="font-semibold text-white">{fmtDate(plan.sellBy)}</span>, whatever the price. Don't hold longer hoping for more.</div>
-            <div><span className="text-slate-500">Sell early only if:</span> real bad news about the company (lawsuit, fraud, guidance cut). No stop-loss: every stop tested made results worse.</div>
+            <div><span className="text-slate-500">Sell early only if:</span> something truly serious (fraud, bankruptcy). A big drop alone isn't a reason: selling after drops did worse in the test, and so did every stop-loss.</div>
             {dailyMove != null && <div><span className="text-slate-500">Expect:</span> it usually moves about ±{Math.round(dailyMove * 1000) / 10}% a day{swing ? " (~" + usd(swing) + " on your position)" : ""}. Normal, don't panic-sell.</div>}
           </div>
           {plan.earnings && <div className="mt-2 flex items-center gap-1.5 rounded bg-amber-500/10 px-2 py-1 text-xs text-amber-300"><Icon name="CalendarClock" size={13} />Earnings {fmtDate(plan.earnings.date)} ({plan.earnings.days} days) falls inside the hold: a big jump or drop is possible that day.</div>}
@@ -701,7 +702,7 @@ function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen, 
       <div className="mt-2 space-y-0.5 text-xs text-slate-300">
         <div><span className="text-slate-500">Buy:</span> {plan.size ? <span className="font-semibold text-white">~{usd(plan.size)}</span> : Math.round(plan.sizePct * 1000) / 10 + "% of portfolio"} now (~{px(x.price)})</div>
         <div><span className="text-slate-500">Sell:</span> {setupKey === "dip" ? "first close above the 5-day avg (~" + px(x.facts.sma5) + "), max 10 days" : "on " + fmtDate(plan.sellBy)}</div>
-        <div><span className="text-slate-500">Early exit:</span> only on bad company news (no stop-loss: tested worse)</div>
+        <div><span className="text-slate-500">Early exit:</span> only for something truly serious (drops and stop-losses tested worse)</div>
       </div>
       <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
         {owned ? <span className="inline-flex items-center gap-1 text-xs text-emerald-300"><Icon name="Check" size={13} />In your open trades</span>
@@ -731,7 +732,7 @@ function OpenTrades({ trades, priceBook, onClose, byTicker = {} }) {
             const st = byTicker[t.ticker];
             const upd = st && st.upd && (Date.parse(today) - Date.parse(st.upd.date)) / 864e5 <= 3 ? st.upd : null;
             const badNews = upd && upd.events.find((e) => e.text.startsWith("Headline"));
-            const status = badNews && !(daysLeft != null && daysLeft <= 0) ? ["Bad news: think about selling early", "bg-rose-500 text-white"]
+            const status = badNews && !(daysLeft != null && daysLeft <= 0) ? ["Headline: read it, but hold unless it's serious", "bg-amber-500 text-slate-900"]
               : t.setup === "dip" && now && t.sma5 && now > t.sma5 ? ["Sell: bounced above the 5-day", "bg-emerald-500 text-slate-900"]
               : daysLeft != null && daysLeft <= 0 ? ["Sell today: time's up", "bg-amber-500 text-slate-900"]
               : ["Hold · sell " + fmtDate(t.sellBy) + " (" + daysLeft + "d)", "bg-slate-700 text-slate-200"];
