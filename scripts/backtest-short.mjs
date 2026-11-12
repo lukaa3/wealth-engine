@@ -216,7 +216,8 @@ const earlyExit = (n, trig) => (x, e) => {
 };
 const MOM = (x, i) => (x.c[i] > x.s50[i] ? ret(x, i, 21) : null);
 const GAPUP = (x, i) => x.o[i] >= x.c[i - 1] * 1.04 && x.v[i] >= 3 * x.av50[i] && x.c[i] >= x.o[i] && up200(x, i);
-const SETUPS = manage ? [
+const chase = env.BT_SET === "chase";
+const SETUPS = chase ? [] : manage ? [
   runWeekly("Momentum 4 wks: hold to the sell date", MOM, 20),
   runWeekly("Momentum 4 wks: sell early on a -5% day on 2x volume (bad news)", MOM, 20, 20, earlyExit(20, badDay)),
   runWeekly("Momentum 4 wks: sell early on any -5% day", MOM, 20, 20, earlyExit(20, drop5)),
@@ -392,6 +393,104 @@ if (manage) {
     "Keep the reserve in the stock from day 1 (buy it all now)": manageLT({ add: () => true }),
   };
 }
+/* ----- "Am I too late?" — does buying after a bigger run (or a few days late) do worse? ----- */
+if (chase) {
+  const bucket = (v, edges) => { for (let j = 0; j < edges.length; j++) if (v < edges[j]) return j; return edges.length; };
+  const st = (arr) => (arr.length ? { n: arr.length, avg: r4(mean(arr.map((a) => a[0]))), vsSpy: r4(mean(arr.map((a) => a[1]))), win: r4(arr.filter((a) => a[0] > 0).length / arr.length) } : { n: 0 });
+  const table = (labels, arrs) => Object.fromEntries(labels.map((l, j) => [l, st(arrs[j])]));
+  const res = {};
+
+  // Long-term: quarterly top 20 by the site's score, grouped by how stretched each was when bought.
+  const EXT = [0, 0.1, 0.2, 0.3, 0.4, 0.6], EXT_L = ["below its 50-day", "0–10% above", "10–20% above", "20–30% above", "30–40% above", "40–60% above", "60%+ above"];
+  const RUN = [0.1, 0.2, 0.3, 0.5], RUN_L = ["up <10% last month", "10–20%", "20–30%", "30–50%", "50%+"];
+  const lt3 = EXT_L.map(() => []), lt12 = EXT_L.map(() => []), ltRun = RUN_L.map(() => []);
+  const topAt = (k) => [...scoreRank.get(k).entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t);
+  for (let q = 0; q < qEnds.length; q++) {
+    const k = qEnds[q];
+    for (const t of topAt(k).slice(0, 20)) {
+      const x = S[t], i0 = x.at[k];
+      if (i0 < 0) continue;
+      const ext = x.c[i0] / x.s50[i0] - 1, b = bucket(ext, EXT);
+      if (i0 + 63 < x.c.length && k + 63 < D) { const r = x.c[i0 + 63] / x.c[i0] - 1; lt3[b].push([r, r - (spy.c[k + 63] / spy.c[k] - 1)]); ltRun[bucket(ret(x, i0, 21), RUN)].push([r, r - (spy.c[k + 63] / spy.c[k] - 1)]); }
+      if (i0 + 252 < x.c.length && k + 252 < D) { const r = x.c[i0 + 252] / x.c[i0] - 1; lt12[b].push([r, r - (spy.c[k + 252] / spy.c[k] - 1)]); }
+    }
+  }
+  function skipLT(maxExt) {
+    let eq = 1, peak = 1, dd = 0, skipped = 0;
+    for (let q = 0; q < qEnds.length - 1; q++) {
+      const k = qEnds[q], k2 = qEnds[q + 1], rets = [];
+      for (const t of topAt(k)) {
+        if (rets.length >= 20) break;
+        const x = S[t], i0 = x.at[k], i2 = x.at[k2];
+        if (i0 < 0 || i2 < 0) continue;
+        if (x.c[i0] / x.s50[i0] - 1 > maxExt) { skipped++; continue; }
+        rets.push(x.c[i2] / x.c[i0] - 1);
+      }
+      eq *= 1 + mean(rets) - 0.002; peak = Math.max(peak, eq); dd = Math.min(dd, eq / peak - 1);
+    }
+    const yrs = (qEnds[qEnds.length - 1] - qEnds[0]) / 252;
+    return { cagr: r4(Math.pow(eq, 1 / yrs) - 1), maxDD: r4(dd), skippedPerQuarter: r4(skipped / (qEnds.length - 1)) };
+  }
+  res.longTerm = {
+    "3 months later, by stretch": table(EXT_L, lt3), "12 months later, by stretch": table(EXT_L, lt12), "3 months later, by last month's run": table(RUN_L, ltRun),
+    "skip rule (quarterly top 20)": { "no cap": skipLT(Infinity), "skip if 60%+ above 50-day": skipLT(0.6), "skip if 40%+": skipLT(0.4), "skip if 30%+": skipLT(0.3), "skip if 20%+": skipLT(0.2) },
+  };
+
+  // Short-term: buying 0–5 days late, and how much higher than the signal-day close you paid.
+  const DEL = [0, 1, 2, 3, 5], DEL_L = ["next morning (as tested)", "1 day late", "2 days late", "3 days late", "5 days late"];
+  const LATE = [0, 0.03, 0.06, 0.1], LATE_L = ["paid less than the signal close", "paid 0–3% more", "3–6% more", "6–10% more", "10%+ more"];
+  const shortTest = (signals, hold) => {
+    const byDelay = DEL.map(() => []), byPaid = LATE_L.map(() => []);
+    for (const [t, i, k] of signals) {
+      const x = S[t];
+      DEL.forEach((d, n) => {
+        const e = i + 1 + d, j = e + hold - 1;
+        if (j >= x.c.length || k + 1 + d + hold - 1 >= D) return;
+        const r = x.c[j] / x.o[e] - 1 - 0.002, sr = spy.c[k + d + hold] / spy.o[k + 1 + d] - 1;
+        byDelay[n].push([r, r - sr]);
+        if (d > 0) byPaid[bucket(x.o[e] / x.c[i] - 1, LATE)].push([r, r - sr]);
+      });
+    }
+    return { "by when you buy": table(DEL_L, byDelay), "late buys, by how much more you paid": table(LATE_L, byPaid) };
+  };
+  const gapSignals = [];
+  for (const t of tick) {
+    const x = S[t]; let nextFree = 0;
+    for (let k = START; k < D - 50; k++) {
+      const i = x.at[k];
+      if (i < 252 || i + 50 >= x.c.length || i < nextFree || !(x.dv50[i] >= 2e6) || x.c[i] < 3) continue;
+      if (GAPUP(x, i)) { gapSignals.push([t, i, k]); nextFree = i + 45; }
+    }
+  }
+  const momSignals = [], MRUN = [0.2, 0.3, 0.5, 1.0], MRUN_L = ["up <20% in the month", "20–30%", "30–50%", "50–100%", "100%+"], momRun = MRUN_L.map(() => []);
+  for (let k = START; k < D - 30; k += 5) {
+    const cands = [];
+    for (const t of tick) {
+      const x = S[t], i = x.at[k];
+      if (i < 252 || i + 30 >= x.c.length || !(x.dv50[i] >= 5e6) || x.c[i] < 5) continue;
+      const v = MOM(x, i); if (v != null) cands.push([v, t, i]);
+    }
+    cands.sort((a, b) => b[0] - a[0]);
+    for (const [v, t, i] of cands.slice(0, 20)) {
+      momSignals.push([t, i, k]);
+      const x = S[t], r = x.c[i + 20] / x.o[i + 1] - 1 - 0.002, sr = spy.c[Math.min(D - 1, k + 20)] / spy.o[k + 1] - 1;
+      momRun[bucket(v, MRUN)].push([r, r - sr]);
+    }
+  }
+  res.gapUp = shortTest(gapSignals, 40);
+  res.momentum = { ...shortTest(momSignals, 20), "by how big the month's run was": table(MRUN_L, momRun) };
+  out.chase = res;
+  const cp = (x) => (x == null ? "   n/a" : ((x * 100).toFixed(2) + "%").padStart(8));
+  const line = (l, v) => console.log("    " + l.padEnd(36) + (v.n ? `avg${cp(v.avg)}  vs SPY${cp(v.vsSpy)}  win ${Math.round(v.win * 100)}%  (${v.n} trades)` : "no trades"));
+  for (const [sec, groups] of Object.entries(res)) {
+    console.log(`\n=== Chase test: ${sec} ===`);
+    for (const [g, rows] of Object.entries(groups)) {
+      console.log("  " + g);
+      for (const [l, v] of Object.entries(rows)) v.cagr != null ? console.log("    " + l.padEnd(36) + `CAGR${cp(v.cagr)}  maxDD${cp(v.maxDD)}  skipped ${v.skippedPerQuarter}/qtr`) : line(l, v);
+    }
+  }
+}
+
 out.longTermSplit = { hold: longTerm(null), sellThirdAt15: longTerm(0.15), sellThirdAt25: longTerm(0.25), sellThirdAt40: longTerm(0.4) };
 out.spyCagr = r4(spyCagr);
 out.caveats = [
