@@ -119,8 +119,8 @@ export function buyPlan(s, horizon = "core") {
   const take = horizon === "swing"
     ? { price: s.target1m, text: "Sell about half at " + dollars(s.target1m) + " (" + sp(rel(s.target1m, p)) + "), let the rest run with the stop raised to your average cost" }
     : horizon === "long"
-      ? { price: s.target12m, text: (s.target12m ? "Street target " + dollars(s.target12m) + " (" + sp(rel(s.target12m, p)) + "). " : "") + "Hold while the trend and earnings stay strong; only sell some if it grows past ~20% of your portfolio" }
-      : { price: s.target6m, text: (s.target6m ? "Street target " + dollars(s.target6m) + " (" + sp(rel(s.target6m, p)) + "). " : "") + "Hold through the dips and re-check every 3 months; only sell some if it grows past ~20% of your portfolio" };
+      ? { price: s.target12m, text: (s.target12m ? "Street target " + dollars(s.target12m) + " (" + sp(rel(s.target12m, p)) + "). " : "") + "When to sell: no price target and no time limit. Hold; at each 3-month check-up (next " + fmtDay(nextCheckup().date) + ") sell it only if it's no longer a pick" }
+      : { price: s.target6m, text: "When to sell: no price target and no time limit. Hold through the dips; at each 3-month check-up (next " + fmtDay(nextCheckup().date) + ") sell it only if it's no longer a pick" };
 
   return {
     steps: steps.map((x) => ({ ...x, part: 1, share: "All" })),
@@ -289,7 +289,27 @@ const ACTION_RANK = { Sell: 0, Trim: 1, Review: 2, "Buy more": 3, "Pause adding"
  *   Hold        everything else
  * `downgrades` = recent analyst downgrades / target cuts for this ticker (from the analyst feed).
  */
-export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
+/**
+ * The 3-month check-up (the tested way to manage long-term picks): at the end of Mar / Jun / Sep / Dec, sell anything
+ * that's no longer a pick and put the money in current top picks. In between, just hold (no price targets, no stops).
+ */
+const iso = (d) => d.toISOString().slice(0, 10);
+export function nextCheckup(today = new Date()) {
+  const y = today.getUTCFullYear();
+  const ends = [[y, 2, 31], [y, 5, 30], [y, 8, 30], [y, 11, 31], [y + 1, 2, 31]].map(([yy, m, d]) => new Date(Date.UTC(yy, m, d)));
+  const t = Date.UTC(y, today.getUTCMonth(), today.getUTCDate());
+  const next = ends.find((e) => e.getTime() >= t);
+  return { date: iso(next), days: Math.round((next.getTime() - t) / 864e5) };
+}
+/** Check-up week: from the quarter-end day through the following ~10 days. */
+export function inCheckupWindow(today = new Date()) {
+  const t = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const prev = [[0, 2, 31], [0, 5, 30], [0, 8, 30], [0, 11, 31], [-1, 11, 31]].map(([dy, m, d]) => Date.UTC(today.getUTCFullYear() + dy, m, d)).filter((e) => e <= t);
+  return prev.some((e) => t - e <= 10 * 864e5);
+}
+const fmtDay = (isoDay) => new Date(isoDay + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
+export function adviseHolding(r, s, chart, { downgrades = [], today = new Date() } = {}) {
   const f = (s && s.factors) || chart || {};
   const isIndex = r.sector === "Index Funds";
   const isFund = !s;
@@ -313,11 +333,26 @@ export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
     why.push("In a downtrend (below its 200-day average); hold, but don't add until it turns");
   }
 
+  // Long-term rule: hold until it stops being a pick; act on that only at the 3-month check-up.
+  const scoreNow = s ? s.composite : chart && isNum(chart.sc) ? chart.sc : null;
+  const isStock = !isIndex && !r.fund && scoreNow != null;
+  const check = nextCheckup(today), window = inCheckupWindow(today);
+  let checkup = null;
+  if (action === "Hold" && isStock && scoreNow < LIMITS.RECOMMEND) {
+    if (window) {
+      action = "Sell"; checkup = "sell";
+      why.push("3-month check-up: it's no longer a pick (score " + scoreNow + "). Sell it and put the money into a current top pick");
+    } else {
+      action = "Pause adding"; checkup = "wait";
+      why.push("Dropped out of the picks (score " + scoreNow + "). Hold for now; at the " + fmtDay(check.date) + " check-up, sell it if it's still out");
+    }
+  }
+
   if (action === "Hold" && !isIndex && r.weight > LIMITS.POSITION_LIMIT) {
     action = "Trim";
     why.push(Math.round(r.weight * 100) + "% of your portfolio in one name; trim about " + dollars(r.value - LIMITS.POSITION_TARGET * r.total) + " to get back to ~" + Math.round(LIMITS.POSITION_TARGET * 100) + "%");
   // (No "take profit when stretched" rule: in the 10-year test selling 1/3 of stretched winners only tied with holding.)
-  } else if (action === "Hold" && s && s.composite < LIMITS.REVIEW_SCORE && !trendBroken) {
+  } else if (action === "Hold" && s && !checkup && s.composite < LIMITS.REVIEW_SCORE && !trendBroken) {
     action = "Pause adding";
     why.push("Weak score (" + s.composite + "): hold what you have, don't add; " + (f.above200 === false
       ? "it's already under its 200-day average" + (isNum(f.ma200) ? " (" + dollars(f.ma200) + ")" : "") + ", so sell if the 50-day crosses under it too"
@@ -339,7 +374,7 @@ export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
         action = "Buy more";
         why.push("Score " + s.composite + " and in an uptrend: add up to about " + Math.round(LIMITS.POSITION_TARGET * 100) + "% of your portfolio, all at once; rethink below " + dollars(bp.stop));
       } else {
-        why.push(s.composite >= LIMITS.RECOMMEND ? "Strong score (" + s.composite + "); keep holding"
+        why.push(s.composite >= LIMITS.RECOMMEND ? "Still a pick (score " + s.composite + "): keep holding. Next check-up " + fmtDay(check.date)
           : "Score " + s.composite + ": fine to hold, not a top add right now");
       }
     } else if (f.above200 && isNum(f.ext50) && Math.abs(f.ext50) <= 0.03 && r.weight < (isIndex ? 0.5 : LIMITS.POSITION_TARGET)) {
@@ -350,7 +385,7 @@ export function adviseHolding(r, s, chart, { downgrades = [] } = {}) {
     }
   }
   if (action !== "Review" && news.length) why.push("Headline to check: " + news[0].headline);
-  return { action, why, rank: ACTION_RANK[action] ?? 5 };
+  return { action, why, rank: ACTION_RANK[action] ?? 5, checkup, nextCheck: check.date };
 }
 
 /** Portfolio math, per-holding advice, and portfolio-level signals. */

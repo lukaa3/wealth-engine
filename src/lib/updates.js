@@ -70,6 +70,9 @@ export function updateAdvice(s, holding) {
   const upd = s.upd;
   if (holding && holding.advice) {
     const a = holding.advice.action, pl = holding.plPct || 0;
+    const day = (d) => new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+    if (holding.advice.checkup === "sell") return { text: "3-month check-up: it's no longer a pick, sell it (" + (pl >= 0 ? "you're " : "you're ") + fmtPct(pl) + ") and buy a current top pick", tone: "bad" };
+    if (holding.advice.checkup === "wait") return { text: "Dropped out of the picks: hold until the " + day(holding.advice.nextCheck) + " check-up, sell then if it's still out", tone: "neutral" };
     if (a === "Sell") return pl >= 0 ? { text: "Sell and lock in the profit (" + fmtPct(pl) + ")", tone: "bad" } : { text: "Get out and take the loss (" + fmtPct(pl) + "): the trend broke", tone: "bad" };
     if (a === "Trim") return { text: "Too much of your money is in this one: sell a little (you're " + fmtPct(pl) + ")", tone: "neutral" };
     if (a === "Review") return { text: "Read the news, but don't panic-sell: selling after drops did worse in the test", tone: "bad" };

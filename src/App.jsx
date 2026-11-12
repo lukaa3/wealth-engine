@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import * as LucideIcons from "lucide-react";
 import { SECTORS, SECTOR_COLORS, SOURCE_URLS, insiderSourceUrl } from "./mockData.js";
-import { LIMITS, FACTORS, HORIZON_INFO, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio, suggestedSize, planNewMoney } from "./scoring.js";
+import { LIMITS, FACTORS, HORIZON_INFO, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio, suggestedSize, planNewMoney, nextCheckup, inCheckupWindow } from "./scoring.js";
 import { SETUPS, RULED_OUT, tradePlanFor } from "./lib/shortterm.js";
 import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, useShort, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
@@ -200,6 +200,27 @@ function UpdateBox({ s, compact = false }) {
         </ul>
       ) : <div className="mt-0.5 text-xs text-slate-400">No big changes since the last check.</div>}
       {!compact && h && h.advice && h.advice.why[0] && <div className="mt-1 text-xs text-slate-400">Why: {h.advice.why[0]}</div>}
+    </div>
+  );
+}
+
+/** The long-term rule in one place: hold; every 3 months sell what's no longer a pick. */
+function CheckupBanner({ rows }) {
+  const c = nextCheckup(), now = inCheckupWindow();
+  const toSell = rows.filter((r) => r.advice && r.advice.checkup === "sell").map((r) => r.ticker);
+  const outNow = rows.filter((r) => r.advice && r.advice.checkup === "wait").map((r) => r.ticker);
+  return (
+    <div className={"mt-2 rounded-lg border p-3 text-sm " + (now ? "border-amber-500/40 bg-amber-500/10" : "border-slate-700 bg-slate-900/40")}>
+      <div className="flex items-center gap-2 font-semibold text-white">
+        <Icon name="CalendarCheck" size={15} className={now ? "text-amber-300" : "text-indigo-300"} />
+        {now ? "It's 3-month check-up week" : "Next 3-month check-up: " + fmtDate(c.date) + " (in " + c.days + " days)"}
+      </div>
+      <p className="mt-1 text-xs text-slate-300">
+        {now
+          ? (toSell.length ? "Sell " + toSell.join(", ") + (toSell.length > 1 ? " (no longer picks)" : " (no longer a pick)") + " and put the money into current top picks. Keep everything else." : "Everything you own is still a pick: keep it all. Add new money to current top picks.")
+          : "Long-term stocks have no price target or time limit: hold through the ups and downs. At each check-up (end of Mar, Jun, Sep, Dec), sell only what's no longer a pick." + (outNow.length ? " Out of the picks right now: " + outNow.join(", ") + " (hold until the check-up; sell then if still out)." : "")}
+      </p>
+      <p className="mt-1 text-[11px] text-slate-500">This is how the 10-year test was run. Selling early on drops did worse; the only other sells are a broken downtrend or one stock growing past 20% of your money.</p>
     </div>
   );
 }
@@ -441,7 +462,7 @@ function Methodology() {
             <div><span className="font-medium text-slate-200">Horizon label:</span> (shorter trades are on the Short-term tab) each stock gets a fit score for <span className="text-slate-200">Core (3–12 months)</span>: the overall score; and <span className="text-slate-200">Long-term (1–3+ years)</span>: quality, growth and fair price. It's labeled with the best fit.</div>
             <div><span className="font-medium text-slate-200">Risk:</span> High = big price swings, losing money, small company or under $5. Low = calm, profitable. Being young, a mix with some High-risk names is fine; keep each one small.</div>
             <div><span className="font-medium text-slate-200">How to buy:</span> buy the whole position at once. In the 10-year test, buying all at once returned +34% over a year; buying in thirds at lower prices did +24%, because strong stocks often never come back down (and even with a 4-week deadline it only tied, for a lot more work). Stretched stocks did best of all when bought at once. The "rethink" price is where the idea is wrong.</div>
-            <div><span className="font-medium text-slate-200">After you buy:</span> mostly leave it alone and re-check every 3 months. In the 10-year test, selling early after a bad day, a -10% week, a drop from the high or a break of the 200-day average all did worse than holding (16–28% a year vs 32%), and taking profit on stretched winners only tied. What did help: putting new money into picks that are still strong, even right after a drop.</div>
+            <div><span className="font-medium text-slate-200">After you buy:</span> no price target and no time limit. Hold, and at each 3-month check-up (end of Mar, Jun, Sep, Dec) sell only what's no longer a pick, putting the money into current top picks. That's exactly how the test was run. In the 10-year test, selling early after a bad day, a -10% week, a drop from the high or a break of the 200-day average all did worse than holding (16–28% a year vs 32%), and taking profit on stretched winners only tied. What did help: putting new money into picks that are still strong, even right after a drop.</div>
             <div><span className="font-medium text-slate-200">How much:</span> keep about half your money in index funds. Each pick gets 8% of your portfolio if Low risk, 5% Medium, 3% High, and 25% more for Top picks (max 10%), so no single stock can sink you. Check picks about every 3 months.</div>
             <div><span className="font-medium text-slate-200">Backtest (2016–2026, S&amp;P 500, top 20 monthly):</span> the momentum & trend score made about 32%/yr vs 15% for SPY and 17% for all stocks equally, in both 5-year halves. FVG setups added nothing to picking. Real results will be lower: the test only includes today's index members, so it misses companies that collapsed. Earnings, quality and valuation couldn't be tested (no free history).</div>
           </div>
@@ -1263,7 +1284,7 @@ function AdviceFeed({ a, onOpen }) {
         <h3 className="flex items-center gap-2 text-sm font-semibold text-white"><Icon name="ClipboardList" size={15} className="text-indigo-300" />What to do now</h3>
         <span className="text-xs text-slate-400">{Object.entries(a.counts).map(([k, v]) => v + " " + k.toLowerCase()).join(" · ")}</span>
       </div>
-      <p className="mt-1 text-xs text-slate-500">Act on Sell and Trim when they show up. Otherwise check in about once a month, and swap picks about every 3 months; in the backtest, holding ~3 months worked as well as trading monthly, with less trading.</p>
+      <CheckupBanner rows={a.rows} />
       {a.feed.length === 0 && <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-300"><Icon name="CircleCheck" size={16} />Nothing to do: every holding is a hold and the mix is balanced.</div>}
       <div className="mt-3 space-y-2.5">
         {adv.map((f) => {
