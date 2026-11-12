@@ -14,7 +14,7 @@ export const AI_PRESETS = {
 };
 
 /** Bump when the instructions change in a way that makes older takes misleading; older takes are then ignored. */
-export const PROMPT_VERSION = 2; // v2: no "wait for a pullback" advice (backtests: buying at once beat waiting)
+export const PROMPT_VERSION = 3; // v2: no "wait for a pullback" advice; v3: stretched (under 60%) isn't a bear point
 const VERDICTS = ["Buy setup", "Accumulate", "Watch", "Avoid"]; // no "Wait for entry": waiting for dips lost in the backtest
 const f2 = (x) => (x == null || !isFinite(x) ? "n/a" : Number(x).toFixed(2));
 const p1 = (x) => (x == null || !isFinite(x) ? "n/a" : (x >= 0 ? "+" : "") + (x * 100).toFixed(1) + "%");
@@ -41,7 +41,7 @@ export function buildPrompt(s, { headlines = [] } = {}) {
 
 const SYSTEM = `You are a disciplined equity analyst writing a short note for a young investor holding stocks from a few weeks to a few years.
 Weigh momentum and earnings-estimate trends most, then quality and valuation; the FVG is minor background (it added nothing in the backtest).
-Never tell the reader to wait for a pullback, a dip or a better entry, and don't call being stretched a reason to hold off: in this site's 10-year backtests, buying picks at once (even stretched ones) beat waiting for lower prices, and skipping stretched picks lowered returns. Being stretched only means bigger swings.
+Never tell the reader to wait for a pullback, a dip or a better entry, and don't call being stretched a reason to hold off: in this site's 10-year backtests, buying picks at once (even stretched ones) beat waiting for lower prices, and skipping stretched picks lowered returns. Don't list being stretched above the 50-day average as a bear point unless it's 60%+ above (that group's edge over SPY was smaller); the site shows a separate note about bigger swings.
 Use ONLY the data provided. Do not add news, numbers, products or events that are not in the data. If data is missing, say so.
 Return a JSON object with exactly these keys:
  "verdict": one of ${VERDICTS.map((v) => `"${v}"`).join(", ")},
@@ -111,6 +111,12 @@ export async function analyzeMany(stocks, ctxFor, opts, onProgress) {
   return { takes: out, errors };
 }
 
+/** Neutral note for stocks 15–60% above their 50-day average (not good or bad for returns in the test; just bumpier). */
+export function stretchNote(s) {
+  const e = s && s.factors ? s.factors.ext50 : null;
+  return e != null && e > 0.15 && e <= 0.6 ? `Stretched ${p1(e)} above its 50-day average: expect bigger swings. Still a buy: in the 10-year test, stretched picks did as well or better, and waiting for a dip did worse.` : null;
+}
+
 /** Deterministic summary from the numbers — shown when no AI take exists. */
 export function ruleSummary(s) {
   const f = s.factors || {};
@@ -124,9 +130,10 @@ export function ruleSummary(s) {
   if (s.plan.status === "live") bull.push(`${s.fvg.tf} FVG entry is live`);
   if (f.above200 === false) bear.push("Below its 200-day average (no long-term uptrend)");
   if ((f.revDown || 0) > (f.revUp || 0) + 1) bear.push(`Analysts cutting EPS estimates (${f.revDown} down)`);
-  // Not "wait for a pullback": in the backtests, waiting for dips and skipping stretched picks both lowered returns.
-  if (f.ext50 != null && f.ext50 > 0.6) bear.push(`Extremely stretched (${p1(f.ext50)} above its 50-day): big swings likely; in the test these still beat SPY, but by less`);
-  else if (f.ext50 != null && f.ext50 > 0.15) bear.push(`Stretched ${p1(f.ext50)} above its 50-day average: expect bigger swings (still a buy; waiting for a dip did worse in the test)`);
+  // Stretched is NOT a bear point (chase backtest: stretched picks did as well or better; waiting/skipping lowered
+  // returns). Only 60%+ above the 50-day is, since that group's 12-month edge over SPY was smaller. The neutral
+  // "stretched" note is shown separately (stretchNote).
+  if (f.ext50 != null && f.ext50 > 0.6) bear.push(`Extremely stretched (${p1(f.ext50)} above its 50-day): in the test these still beat SPY, but by less, with big swings`);
   if (f.opMargin != null && f.opMargin < 0) bear.push("Not profitable yet");
   if (s.peg != null && s.peg > 2.5) bear.push(`Expensive for its growth (PEG ${f2(s.peg)})`);
   if ((s.newsFlags || []).length) bear.push("Negative headline this week: " + s.newsFlags[0].headline);
