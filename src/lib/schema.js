@@ -19,6 +19,8 @@ export function stockToRow(s) {
     factors: s.factors || null, news_flags: s.newsFlags && s.newsFlags.length ? s.newsFlags : null,
     checked_at: s.checkedAt || null, carried: !!s.carried,
     ai_take: s.ai || null,
+    // daily history [date, score, price, above200, revUp, revDown] (pool only) and today's "what changed" note
+    hist: s.hist || null, upd: s.upd || null,
     stale_fields: s.staleFields && Object.keys(s.staleFields).length ? s.staleFields : null,
     updated_at: new Date().toISOString(),
   };
@@ -36,6 +38,7 @@ export function rowToStock(r) {
     catalysts: r.catalysts || [], invalidation: r.invalidation_triggers || [],
     factors: r.factors || {}, newsFlags: r.news_flags || [], checkedAt: r.checked_at || null, carried: !!r.carried,
     ai: r.ai_take || null,
+    hist: r.hist || null, upd: r.upd || null,
     staleFields: r.stale_fields || null,
     updatedAt: r.updated_at || null,
   };

@@ -10,10 +10,12 @@ import { SETUPS, RULED_OUT, tradePlanFor } from "./lib/shortterm.js";
 import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, useShort, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
 import { ruleSummary } from "./lib/ai.js";
+import { updateAdvice } from "./lib/updates.js";
 
 const L = LIMITS;
 /** Your portfolio's total value, so buy plans can say "about $X" instead of only "% of portfolio". */
 const PortfolioValue = createContext(0);
+const HoldingRows = createContext({}); // ticker → your portfolio row (with advice), for the daily Update line
 
 /* ================================ Icons ================================ */
 function Icon({ name, size = 16, className = "" }) {
@@ -169,6 +171,39 @@ function BuyPlanBox({ s }) {
   );
 }
 
+/** "Update: what changed since yesterday → what to do." Server writes the changes; the advice depends on whether you own it. */
+function UpdateBox({ s, compact = false }) {
+  const rows = useContext(HoldingRows);
+  const h = rows[s.ticker];
+  const upd = s.upd && s.upd.date && (Date.now() - Date.parse(s.upd.date)) / 864e5 <= 5 ? s.upd : null;
+  if (!upd && !(h && h.advice)) return null;
+  const adv = updateAdvice(s, h);
+  const ev = upd ? upd.events : [];
+  const tone = adv.tone === "bad" || (upd && upd.tone === "bad") ? "bad" : adv.tone === "good" ? "good" : "neutral";
+  const box = { good: "border-emerald-500/30 bg-emerald-500/5", bad: "border-rose-500/40 bg-rose-500/5", neutral: "border-slate-600/60 bg-slate-900/40" }[tone];
+  const head = { good: "text-emerald-300", bad: "text-rose-300", neutral: "text-slate-200" }[tone];
+  return (
+    <div className={"rounded-lg border p-2.5 text-sm " + box}>
+      <div className={"flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide " + head}>
+        <Icon name={tone === "bad" ? "AlertTriangle" : tone === "good" ? "TrendingUp" : "Info"} size={13} />
+        Update{upd ? " · " + fmtDate(upd.date) : ""}{h ? " · you own it" : ""}
+      </div>
+      <div className="mt-0.5 font-semibold text-white">{adv.text}</div>
+      {ev.length > 0 ? (
+        <ul className="mt-1 space-y-0.5">
+          {(compact ? ev.slice(0, 2) : ev).map((e) => (
+            <li key={e.text} className="flex gap-1.5 text-xs text-slate-300">
+              <span className={e.tone === "good" ? "text-emerald-400" : e.tone === "bad" ? "text-rose-400" : "text-slate-500"}>{e.tone === "good" ? "▲" : e.tone === "bad" ? "▼" : "•"}</span>
+              <span className={compact ? "truncate" : ""}>{e.text}</span>
+            </li>
+          ))}
+        </ul>
+      ) : <div className="mt-0.5 text-xs text-slate-400">No big changes since the last check.</div>}
+      {!compact && h && h.advice && h.advice.why[0] && <div className="mt-1 text-xs text-slate-400">Why: {h.advice.why[0]}</div>}
+    </div>
+  );
+}
+
 /* ===================== Tab 1: Swing & Position Picks ===================== */
 const SORTS = [
   { value: "composite", label: "Overall", icon: "Award" },
@@ -267,6 +302,7 @@ function InvestmentCard({ s, onOpen }) {
         {s.carried && s.checkedAt && <span className="rounded-md bg-slate-700/60 px-2 py-0.5 text-xs text-slate-400 ring-1 ring-slate-600/50" title="Fundamentals from this date; price and chart are from today">Checked {fmtDate(s.checkedAt)}</span>}
       </div>
 
+      <div className="mt-3"><UpdateBox s={s} compact /></div>
       <div className="mt-3"><AiTake s={s} /></div>
       <div className="mt-3"><BuyPlanBox s={s} /></div>
 
@@ -677,7 +713,7 @@ function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen, 
   );
 }
 
-function OpenTrades({ trades, priceBook, onClose }) {
+function OpenTrades({ trades, priceBook, onClose, byTicker = {} }) {
   if (!trades.length) return null;
   const today = todayISO();
   return (
@@ -692,12 +728,16 @@ function OpenTrades({ trades, priceBook, onClose }) {
             const now = priceBook[t.ticker] ? priceBook[t.ticker].price : null;
             const pl = now ? now / t.price - 1 : null;
             const daysLeft = t.sellBy ? Math.round((Date.parse(t.sellBy) - Date.parse(today)) / 864e5) : null;
-            const status = t.setup === "dip" && now && t.sma5 && now > t.sma5 ? ["Sell: bounced above the 5-day", "bg-emerald-500 text-slate-900"]
+            const st = byTicker[t.ticker];
+            const upd = st && st.upd && (Date.parse(today) - Date.parse(st.upd.date)) / 864e5 <= 3 ? st.upd : null;
+            const badNews = upd && upd.events.find((e) => e.text.startsWith("Headline"));
+            const status = badNews && !(daysLeft != null && daysLeft <= 0) ? ["Bad news: think about selling early", "bg-rose-500 text-white"]
+              : t.setup === "dip" && now && t.sma5 && now > t.sma5 ? ["Sell: bounced above the 5-day", "bg-emerald-500 text-slate-900"]
               : daysLeft != null && daysLeft <= 0 ? ["Sell today: time's up", "bg-amber-500 text-slate-900"]
               : ["Hold · sell " + fmtDate(t.sellBy) + " (" + daysLeft + "d)", "bg-slate-700 text-slate-200"];
             return (
               <tr key={t.id} className="border-b border-slate-700/40 last:border-0">
-                <td className="px-4 py-2.5"><div className="font-semibold text-white">{t.ticker}</div><div className="text-xs text-slate-400">{(SETUPS[t.setup] || {}).label} · {fmtDate(t.date)}</div></td>
+                <td className="px-4 py-2.5"><div className="font-semibold text-white">{t.ticker}</div><div className="text-xs text-slate-400">{(SETUPS[t.setup] || {}).label} · {fmtDate(t.date)}</div>{upd && upd.events.length > 0 && <div className={"max-w-[18rem] truncate text-[11px] " + (upd.tone === "bad" ? "text-rose-300" : upd.tone === "good" ? "text-emerald-300" : "text-slate-400")} title={upd.events.map((e) => e.text).join("\n")}>Update: {upd.events.map((e) => e.text).join(" · ")}</div>}</td>
                 <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">{px(t.price)}</td>
                 <td className="px-3 py-2.5 text-right tabular-nums text-slate-200">{now ? px(now) : "—"}</td>
                 <td className={"px-3 py-2.5 text-right tabular-nums " + tone(pl)}>{pl == null ? "—" : spct(pl)}</td>
@@ -743,7 +783,7 @@ function ShortTermTab({ data, byTicker, priceBook, pf, total, onOpen }) {
         </div>
       </Card>
 
-      <OpenTrades trades={pf.trades} priceBook={priceBook} onClose={pf.closeTrade} />
+      <OpenTrades trades={pf.trades} priceBook={priceBook} onClose={pf.closeTrade} byTicker={byTicker} />
       {detail && <ShortModal x={detail.x} setupKey={detail.k} byTicker={byTicker} total={total} today={today} owned={owned.has(detail.x.ticker)} onBuy={pf.addTrade}
         onClose={closeDetail} onOpenLong={(t) => { setDetail(null); onOpen(t); }} />}
 
@@ -1219,7 +1259,7 @@ function HoldingRow({ r, onOpen, onSave, onDelete }) {
       <td className={cell + " text-slate-300"}>{cash ? "—" : px(r.price)}</td>
       <td className={cell + " font-medium text-slate-100"}>{usd(r.value)}</td>
       <td className={cell + " " + tone(r.pl)}>{cash ? "—" : <>{usd(r.pl)} <span className="text-xs opacity-80">({spct(r.plPct)})</span></>}</td>
-      <td className="max-w-[16rem] px-3 py-3">{r.advice ? <div title={r.advice.why.join("\n")}><ActionChip action={r.advice.action} /><div className="mt-0.5 truncate text-[11px] text-slate-400">{r.advice.why[0]}</div></div> : r.unpriced ? <span className="text-xs text-amber-300">No price data yet (held at cost)</span> : <span className="text-slate-500">—</span>}</td>
+      <td className="max-w-[16rem] px-3 py-3">{r.advice ? <div title={r.advice.why.join("\n")}><ActionChip action={r.advice.action} /><div className="mt-0.5 truncate text-[11px] text-slate-400">{r.advice.why[0]}</div>{r.stock && r.stock.upd && r.stock.upd.events.length > 0 && (Date.now() - Date.parse(r.stock.upd.date)) / 864e5 <= 5 && <div className={"mt-0.5 truncate text-[11px] " + (r.stock.upd.tone === "bad" ? "text-rose-300" : r.stock.upd.tone === "good" ? "text-emerald-300" : "text-slate-300")}>Today: {r.stock.upd.events.map((e) => e.text).join(" · ")}</div>}</div> : r.unpriced ? <span className="text-xs text-amber-300">No price data yet (held at cost)</span> : <span className="text-slate-500">—</span>}</td>
       <td className={cell + " text-slate-300"}>{pct(r.weight)}</td>
       <td className="px-3 py-3">{r.score != null ? <ScoreBadge score={r.score} size="sm" /> : <span className="text-slate-500">—</span>}</td>
       <td className="relative whitespace-nowrap px-3 py-3 text-right">
@@ -1398,6 +1438,7 @@ function StockModal({ s, onClose }) {
           <span className="text-xs text-slate-400">β {s.beta.toFixed(2)} · {s.analystCount ?? "n/a"} analysts · {s.buyPct != null ? Math.round(s.buyPct * 100) + "% Buy" : "no consensus"}{s.live ? " · live data" : ""}</span>
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5"><HorizonChip s={s} /><RiskChip risk={s.risk} /><FvgPill fvg={s.fvg} />{s.carried && s.checkedAt && <span className="rounded-md bg-slate-700/60 px-2 py-0.5 text-xs text-slate-400">Full check {fmtDate(s.checkedAt)}</span>}</div>
+        <div className="mt-3"><UpdateBox s={s} /></div>
         <div className="mt-3"><AiTake s={s} full /></div>
         <div className="mt-3"><BuyPlanBox s={s} /></div>
         <div className="mt-3"><FitBars s={s} /></div>
@@ -1559,6 +1600,7 @@ export default function App() {
   const scanLive = screener.source !== "mock" ? scanRes.data : null;
   const priceBook = useMemo(() => Object.fromEntries(((scanLive && scanLive.items) || []).map((r) => [r.ticker, r])), [scanLive]);
   const analysis = useMemo(() => analyzePortfolio(pf.holdings, byTicker, SECTORS, SECTOR_COLORS, priceBook, { analyst: feed.data.items }), [pf.holdings, byTicker, priceBook, feed.data]);
+  const holdingRows = useMemo(() => Object.fromEntries(analysis.rows.filter((r) => r.stock).map((r) => [r.ticker, r])), [analysis]);
 
   useEffect(() => {
     const f = () => setTab(tabFromHash());
@@ -1576,6 +1618,7 @@ export default function App() {
 
   return (
     <PortfolioValue.Provider value={analysis.total}>
+    <HoldingRows.Provider value={holdingRows}>
     <div className="min-h-screen bg-slate-900 text-slate-100">
       <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-900/90 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -1634,6 +1677,7 @@ export default function App() {
       {drawer && <SettingsDrawer settings={settings} status={{ screener, feed, insider }} onClose={closeDrawer}
         onSave={(next) => { setSettings({ ...next }); setDrawer(false); }} />}
     </div>
+    </HoldingRows.Provider>
     </PortfolioValue.Provider>
   );
 }

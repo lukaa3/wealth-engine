@@ -33,6 +33,7 @@ import { shortFacts, detectSetups } from "../src/lib/shortterm.js";
 import { scoreUniverse, LIMITS } from "../src/scoring.js";
 import { stockToRow, rowToStock, actionToRow, insiderToRow, rowToAction, rowToInsider } from "../src/lib/schema.js";
 import { analyzeMany, buildPrompt } from "../src/lib/ai.js";
+import { nextHist, stockUpdate } from "../src/lib/updates.js";
 import { loadUniverse, HOLDINGS } from "../src/lib/universe.js";
 import { scanRow, pickDeepSet } from "../src/lib/scan.js";
 import { mapLimit } from "../src/lib/providers.js";
@@ -277,6 +278,20 @@ if (aiKey) {
   console.log("No GROQ_API_KEY / GEMINI_API_KEY: skipping the free-tier AI step (Claude step or rule-based summaries cover it).");
 }
 
+// Daily "Update:" — what changed since the last trading day (the site adds what to do about it).
+{
+  const recent = shortCtx ? shortCtx.recentEarnings : {};
+  scored.forEach((s) => {
+    const prev = prevRows[s.ticker];
+    s.hist = nextHist(prev && prev.hist, s, today);
+    const c = pre[s.ticker] && pre[s.ticker].candles;
+    const dayMove = c && c.length > 2 ? c[c.length - 1].close / c[c.length - 2].close - 1 : null;
+    const ps = prev && prev.factors && Array.isArray(prev.factors.surprises) ? prev.factors.surprises[0] : null;
+    s.upd = stockUpdate(s, s.hist, { today, dayMove, reportedOn: recent[s.ticker] || null, prevSurprise: ps });
+  });
+  const n = scored.filter((s) => s.upd.events.length).length;
+  console.log(`Updates: ${n} stocks with something new today (${scored.filter((s) => s.upd.tone === "bad").length} bad, ${scored.filter((s) => s.upd.tone === "good").length} good)`);
+}
 const rows = scored.map(stockToRow);
 const generatedAt = new Date().toISOString();
 
@@ -287,7 +302,7 @@ fs.writeFileSync(POOL_FILE, JSON.stringify({ generatedAt, stocks: rows, analyst:
 // What the site loads: stocks scoring 50+ plus your holdings / watchlist, and only their analyst + insider items.
 const MIN_PUBLIC = Number(env.MIN_PUBLIC_SCORE || 50);
 const keepT = new Set([...HOLDINGS, ...watchlist]);
-const pubRows = rows.filter((r) => (r.composite_score ?? 0) >= MIN_PUBLIC || keepT.has(r.ticker));
+const pubRows = rows.filter((r) => (r.composite_score ?? 0) >= MIN_PUBLIC || keepT.has(r.ticker)).map(({ hist, ...r }) => r); // history stays in the pool
 const pubT = new Set(pubRows.map((r) => r.ticker));
 const capPer = (items, n) => { const c = {}; return items.filter((x) => (c[x.ticker] = (c[x.ticker] || 0) + 1) <= n); };
 const pubAnalyst = capPer(analyst.filter((a) => pubT.has(a.ticker)).sort((a, b) => (b.date || "").localeCompare(a.date || "")), 5);
