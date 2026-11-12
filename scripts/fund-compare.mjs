@@ -13,8 +13,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function hist(t) {
   for (let a = 0; a < 8; a++) {
     const host = a % 2 ? "query2" : "query1";
-    const res = await fetch(`https://${host}.finance.yahoo.com/v8/finance/chart/${t}?period1=${Math.floor(Date.now() / 1000 - 21.2 * 31557600)}&period2=${Math.floor(Date.now() / 1000)}&interval=1d&events=div%7Csplit`, { headers: { "User-Agent": UA, Accept: "application/json" } }).catch(() => null);
-    if (!res || res.status === 429 || res.status >= 500) { await sleep(5000 * (a + 1)); continue; }
+    const res = await fetch(`https://${host}.finance.yahoo.com/v8/finance/chart/${t}?period1=${Math.floor(Date.now() / 1000 - 21.2 * 31557600)}&period2=${Math.floor(Date.now() / 1000)}&interval=1d&events=div%7Csplit`, { headers: { "User-Agent": UA, Accept: "application/json" } }).catch((e) => (console.warn(t, host, "fetch error:", e.message, e.cause && e.cause.code), null));
+    if (res && !res.ok) console.warn(t, host, "HTTP", res.status, (await res.text()).slice(0, 120));
+    if (!res || res.status === 429 || res.status >= 500) { await sleep(3000 * (a + 1)); continue; }
     if (!res.ok) throw new Error(t + " HTTP " + res.status);
     const r = (await res.json()).chart.result[0];
     const adj = r.indicators.adjclose[0].adjclose;
