@@ -13,7 +13,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function hist(t) {
   for (let a = 0; a < 8; a++) {
     const host = a % 2 ? "query2" : "query1";
-    const res = await fetch(`https://${host}.finance.yahoo.com/v8/finance/chart/${t}?range=25y&interval=1d`, { headers: { "User-Agent": UA, Accept: "application/json" } }).catch(() => null);
+    const res = await fetch(`https://${host}.finance.yahoo.com/v8/finance/chart/${t}?period1=${Math.floor(Date.now() / 1000 - 21.2 * 31557600)}&period2=${Math.floor(Date.now() / 1000)}&interval=1d&events=div%7Csplit`, { headers: { "User-Agent": UA, Accept: "application/json" } }).catch(() => null);
     if (!res || res.status === 429 || res.status >= 500) { await sleep(5000 * (a + 1)); continue; }
     if (!res.ok) throw new Error(t + " HTTP " + res.status);
     const r = (await res.json()).chart.result[0];
@@ -28,6 +28,7 @@ async function hist(t) {
 const data = {};
 for (const t of FUNDS) { data[t] = await hist(t); await sleep(400); }
 const days = [...data.SPY.keys()].filter((d) => FUNDS.every((t) => data[t].has(d))).sort();
+for (const t of FUNDS) console.log(t, "from", [...data[t].keys()][0]);
 console.log(`Common history: ${days[0]} → ${days[days.length - 1]} (${days.length} days)`);
 
 function series(weights, from) {
