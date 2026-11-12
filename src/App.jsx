@@ -564,6 +564,20 @@ function MarketScan({ scan, byTicker, onOpen }) {
   );
 }
 
+/**
+ * Freeze the page behind a popup (incl. iPhone Safari, which ignores overflow:hidden on body): pin the body in place
+ * and put the scroll position back when the popup closes.
+ */
+function useScrollLock(active = true) {
+  useEffect(() => {
+    if (!active || typeof document === "undefined") return;
+    const b = document.body, y = window.scrollY;
+    const prev = { position: b.style.position, top: b.style.top, width: b.style.width, overflow: b.style.overflow };
+    Object.assign(b.style, { position: "fixed", top: -y + "px", width: "100%", overflow: "hidden" });
+    return () => { Object.assign(b.style, prev); window.scrollTo(0, y); };
+  }, [active]);
+}
+
 /** True on screens 768px+ (md). Lets big lists render one layout instead of hiding a second copy with CSS. */
 function useIsDesktop() {
   const q = "(min-width: 768px)";
@@ -715,9 +729,10 @@ function ShortModal({ x, setupKey, byTicker, total, today, owned, onBuy, onClose
   useEffect(() => {
     const k = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", k);
-    ref.current && ref.current.focus();
+    if (ref.current) { ref.current.scrollTop = 0; ref.current.focus({ preventScroll: true }); }
     return () => window.removeEventListener("keydown", k);
   }, [onClose]);
+  useScrollLock(true);
   const S = SETUPS[setupKey], st = S.stats, f = x.facts;
   const plan = tradePlanFor(setupKey, x.price, f, { total, budgetPct: SHORT_BUDGET, earningsDate: x.earningsDate, today });
   const full = byTicker[x.ticker];
@@ -726,8 +741,8 @@ function ShortModal({ x, setupKey, byTicker, total, today, owned, onBuy, onClose
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
       <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={x.ticker + " short-term trade"} onClick={(e) => e.stopPropagation()}
-        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl border border-slate-700 bg-slate-800 p-5 shadow-2xl focus:outline-none sm:rounded-2xl">
-        <div className="flex items-start justify-between gap-3">
+        className="max-h-[92vh] supports-[height:100dvh]:max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-t-2xl border border-slate-700 bg-slate-800 p-5 shadow-2xl focus:outline-none sm:rounded-2xl">
+        <div style={{ top: "-1.25rem", marginTop: "-1.25rem" }} className="sticky z-10 -mx-5 flex items-start justify-between gap-3 border-b border-slate-700/60 bg-slate-800 px-5 pb-3 pt-5">
           <div>
             <div className="flex items-baseline gap-2"><span className="text-xl font-bold text-white">{x.ticker}</span><span className="tabular-nums text-slate-300">{px(x.price)}</span></div>
             <div className="text-sm text-slate-400">{x.name} · {x.sector}</div>
@@ -1533,12 +1548,13 @@ function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen }) {
 /* ============================ Detail modal ============================ */
 function StockModal({ s, onClose }) {
   const ref = useRef(null);
+  useScrollLock(!!s);
   useEffect(() => {
     const k = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", k);
-    ref.current && ref.current.focus();
     return () => window.removeEventListener("keydown", k);
   }, [onClose]);
+  useEffect(() => { if (ref.current) { ref.current.scrollTop = 0; ref.current.focus({ preventScroll: true }); } }, [s && s.ticker]);
   if (!s) return null;
   const verdict = s.composite >= L.HIGH_CONVICTION ? ["Top Pick", "text-emerald-300 bg-emerald-500/15"]
     : s.composite >= L.RECOMMEND ? ["Recommended Buy", "text-emerald-300 bg-emerald-500/10"]
@@ -1546,8 +1562,8 @@ function StockModal({ s, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
       <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={s.ticker + " score breakdown"} onClick={(e) => e.stopPropagation()}
-        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-2xl border border-slate-700 bg-slate-800 p-5 shadow-2xl focus:outline-none sm:rounded-2xl">
-        <div className="flex items-start justify-between gap-3">
+        className="max-h-[92vh] supports-[height:100dvh]:max-h-[92dvh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-t-2xl border border-slate-700 bg-slate-800 p-5 shadow-2xl focus:outline-none sm:rounded-2xl">
+        <div style={{ top: "-1.25rem", marginTop: "-1.25rem" }} className="sticky z-10 -mx-5 flex items-start justify-between gap-3 border-b border-slate-700/60 bg-slate-800 px-5 pb-3 pt-5">
           <div className="flex items-center gap-3">
             <ScoreBadge score={s.composite} size="lg" />
             <div>
@@ -1611,6 +1627,7 @@ function Field({ label, hint, children }) {
 }
 
 function SettingsDrawer({ settings, onSave, onClose, status }) {
+  useScrollLock(true);
   const [draft, setDraft] = useState(settings);
   const [show, setShow] = useState(false);
   const set = (k) => (e) => setDraft({ ...draft, [k]: e.target.value });
@@ -1632,7 +1649,7 @@ function SettingsDrawer({ settings, onSave, onClose, status }) {
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/60 backdrop-blur-sm" onClick={onClose}>
       <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Data settings" onClick={(e) => e.stopPropagation()}
-        className="flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-slate-700 bg-slate-800 p-5 shadow-2xl focus:outline-none">
+        className="flex h-full supports-[height:100dvh]:max-h-[100dvh] w-full max-w-md flex-col overflow-y-auto overscroll-contain border-l border-slate-700 bg-slate-800 p-5 shadow-2xl focus:outline-none">
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-base font-semibold text-white"><Icon name="Settings" size={17} className="text-indigo-300" />Data settings</h2>
           <button type="button" onClick={onClose} aria-label="Close settings" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"><Icon name="X" size={18} /></button>
