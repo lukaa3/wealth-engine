@@ -170,7 +170,7 @@ function runEvent(name, signal, exit, { cooldown = 0 } = {}) {
 }
 
 // Weekly cross-sectional setups (enter Monday open, hold N weeks).
-function runWeekly(name, pick, holdDays, topN = 20) {
+function runWeekly(name, pick, holdDays, topN = 20, exit = null) {
   const trades = [];
   for (let k = START; k < D - holdDays - 1; k += 5) {
     const cands = [];
@@ -182,11 +182,13 @@ function runWeekly(name, pick, holdDays, topN = 20) {
     }
     cands.sort((a, b) => b[0] - a[0]);
     for (const [, t, i] of cands.slice(0, topN)) {
-      const x = S[t], e = i + 1, j = Math.min(x.c.length - 1, e + holdDays - 1);
+      const x = S[t], e = i + 1;
+      const ex = exit ? exit(x, e, i) : { j: Math.min(x.c.length - 1, e + holdDays - 1), px: null };
+      const j = ex.j, px = ex.px == null ? x.c[j] : ex.px;
       const cost = x.small ? 0.0025 : 0.001;
-      const r = x.c[j] / x.o[e] - 1 - 2 * cost;
-      const sk = k + 1, ek = Math.min(D - 1, k + holdDays);
-      trades.push({ t, k: sk, ek, r, ex: r - (spy.c[ek] / spy.o[sk] - 1), hold: holdDays, small: x.small, pri: 0 });
+      const r = px / x.o[e] - 1 - 2 * cost;
+      const sk = k + 1, ek = Math.min(D - 1, k + 1 + (j - e));
+      trades.push({ t, k: sk, ek, r, ex: r - (spy.c[ek] / spy.o[sk] - 1), hold: j - e + 1, small: x.small, pri: 0 });
     }
   }
   return { name, trades };
@@ -202,7 +204,30 @@ const disasterStop = (n, k = 3) => (x, e, s) => {
   return exitTime(x, e, n);
 };
 const dipExit = (x, e) => { for (let j = e; j < Math.min(x.c.length, e + 10); j++) if (x.c[j] > x.s5[j]) return { j, px: x.c[j] }; const j = Math.min(x.c.length - 1, e + 9); return { j, px: x.c[j] }; };
-const SETUPS = refined ? [
+// "manage" set: should you get out early when something bad happens, or buy more, vs just holding?
+// Triggers are seen at the close; you act at the next day's open (that's when the site's update is out).
+const manage = env.BT_SET === "manage";
+const badDay = (x, j) => j > 0 && x.c[j] / x.c[j - 1] - 1 <= -0.05 && x.v[j] >= 2 * x.av50[j]; // stand-in for bad news / an earnings miss
+const drop5 = (x, j) => j > 0 && x.c[j] / x.c[j - 1] - 1 <= -0.05;
+const weekDrop = (x, j) => j >= 5 && x.c[j] / x.c[j - 5] - 1 <= -0.1;
+const earlyExit = (n, trig) => (x, e) => {
+  for (let j = e; j < Math.min(x.c.length - 1, e + n - 1); j++) if (trig(x, j)) return { j: j + 1, px: x.o[j + 1] };
+  return exitTime(x, e, n);
+};
+const MOM = (x, i) => (x.c[i] > x.s50[i] ? ret(x, i, 21) : null);
+const GAPUP = (x, i) => x.o[i] >= x.c[i - 1] * 1.04 && x.v[i] >= 3 * x.av50[i] && x.c[i] >= x.o[i] && up200(x, i);
+const SETUPS = manage ? [
+  runWeekly("Momentum 4 wks: hold to the sell date", MOM, 20),
+  runWeekly("Momentum 4 wks: sell early on a -5% day on 2x volume (bad news)", MOM, 20, 20, earlyExit(20, badDay)),
+  runWeekly("Momentum 4 wks: sell early on any -5% day", MOM, 20, 20, earlyExit(20, drop5)),
+  runWeekly("Momentum 4 wks: sell early on -10% in a week", MOM, 20, 20, earlyExit(20, weekDrop)),
+  runWeekly("Momentum 4 wks: sell early if it closes below its 50-day", MOM, 20, 20, earlyExit(20, (x, j) => x.c[j] < x.s50[j])),
+  runEvent("Gap-up 2 months: hold to the sell date", GAPUP, (x, e) => exitTime(x, e, 40), { cooldown: 5 }),
+  runEvent("Gap-up 2 months: sell early on a -5% day on 2x volume (bad news)", GAPUP, earlyExit(40, badDay), { cooldown: 5 }),
+  runEvent("Gap-up 2 months: sell early on any -5% day", GAPUP, earlyExit(40, drop5), { cooldown: 5 }),
+  runEvent("Gap-up 2 months: sell early on -10% in a week", GAPUP, earlyExit(40, weekDrop), { cooldown: 5 }),
+  runEvent("Gap-up 2 months: sell early if it closes below its 50-day", GAPUP, earlyExit(40, (x, j) => x.c[j] < x.s50[j]), { cooldown: 5 }),
+] : refined ? [
   runEvent("Dip (all): RSI(2)<10 above 200-day → exit above 5-day", (x, i) => up200(x, i) && x.rsi2[i] < 10, dipExit),
   runEvent("Dip in leader: top-30% 6-mo momentum, RSI(2)<10 → exit above 5-day", (x, i, t, k) => up200(x, i) && x.rsi2[i] < 10 && rank6[t][k] >= 0.7, dipExit),
   runEvent("Dip in leader + 3-ATR disaster stop", (x, i, t, k) => up200(x, i) && x.rsi2[i] < 10 && rank6[t][k] >= 0.7, (x, e, s) => {
@@ -297,6 +322,76 @@ function longTerm(rule) {
   const yrs = (qEnds[qEnds.length - 1] - qEnds[0]) / 252;
   return { cagr: r4(Math.pow(eq, 1 / yrs) - 1), maxDD: r4(dd) };
 }
+/* ----- Long-term: get out / buy more / take profit when something happens, vs plain holding (quarterly picks) ----- */
+// Each pick gets $1 in the stock plus a $0.50 reserve parked in SPY ("new money"). Exit rules move the stock money to SPY;
+// buy-more rules move the reserve into the stock. Same pot of money every time, so only the rule differs.
+// Month-end re-checks use the site's momentum score rank (top ~14% ≈ the long-term page, top 20 ≈ the picks).
+const monthSet = new Set(monthEnds);
+const scoreRank = new Map();
+for (const k of monthEnds) {
+  const rows = [];
+  for (const t of bigT) {
+    const x = S[t], i = x.at[k];
+    if (i < 252 || x.c[i] < 5) continue;
+    rows.push({ t, m12: x.c[i - 21] / x.c[i - 252] - 1, m6: ret(x, i, 126), a200: x.c[i] > x.s200[i], g: x.s50[i] > x.s200[i] });
+  }
+  const rk = (key) => { const q = rows.slice().sort((a, b) => a[key] - b[key]); q.forEach((r, j) => (r[key + "R"] = j / (q.length - 1))); };
+  rk("m12"); rk("m6");
+  rows.forEach((r) => (r.score = 16 * r.m12R + 6 * r.m6R + (r.a200 ? 4 : 0) + (r.g ? 3 : 0)));
+  rows.sort((a, b) => a.score - b.score);
+  const m = new Map(); rows.forEach((r, j) => m.set(r.t, j / (rows.length - 1))); scoreRank.set(k, m);
+}
+function manageLT(rule) {
+  const R = 0.5, COSTM = 0.001;
+  let eq = 1, peak = 1, dd = 0, fired = 0, n = 0;
+  for (let q = 0; q < qEnds.length - 1; q++) {
+    const k = qEnds[q], k2 = qEnds[q + 1], m = scoreRank.get(k);
+    const top = [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 20).map(([t]) => t);
+    const rets = [];
+    for (const t of top) {
+      const x = S[t], i0 = x.at[k], i2 = x.at[k2];
+      if (i0 < 0 || i2 < 0) continue;
+      const entry = x.c[i0];
+      let units = 1 / entry, spyUnits = 0, reserve = R / spy.c[k], hi = entry, didExit = false, didAdd = false, didTrim = false;
+      for (let kk = k + 1; kk < k2; kk++) {
+        const i = x.at[kk];
+        if (i < 0 || x.at[kk + 1] < 0) continue;
+        hi = Math.max(hi, x.c[i]);
+        const ctx = { entry, hi, rank: monthSet.has(kk) ? scoreRank.get(kk).get(t) : null, gain: x.c[i] / entry - 1 };
+        const o = x.o[x.at[kk + 1]], so = spy.o[kk + 1];
+        if (!didExit && units > 0 && rule.exit && rule.exit(x, i, ctx)) { spyUnits += (units * o * (1 - COSTM)) / so; units = 0; didExit = true; }
+        if (!didTrim && units > 0 && rule.trim && rule.trim(x, i, ctx)) { spyUnits += (units / 3 * o * (1 - COSTM)) / so; units *= 2 / 3; didTrim = true; }
+        if (!didAdd && units > 0 && rule.add && rule.add(x, i, ctx)) { units += (reserve * so * (1 - COSTM)) / o; reserve = 0; didAdd = true; }
+      }
+      const val = units * x.c[i2] + (spyUnits + reserve) * spy.c[k2];
+      rets.push(val / (1 + R) - 1); n++;
+      if (didExit || didAdd || didTrim) fired++;
+    }
+    eq *= 1 + mean(rets) - 0.002;
+    peak = Math.max(peak, eq); dd = Math.min(dd, eq / peak - 1);
+  }
+  const yrs = (qEnds[qEnds.length - 1] - qEnds[0]) / 252;
+  return { cagr: r4(Math.pow(eq, 1 / yrs) - 1), maxDD: r4(dd), firedShare: r4(fired / n) };
+}
+if (manage) {
+  const above = (x, i) => x.c[i] > x.s200[i];
+  out.manageLongTerm = {
+    "Just hold (baseline)": manageLT({}),
+    "Get out: falls below its 200-day average": manageLT({ exit: (x, i) => x.c[i] < x.s200[i] }),
+    "Get out: drops out of the picks at a month-end (out of top ~14%)": manageLT({ exit: (x, i, c) => c.rank != null && c.rank < 0.86 }),
+    "Get out: site's Sell rule (below 200-day and weak score)": manageLT({ exit: (x, i, c) => c.rank != null && c.rank < 0.5 && !above(x, i) }),
+    "Get out: -5% day on 2x volume (bad news)": manageLT({ exit: badDay }),
+    "Get out: any -5% day": manageLT({ exit: drop5 }),
+    "Get out: -10% in a week": manageLT({ exit: weekDrop }),
+    "Get out: -15% from its high since buying": manageLT({ exit: (x, i, c) => x.c[i] <= c.hi * 0.85 }),
+    "Buy more: after a bad-news drop, still above 200-day": manageLT({ add: (x, i) => badDay(x, i) && above(x, i) }),
+    "Buy more: after a -10% pullback, still above 200-day": manageLT({ add: (x, i, c) => x.c[i] <= c.hi * 0.9 && above(x, i) }),
+    "Buy more: once it's up 20% (add to winners)": manageLT({ add: (x, i, c) => c.gain >= 0.2 && x.c[i] > x.s50[i] }),
+    "Buy more: still a top pick at a month-end": manageLT({ add: (x, i, c) => c.rank != null && c.rank >= 0.99 && above(x, i) }),
+    "Take profit: sell 1/3 when up 25%+ and stretched (site's Trim)": manageLT({ trim: (x, i, c) => c.gain >= 0.25 && x.c[i] / x.s50[i] - 1 > 0.2 }),
+    "Keep the reserve in the stock from day 1 (buy it all now)": manageLT({ add: () => true }),
+  };
+}
 out.longTermSplit = { hold: longTerm(null), sellThirdAt15: longTerm(0.15), sellThirdAt25: longTerm(0.25), sellThirdAt40: longTerm(0.4) };
 out.spyCagr = r4(spyCagr);
 out.caveats = [
@@ -314,6 +409,10 @@ for (const s of out.setups) {
   const a = s.all || {};
   console.log(s.name.slice(0, 64).padEnd(66) + String(a.perYear).padStart(8) + pct(a.avg) + pct(a.avgVsSpy) + pct(a.win) + String(a.avgHold).padStart(5) + String(a.profitFactor).padStart(6)
     + pct(a.first) + pct(a.second) + " |" + pct(s.big && s.big.avg) + pct(s.small && s.small.avg) + " |" + pct(s.portfolio10.cagr) + pct(s.portfolio10.maxDD) + pct(s.portfolio10.exposure) + " |" + pct(s.portfolio10Big.cagr));
+}
+if (out.manageLongTerm) {
+  console.log("\nLong-term top 20 — manage rules vs just holding (stock $1 + $0.50 SPY reserve each):");
+  for (const [k, v] of Object.entries(out.manageLongTerm)) console.log("  " + k.slice(0, 70).padEnd(72) + " CAGR" + pct(v.cagr) + "  maxDD" + pct(v.maxDD) + "  fired" + pct(v.firedShare));
 }
 console.log("\nLong-term top 20 (quarterly) — plain hold vs sell 1/3 at a target:");
 for (const [k, v] of Object.entries(out.longTermSplit)) console.log("  " + k.padEnd(16) + " CAGR" + pct(v.cagr) + "  maxDD" + pct(v.maxDD));
