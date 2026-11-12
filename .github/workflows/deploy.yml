@@ -79,8 +79,8 @@ jobs:
             matching the stock's best-fit horizon. Weigh momentum and earnings-estimate trends most; the FVG is minor background.
             Never tell the reader to wait for a pullback, a dip or a better entry, and don't treat being stretched above the
             50-day average as a reason to hold off: in this site's 10-year backtests, buying picks at once (even stretched ones)
-            beat waiting for lower prices. Don't list being stretched as a bear point unless it's 60%+ above the 50-day
-            (the site shows its own note about bigger swings).
+            beat waiting for lower prices. Never list being stretched as a bear point, however far above the 50-day it is:
+            skipping stretched picks lowered returns at every cutoff tested. The site shows its own note about bigger swings.
             Use ONLY the data in the brief. Do not add news, numbers or events that are not there. If data is missing, say so.
             Plain language, no hype, no guarantees, no telling anyone to buy or sell.
 
