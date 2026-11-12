@@ -11,9 +11,10 @@ const FUNDS = (process.env.FUNDS || "SPY,QQQ,IWM,XLV,VFH,VDC,XLY,XLU").split(","
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function hist(t) {
-  for (let a = 0; a < 3; a++) {
-    const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${t}?range=25y&interval=1d`, { headers: { "User-Agent": UA } });
-    if (res.status === 429) { await sleep(4000 * (a + 1)); continue; }
+  for (let a = 0; a < 8; a++) {
+    const host = a % 2 ? "query2" : "query1";
+    const res = await fetch(`https://${host}.finance.yahoo.com/v8/finance/chart/${t}?range=25y&interval=1d`, { headers: { "User-Agent": UA, Accept: "application/json" } }).catch(() => null);
+    if (!res || res.status === 429 || res.status >= 500) { await sleep(5000 * (a + 1)); continue; }
     if (!res.ok) throw new Error(t + " HTTP " + res.status);
     const r = (await res.json()).chart.result[0];
     const adj = r.indicators.adjclose[0].adjclose;
