@@ -39,6 +39,7 @@ jobs:
           if [ "${{ inputs.set }}" = "refined" ]; then mv public/data/backtest-short.json public/data/backtest-short-refined.json; fi
           if [ "${{ inputs.set }}" = "manage" ]; then mv public/data/backtest-short.json public/data/backtest-manage.json; fi
           if [ "${{ inputs.set }}" = "chase" ]; then mv public/data/backtest-short.json public/data/backtest-chase.json; fi
+          if [ "${{ inputs.set }}" = "rank" ]; then mv public/data/backtest-short.json public/data/backtest-rank.json; fi
           git add public/data/backtest-short*.json
           git diff --cached --quiet && exit 0
           git commit -m "chore: short-term backtest results [skip ci]"

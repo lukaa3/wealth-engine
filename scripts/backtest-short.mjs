@@ -216,8 +216,8 @@ const earlyExit = (n, trig) => (x, e) => {
 };
 const MOM = (x, i) => (x.c[i] > x.s50[i] ? ret(x, i, 21) : null);
 const GAPUP = (x, i) => x.o[i] >= x.c[i - 1] * 1.04 && x.v[i] >= 3 * x.av50[i] && x.c[i] >= x.o[i] && up200(x, i);
-const chase = env.BT_SET === "chase";
-const SETUPS = chase ? [] : manage ? [
+const chase = env.BT_SET === "chase", rankSet = env.BT_SET === "rank";
+const SETUPS = chase || rankSet ? [] : manage ? [
   runWeekly("Momentum 4 wks: hold to the sell date", MOM, 20),
   runWeekly("Momentum 4 wks: sell early on a -5% day on 2x volume (bad news)", MOM, 20, 20, earlyExit(20, badDay)),
   runWeekly("Momentum 4 wks: sell early on any -5% day", MOM, 20, 20, earlyExit(20, drop5)),
@@ -488,6 +488,41 @@ if (chase) {
       console.log("  " + g);
       for (const [l, v] of Object.entries(rows)) v.cagr != null ? console.log("    " + l.padEnd(36) + `CAGR${cp(v.cagr)}  maxDD${cp(v.maxDD)}  skipped ${v.skippedPerQuarter}/qtr`) : line(l, v);
     }
+  }
+}
+
+/* ----- Gap-up ranking: which gap-ups did better? (bought next morning, held 40 trading days) ----- */
+if (rankSet) {
+  const bucket = (v, edges) => { for (let j = 0; j < edges.length; j++) if (v < edges[j]) return j; return edges.length; };
+  const st = (arr) => (arr.length ? { n: arr.length, avg: r4(mean(arr.map((a) => a[0]))), vsSpy: r4(mean(arr.map((a) => a[1]))), win: r4(arr.filter((a) => a[0] > 0).length / arr.length) } : { n: 0 });
+  const groups = {
+    "jump size": [[0.06, 0.1, 0.15], ["4–6%", "6–10%", "10–15%", "15%+"], (x, i) => x.o[i] / x.c[i - 1] - 1],
+    "volume vs normal": [[5, 10], ["3–5x", "5–10x", "10x+"], (x, i) => x.v[i] / x.av50[i]],
+    "run in the month before": [[0, 0.1, 0.25], ["down", "up 0–10%", "up 10–25%", "up 25%+"], (x, i) => x.c[i - 1] / x.c[i - 22] - 1],
+    "close vs open on the jump day": [[0.02, 0.05], ["held (0–2% higher)", "2–5% higher", "5%+ higher"], (x, i) => x.c[i] / x.o[i] - 1],
+    "distance above 200-day": [[0.1, 0.25, 0.5], ["0–10%", "10–25%", "25–50%", "50%+"], (x, i) => x.c[i] / x.s200[i] - 1],
+    "company size (avg $ traded/day)": [[2e7, 1e8, 5e8], ["<$20M", "$20–100M", "$100–500M", "$500M+"], (x, i) => x.dv50[i]],
+  };
+  const res = Object.fromEntries(Object.keys(groups).map((g) => [g, groups[g][1].map(() => [])]));
+  let n = 0;
+  for (const t of tick) {
+    const x = S[t]; let nextFree = 0;
+    for (let k = START; k < D - 45; k++) {
+      const i = x.at[k];
+      if (i < 252 || i + 41 >= x.c.length || i < nextFree || !(x.dv50[i] >= 2e6) || x.c[i] < 3) continue;
+      if (!GAPUP(x, i)) continue;
+      nextFree = i + 45; n++;
+      const e = i + 1, j = e + 39;
+      const r = x.c[j] / x.o[e] - 1 - 0.002, sr = spy.c[Math.min(D - 1, k + 40)] / spy.o[k + 1] - 1;
+      for (const [g, [edges, , f]] of Object.entries(groups)) { const v = f(x, i); if (v != null && isFinite(v)) res[g][bucket(v, edges)].push([r, r - sr]); }
+    }
+  }
+  out.gapRank = Object.fromEntries(Object.entries(groups).map(([g, [, labels]]) => [g, Object.fromEntries(labels.map((l, j) => [l, st(res[g][j])]))]));
+  const cp = (x) => (x == null ? "   n/a" : ((x * 100).toFixed(2) + "%").padStart(8));
+  console.log(`\n=== Gap-up ranking (${n} gap-ups, bought next morning, held 40 days) ===`);
+  for (const [g, rows] of Object.entries(out.gapRank)) {
+    console.log("  " + g);
+    for (const [l, v] of Object.entries(rows)) console.log("    " + l.padEnd(24) + (v.n ? `avg${cp(v.avg)}  vs SPY${cp(v.vsSpy)}  win ${Math.round(v.win * 100)}%  (${v.n})` : "none"));
   }
 }
 
