@@ -721,7 +721,7 @@ function shortRules(x, k) {
   return common;
 }
 
-function ShortModal({ x, setupKey, byTicker, total, today, owned, onBuy, onClose, onOpenLong }) {
+function ShortModal({ x, setupKey, byTicker, priceBook = {}, total, today, owned, onBuy, onClose, onOpenLong }) {
   const ref = useRef(null);
   useEffect(() => {
     const k = (e) => e.key === "Escape" && onClose();
@@ -733,6 +733,7 @@ function ShortModal({ x, setupKey, byTicker, total, today, owned, onBuy, onClose
   const S = SETUPS[setupKey], st = S.stats, f = x.facts;
   const plan = tradePlanFor(setupKey, x.price, f, { total, budgetPct: SHORT_BUDGET, earningsDate: x.earningsDate, today });
   const full = byTicker[x.ticker];
+  const lt = priceBook[x.ticker] && priceBook[x.ticker].sc != null ? priceBook[x.ticker].sc : null;
   const dailyMove = f.atr && x.price ? f.atr / x.price : null;
   const swing = plan.size && dailyMove ? plan.size * dailyMove : null;
   return (
@@ -790,6 +791,8 @@ function ShortModal({ x, setupKey, byTicker, total, today, owned, onBuy, onClose
             <div className="flex items-center gap-2 text-sm text-slate-300"><ScoreBadge score={full.composite} size="sm" /><span>Long-term score {Math.round(full.composite)}, {(full.risk || "").toLowerCase()} risk</span></div>
             <button type="button" onClick={() => onOpenLong(x.ticker)} className="text-sm text-indigo-300 hover:text-indigo-200">Long-term breakdown →</button>
           </div>
+        ) : lt != null ? (
+          <div className="mt-4 flex items-center gap-2 rounded-lg bg-slate-900/50 p-3 text-sm text-slate-300"><ScoreBadge score={lt} size="sm" /><span>Long-term score {Math.round(lt)}: not a long-term pick. That's fine: this short-term trade doesn't depend on it.</span></div>
         ) : <p className="mt-4 text-xs text-slate-500">Not fully checked on the long-term side yet. That's fine: this trade doesn't depend on it.</p>}
         {full && (full.newsFlags || []).length > 0 && (
           <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5">
@@ -808,7 +811,7 @@ function ShortModal({ x, setupKey, byTicker, total, today, owned, onBuy, onClose
   );
 }
 
-function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen, onDetails }) {
+function ShortCard({ x, setupKey, byTicker, priceBook = {}, total, today, onBuy, owned, onOpen, onDetails }) {
   const plan = tradePlanFor(setupKey, x.price, x.facts, { total, budgetPct: SHORT_BUDGET, earningsDate: x.earningsDate, today });
   const full = byTicker[x.ticker];
   const why = setupKey === "momentum" ? "Up " + spct(x.facts.ret21, 0) + " in a month"
@@ -821,7 +824,18 @@ function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen, 
           <div className="flex items-baseline gap-2"><span className="text-base font-bold text-white hover:underline">{x.ticker}</span><span className="text-sm tabular-nums text-slate-300">{px(x.price)}</span></div>
           <div className="truncate text-xs text-slate-400">{x.name}</div>
         </button>
-        {full ? <button type="button" onClick={() => onOpen(x.ticker)} title="Long-term score: open the full breakdown"><ScoreBadge score={full.composite} size="sm" /></button> : null}
+        {(() => {
+          // Long-term score (from the full nightly check). Short-term trades don't use it: they're price-based setups.
+          const lt = full ? full.composite : priceBook[x.ticker] && priceBook[x.ticker].sc != null ? priceBook[x.ticker].sc : null;
+          const badge = (
+            <span className="flex flex-col items-center">
+              {lt != null ? <ScoreBadge score={lt} size="sm" /> : <span className="rounded-md bg-slate-700 px-1.5 py-0.5 text-xs text-slate-400">n/a</span>}
+              <span className="mt-0.5 text-[9px] uppercase tracking-wide text-slate-500">long-term</span>
+            </span>
+          );
+          return full ? <button type="button" onClick={() => onOpen(x.ticker)} title="Long-term score: open the full breakdown">{badge}</button>
+            : <span title={lt != null ? "Long-term score (below the picks). Short-term trades don't depend on it." : "Not fully checked yet"}>{badge}</span>;
+        })()}
       </div>
       <div className="mt-2 text-sm text-emerald-300">{why}</div>
       {plan.earnings && <div className="mt-1.5 flex items-center gap-1 rounded bg-amber-500/10 px-2 py-1 text-xs text-amber-300"><Icon name="CalendarClock" size={12} />Earnings {fmtDate(plan.earnings.date)} ({plan.earnings.days} days): a big move either way is possible</div>}
@@ -911,7 +925,7 @@ function ShortTermTab({ data, byTicker, priceBook, pf, total, onOpen }) {
       </Card>
 
       <OpenTrades trades={pf.trades} priceBook={priceBook} onClose={pf.closeTrade} byTicker={byTicker} />
-      {detail && <ShortModal x={detail.x} setupKey={detail.k} byTicker={byTicker} total={total} today={today} owned={owned.has(detail.x.ticker)} onBuy={pf.addTrade}
+      {detail && <ShortModal x={detail.x} setupKey={detail.k} byTicker={byTicker} priceBook={priceBook} total={total} today={today} owned={owned.has(detail.x.ticker)} onBuy={pf.addTrade}
         onClose={closeDetail} onOpenLong={(t) => { setDetail(null); onOpen(t); }} />}
 
       {!data && <Card className="p-6 text-center text-sm text-slate-400">Short-term setups appear after the next nightly run.</Card>}
@@ -922,7 +936,7 @@ function ShortTermTab({ data, byTicker, priceBook, pf, total, onOpen }) {
           <div className="mb-3 mt-1"><SetupStats st={SETUPS[k].stats} /></div>
           {lists[k].length ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {(showAll[k] ? lists[k] : lists[k].slice(0, 8)).map((x) => <ShortCard key={k + x.ticker} x={x} setupKey={k} byTicker={byTicker} total={total} today={today} owned={owned.has(x.ticker)} onBuy={pf.addTrade} onOpen={onOpen} onDetails={() => setDetail({ x, k })} />)}
+              {(showAll[k] ? lists[k] : lists[k].slice(0, 8)).map((x) => <ShortCard key={k + x.ticker} x={x} setupKey={k} byTicker={byTicker} priceBook={priceBook} total={total} today={today} owned={owned.has(x.ticker)} onBuy={pf.addTrade} onOpen={onOpen} onDetails={() => setDetail({ x, k })} />)}
             </div>
           ) : <Card className="p-4 text-center text-sm text-slate-400">No {SETUPS[k].label.toLowerCase()} setups today.</Card>}
           {lists[k].length > 8 && <button type="button" onClick={() => setShowAll({ ...showAll, [k]: !showAll[k] })} className="mt-2 text-sm text-indigo-300 hover:text-indigo-200">{showAll[k] ? "Show top 8 only" : "Show all " + lists[k].length + " (top 8 are the strongest)"}</button>}
