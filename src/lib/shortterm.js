@@ -150,3 +150,36 @@ export function tradePlanFor(key, price, f, { total = 0, budgetPct = 0.22, earni
   return { key, label: S.label, span: S.span, holdDays: S.holdDays, rule: S.rule, entry: round2(price),
     sellBy, size, sizePct: total > 0 ? size / total : budgetPct / 8, earnings: earn, stats: S.stats || null, experimental: !!S.experimental };
 }
+
+/**
+ * Short-term strength label, straight from the backtests (per trade vs SPY, 10 years, $2B+ stocks).
+ * Momentum (chase test, weekly top 20): the bigger the month's run, the better.
+ * Gap-ups: see GAP_STRENGTH (rank test).
+ */
+const MOM_STRENGTH = [
+  { min: 1.0, label: "Very strong", tone: "great", vsSpy: 0.0643, why: "a 100%+ month: beat SPY by ~6.4% per trade (only 539 trades, very wild swings)" },
+  { min: 0.5, label: "Strong", tone: "good", vsSpy: 0.0198, why: "a 50–100% month: beat SPY by ~2.0% per trade" },
+  { min: 0.3, label: "Good", tone: "ok", vsSpy: 0.0081, why: "a 30–50% month: beat SPY by ~0.8% per trade" },
+  { min: -Infinity, label: "Weak", tone: "weak", vsSpy: 0.002, why: "a month under 30%: only beat SPY by ~0.2% per trade" },
+];
+// Gap-ups (rank test, 3,498 gap-ups): the cleanest pattern was volume on the jump day (3–5x: ~SPY, 5–10x: +2.4%,
+// 10x+: +8.8% per trade vs SPY). Jump size was noisy (6–10% jumps lagged SPY), so the label uses volume only.
+const GAP_VOL = [
+  { min: 10, label: "Very strong", tone: "great", why: "10x+ normal volume: beat SPY by ~8.8% per trade (only 186 trades, wild swings)" },
+  { min: 5, label: "Strong", tone: "good", why: "5–10x normal volume: beat SPY by ~2.4% per trade" },
+  { min: -Infinity, label: "Weak", tone: "weak", why: "3–5x normal volume: only matched SPY (+0.05% per trade)" },
+];
+export const GAP_STRENGTH = (g) => {
+  const b = GAP_VOL.find((r) => (g.volX || 0) >= r.min);
+  return { ...b, why: "Jumped on " + (g.volX || 0).toFixed(1) + "x normal volume. In the test, gap-ups on " + b.why + "." };
+};
+
+export function shortStrength(key, x) {
+  const f = (x && x.facts) || {};
+  if (key === "momentum" && f.ret21 != null) {
+    const b = MOM_STRENGTH.find((r) => f.ret21 >= r.min);
+    return { ...b, why: "Up " + Math.round(f.ret21 * 100) + "% in a month. In the test, momentum trades after " + b.why + "." };
+  }
+  if (key === "gap" && GAP_STRENGTH && f.gapSig) return GAP_STRENGTH(f.gapSig, f, x);
+  return null;
+}

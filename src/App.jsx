@@ -6,7 +6,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, createContext
 import * as LucideIcons from "lucide-react";
 import { SECTORS, SECTOR_COLORS, SOURCE_URLS, insiderSourceUrl } from "./mockData.js";
 import { LIMITS, FACTORS, HORIZON_INFO, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio, suggestedSize, planNewMoney, nextCheckup, inCheckupWindow } from "./scoring.js";
-import { SETUPS, RULED_OUT, tradePlanFor } from "./lib/shortterm.js";
+import { SETUPS, RULED_OUT, tradePlanFor, shortStrength } from "./lib/shortterm.js";
 import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, useShort, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
 import { ruleSummary, PROMPT_VERSION } from "./lib/ai.js";
@@ -688,6 +688,20 @@ function SetupStats({ st }) {
   );
 }
 
+const STRENGTH_STYLE = {
+  great: "bg-emerald-500 text-slate-900", good: "bg-emerald-500/20 text-emerald-300", ok: "bg-sky-500/15 text-sky-300", weak: "bg-slate-700 text-slate-300",
+};
+/** Short-term strength chip (from the backtest buckets). */
+function StrengthChip({ st }) {
+  if (!st) return null;
+  return (
+    <span className="flex flex-col items-center" title={st.why}>
+      <span className={"rounded-md px-1.5 py-0.5 text-xs font-semibold " + (STRENGTH_STYLE[st.tone] || STRENGTH_STYLE.ok)}>{st.label}</span>
+      <span className="mt-0.5 text-[9px] uppercase tracking-wide text-slate-500">short-term</span>
+    </span>
+  );
+}
+
 /** Pass/fail line for one rule a short-term setup checks. */
 function RuleRow({ ok, label, value }) {
   return (
@@ -751,6 +765,9 @@ function ShortModal({ x, setupKey, byTicker, total, today, owned, onBuy, onClose
           <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-white"><Icon name="X" size={18} /></button>
         </div>
 
+        {(() => { const st = shortStrength(setupKey, x); return st ? (
+          <div className="mt-4 flex items-start gap-2 rounded-lg bg-slate-900/50 p-3 text-sm text-slate-300"><StrengthChip st={st} /><span>{st.why}</span></div>
+        ) : null; })()}
         <div className="mt-4">
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Why it's on the list</div>
           <p className="mt-1 text-sm text-slate-400">{S.blurb}</p>
@@ -821,7 +838,7 @@ function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen, 
           <div className="flex items-baseline gap-2"><span className="text-base font-bold text-white hover:underline">{x.ticker}</span><span className="text-sm tabular-nums text-slate-300">{px(x.price)}</span></div>
           <div className="truncate text-xs text-slate-400">{x.name}</div>
         </button>
-        {full ? <button type="button" onClick={() => onOpen(x.ticker)} title="Long-term score: open the full breakdown"><ScoreBadge score={full.composite} size="sm" /></button> : null}
+        <StrengthChip st={shortStrength(setupKey, x)} />
       </div>
       <div className="mt-2 text-sm text-emerald-300">{why}</div>
       {plan.earnings && <div className="mt-1.5 flex items-center gap-1 rounded bg-amber-500/10 px-2 py-1 text-xs text-amber-300"><Icon name="CalendarClock" size={12} />Earnings {fmtDate(plan.earnings.date)} ({plan.earnings.days} days): a big move either way is possible</div>}
@@ -890,7 +907,8 @@ function ShortTermTab({ data, byTicker, priceBook, pf, total, onOpen }) {
   const owned = new Set(pf.trades.map((t) => t.ticker));
   const lists = {
     momentum: items.filter((x) => x.setups.includes("momentum")).sort((a, b) => (b.facts.ret21 || 0) - (a.facts.ret21 || 0)),
-    gap: items.filter((x) => x.setups.includes("gap")).sort((a, b) => ((a.facts.gapSig || {}).daysAgo ?? 9) - ((b.facts.gapSig || {}).daysAgo ?? 9) || ((b.facts.gapSig || {}).gap || 0) - ((a.facts.gapSig || {}).gap || 0)),
+    // strongest first: heavier jump-day volume did better in the gap-up ranking test
+    gap: items.filter((x) => x.setups.includes("gap")).sort((a, b) => ((b.facts.gapSig || {}).volX || 0) - ((a.facts.gapSig || {}).volX || 0)),
     dip: items.filter((x) => x.setups.includes("dip")).sort((a, b) => (b.rank6 || 0) - (a.rank6 || 0)).slice(0, 12),
   };
   const budget = total * SHORT_BUDGET;
