@@ -905,12 +905,17 @@ function ShortTermTab({ data, byTicker, priceBook, pf, total, onOpen }) {
   const items = (data && data.items) || [];
   const today = data && data.generatedAt ? data.generatedAt.slice(0, 10) : todayISO();
   const owned = new Set(pf.trades.map((t) => t.ticker));
-  const lists = {
+  const [showWeak, setShowWeak] = useState({});
+  const all = {
     momentum: items.filter((x) => x.setups.includes("momentum")).sort((a, b) => (b.facts.ret21 || 0) - (a.facts.ret21 || 0)),
     // strongest first: heavier jump-day volume did better in the gap-up ranking test
     gap: items.filter((x) => x.setups.includes("gap")).sort((a, b) => ((b.facts.gapSig || {}).volX || 0) - ((a.facts.gapSig || {}).volX || 0)),
     dip: items.filter((x) => x.setups.includes("dip")).sort((a, b) => (b.rank6 || 0) - (a.rank6 || 0)).slice(0, 12),
   };
+  // "Weak" setups only about matched SPY in the backtests, so they're hidden unless you ask to see them.
+  const isWeak = (k, x) => { const st = shortStrength(k, x); return !!st && st.tone === "weak"; };
+  const weakCount = Object.fromEntries(Object.entries(all).map(([k, v]) => [k, v.filter((x) => isWeak(k, x) && !owned.has(x.ticker)).length]));
+  const lists = Object.fromEntries(Object.entries(all).map(([k, v]) => [k, showWeak[k] ? v : v.filter((x) => !isWeak(k, x) || owned.has(x.ticker))]));
   const budget = total * SHORT_BUDGET;
   return (
     <div className="space-y-6">
@@ -942,8 +947,9 @@ function ShortTermTab({ data, byTicker, priceBook, pf, total, onOpen }) {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {(showAll[k] ? lists[k] : lists[k].slice(0, 8)).map((x) => <ShortCard key={k + x.ticker} x={x} setupKey={k} byTicker={byTicker} total={total} today={today} owned={owned.has(x.ticker)} onBuy={pf.addTrade} onOpen={onOpen} onDetails={() => setDetail({ x, k })} />)}
             </div>
-          ) : <Card className="p-4 text-center text-sm text-slate-400">No {SETUPS[k].label.toLowerCase()} setups today.</Card>}
+          ) : <Card className="p-4 text-center text-sm text-slate-400">No strong {SETUPS[k].label.toLowerCase()} setups today. Skipping a day is fine.</Card>}
           {lists[k].length > 8 && <button type="button" onClick={() => setShowAll({ ...showAll, [k]: !showAll[k] })} className="mt-2 text-sm text-indigo-300 hover:text-indigo-200">{showAll[k] ? "Show top 8 only" : "Show all " + lists[k].length + " (top 8 are the strongest)"}</button>}
+          {weakCount[k] > 0 && <div className="mt-1.5 text-xs text-slate-500">{showWeak[k] ? "Showing weak ones too. " : weakCount[k] + " weak " + (weakCount[k] === 1 ? "one" : "ones") + " hidden: they only about matched SPY in the test. "}<button type="button" onClick={() => setShowWeak({ ...showWeak, [k]: !showWeak[k] })} className="text-indigo-300 hover:text-indigo-200">{showWeak[k] ? "Hide them" : "Show them"}</button></div>}
         </div>
       ))}
 
