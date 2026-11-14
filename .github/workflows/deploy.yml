@@ -9,6 +9,15 @@ on:
   schedule:
     - cron: "45 21 * * 1-5"   # 21:45 UTC on weekdays ≈ after the US close (4:45 pm EST / 5:45 pm EDT)
   workflow_dispatch:
+    inputs:
+      deep_n:
+        description: "Stocks to fully check this run on top of the priority list (normal: 400). For a one-off catch-up use ~700."
+        required: false
+        default: ""
+      deep_max:
+        description: "Cap on full checks this run (normal: 650). Catch-up: ~1150. ~4.5 s per stock."
+        required: false
+        default: ""
 
 permissions:
   contents: write   # commit refreshed public/data/*.json
@@ -22,7 +31,7 @@ concurrency:
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 120   # the full scan + ~400 deep checks take ~30-45 min
+    timeout-minutes: 170   # nightly: scan + ~650 full checks ≈ 50 min; a one-off catch-up of ~1150 ≈ 95 min
     env:
       HAS_CLAUDE: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
     environment:
@@ -58,6 +67,8 @@ jobs:
           AI_PROVIDER: ${{ vars.AI_PROVIDER }}
           AI_MODEL: ${{ vars.AI_MODEL }}
           AI_MAX_STOCKS: ${{ vars.AI_MAX_STOCKS }}
+          DEEP_N: ${{ inputs.deep_n }}
+          DEEP_MAX: ${{ inputs.deep_max }}
         run: node scripts/update-screener.mjs
 
       # Claude (uses your Pro/Max subscription via CLAUDE_CODE_OAUTH_TOKEN). If it fails, free-tier/earlier takes stay.
