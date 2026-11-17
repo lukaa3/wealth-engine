@@ -691,6 +691,15 @@ function SetupStats({ st }) {
 const STRENGTH_STYLE = {
   great: "bg-emerald-500 text-slate-900", good: "bg-emerald-500/20 text-emerald-300", ok: "bg-sky-500/15 text-sky-300", weak: "bg-slate-700 text-slate-300",
 };
+/** Which short-term setup to track a stock under (strongest label wins; momentum on a tie). */
+const STRENGTH_ORDER = { great: 3, good: 2, ok: 1, weak: 0 };
+function bestSetup(item) {
+  if (!item) return null;
+  const ks = item.setups.filter((k) => SETUPS[k] && !SETUPS[k].disabled);
+  ks.sort((a, b) => ((STRENGTH_ORDER[(shortStrength(b, item) || {}).tone] ?? 1) - (STRENGTH_ORDER[(shortStrength(a, item) || {}).tone] ?? 1)) || (a === "momentum" ? -1 : 1));
+  return ks[0] || null;
+}
+
 /** Short-term strength chip (from the backtest buckets). */
 function StrengthChip({ st }) {
   if (!st) return null;
@@ -817,8 +826,7 @@ function ShortModal({ x, setupKey, byTicker, total, today, owned, onBuy, onClose
 
         <div className="mt-4">
           {owned ? <span className="inline-flex items-center gap-1 text-sm text-emerald-300"><Icon name="Check" size={14} />In your open trades</span>
-            : <button type="button" onClick={() => { onBuy({ ticker: x.ticker, setup: setupKey, date: todayISO(), price: x.price, sellBy: plan.sellBy, sma5: f.sma5 || null }); onClose(); }}
-                className="rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-semibold text-slate-900 hover:bg-emerald-400">I bought this</button>}
+            : <span className="text-xs text-slate-400">Bought it? Add it in the Portfolio tab: it's tracked as a short-term trade automatically, with the sell date counted from that day.</span>}
         </div>
       </div>
     </div>
@@ -848,9 +856,7 @@ function ShortCard({ x, setupKey, byTicker, total, today, onBuy, owned, onOpen, 
         <div><span className="text-slate-500">Early exit:</span> only for something truly serious (drops and stop-losses tested worse)</div>
       </div>
       <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
-        {owned ? <span className="inline-flex items-center gap-1 text-xs text-emerald-300"><Icon name="Check" size={13} />In your open trades</span>
-          : <button type="button" onClick={() => onBuy({ ticker: x.ticker, setup: setupKey, date: todayISO(), price: x.price, sellBy: plan.sellBy, sma5: x.facts.sma5 || null })}
-              className="rounded-lg border border-emerald-500/40 px-2.5 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-500/10">I bought this</button>}
+        {owned ? <span className="inline-flex items-center gap-1 text-xs text-emerald-300"><Icon name="Check" size={13} />In your open trades</span> : <span />}
         <button type="button" onClick={onDetails} className="text-xs text-indigo-300 hover:text-indigo-200">Why + details →</button>
       </div>
     </div>
@@ -1226,8 +1232,10 @@ function Intelligence({ scored, byTicker, feedRes, txRes, onOpen }) {
 /* ================= Tab 3: Portfolio Tracker & Rebalancer ================= */
 const inputCls = "w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 focus:outline-none disabled:opacity-40";
 
-function HoldingForm({ byTicker, scored, priceBook, onAdd }) {
+function HoldingForm({ byTicker, scored, priceBook, onAdd, shortItems = [], trades = [], onAddTrade }) {
   const [ticker, setTicker] = useState("");
+  const [term, setTerm] = useState(null); // null = automatic (short-term if it's on today's short-term list)
+  const [pickSetup, setPickSetup] = useState("momentum");
   const [shares, setShares] = useState("");
   const [cost, setCost] = useState("");
   const [err, setErr] = useState("");
@@ -1235,6 +1243,13 @@ function HoldingForm({ byTicker, scored, priceBook, onAdd }) {
   const isCash = t === "CASH";
   const known = byTicker[t];
   const scanned = !known && priceBook[t];
+  const shortItem = (shortItems || []).find((x) => x.ticker === t);
+  const autoSetup = bestSetup(shortItem);
+  const openTrade = (trades || []).find((x) => x.ticker === t);
+  const isShort = !isCash && (term ? term === "short" : !!autoSetup);
+  const setupNow = autoSetup || pickSetup;
+  const today = todayISO();
+  const sellBy = addTradingDays(today, (SETUPS[setupNow] || {}).holdDays || 20);
   const options = useMemo(() => {
     const m = new Map(scored.map((s) => [s.ticker, s.name]));
     Object.entries(priceBook).forEach(([k, v]) => { if (!m.has(k)) m.set(k, v.name); });
@@ -1249,7 +1264,9 @@ function HoldingForm({ byTicker, scored, priceBook, onAdd }) {
     if (!(sh > 0)) return setErr(isCash ? "Enter a cash amount above 0." : "Shares must be above 0.");
     if (!isCash && !(c > 0)) return setErr("Average cost must be above 0.");
     onAdd({ ticker: t, shares: sh, cost: isCash ? 1 : c });
-    setTicker(""); setShares(""); setCost(""); setErr("");
+    // Short-term: track it as a trade from today (the sell date counts from the day you buy).
+    if (isShort && !openTrade && onAddTrade) onAddTrade({ ticker: t, setup: setupNow, date: today, price: c, sellBy });
+    setTicker(""); setShares(""); setCost(""); setErr(""); setTerm(null);
   }
   return (
     <Card className="p-4">
@@ -1267,6 +1284,24 @@ function HoldingForm({ byTicker, scored, priceBook, onAdd }) {
         </label>
         <button type="submit" className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-emerald-400"><Icon name="Plus" size={15} />Add</button>
       </form>
+      {t && !isCash && !err && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-slate-400">Type:</span>
+          {[["long", "Long-term"], ["short", "Short-term"]].map(([k, l]) => (
+            <button key={k} type="button" onClick={() => setTerm(k)} className={"rounded-md px-2 py-0.5 font-medium " + ((k === "short") === isShort ? (k === "short" ? "bg-amber-500 text-slate-900" : "bg-indigo-500 text-white") : "bg-slate-700 text-slate-300 hover:text-white")}>{l}</button>
+          ))}
+          {isShort && !autoSetup && (
+            <select value={pickSetup} onChange={(e) => setPickSetup(e.target.value)} className="rounded border border-slate-600 bg-slate-800 px-1 py-0.5 text-slate-100">
+              <option value="momentum">Momentum (4 weeks)</option><option value="gap">Gap-up (~2 months)</option>
+            </select>
+          )}
+          <span className="text-slate-400">
+            {openTrade ? "Already tracked as a short-term trade (sell " + fmtDate(openTrade.sellBy) + ")."
+              : isShort ? (autoSetup ? "On today's short-term list (" + (SETUPS[autoSetup] || {}).label + "): " : "") + "sell on " + fmtDate(sellBy) + " (" + ((SETUPS[setupNow] || {}).span || "") + " from today)."
+              : autoSetup ? "It's on today's short-term list; tap Short-term if that's why you bought it." : "Held until it's no longer a pick (3-month check-ups)."}
+          </span>
+        </div>
+      )}
       {known && !err && <p className="mt-2 text-xs text-slate-400">{known.name} · {known.sector} · last {px(known.price)} · score {known.composite} · {(HORIZON_INFO[known.horizon] || HORIZON_INFO.core).label} · {known.risk} risk</p>}
       {scanned && !err && <p className="mt-2 text-xs text-slate-400">{scanned.name} · {scanned.sector} · last {px(scanned.price)} · in the market scan (price only, no full score today)</p>}
       {!known && !scanned && !isCash && t && !err && <p className="mt-2 text-xs text-amber-300">{t} isn't in today's data, so it's tracked at your cost basis until a price is available. Add it to the repo's WATCHLIST variable to get it fully checked every day.</p>}
@@ -1559,8 +1594,14 @@ function NewMoneyPlanner({ a, scored, onOpen }) {
   );
 }
 
-function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen }) {
-  const { addHolding, updateHolding, deleteHolding, resetPortfolio, sync } = pf;
+function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen, shortItems = [] }) {
+  const { addHolding, updateHolding, resetPortfolio, sync } = pf;
+  // Deleting a holding also ends its short-term trade, so the two never drift apart.
+  const deleteHolding = (id) => {
+    const h = pf.holdings.find((x) => x.id === id);
+    if (h) pf.trades.filter((t) => t.ticker === h.ticker).forEach((t) => pf.closeTrade(t.id));
+    pf.deleteHolding(id);
+  };
   const rows = a.rows.slice().sort((x, y) => ((x.advice ? x.advice.rank : 9) - (y.advice ? y.advice.rank : 9)) || y.value - x.value);
   return (
     <div className="space-y-5">
@@ -1571,7 +1612,7 @@ function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen }) {
           sub={[["Sell", a.counts.Sell], ["Trim", a.counts.Trim], ["Buy more", a.counts["Buy more"]], ["Review", a.counts.Review]].filter(([, v]) => v).map(([k, v]) => v + " " + k.toLowerCase()).join(" · ") || "all holds"} icon="ClipboardList" />
         <Stat label="Overall P/L %" value={spct(a.plPct)} sub="unrealized, excludes cash" valueTone={a.plPct >= 0 ? "up" : "down"} icon="Percent" />
       </div>
-      <HoldingForm byTicker={byTicker} scored={scored} priceBook={priceBook} onAdd={addHolding} />
+      <HoldingForm byTicker={byTicker} scored={scored} priceBook={priceBook} onAdd={addHolding} shortItems={shortItems} trades={pf.trades} onAddTrade={pf.addTrade} />
       <SyncCard sync={sync} />
       <NewMoneyPlanner a={a} scored={scored} onOpen={onOpen} />
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
@@ -1867,7 +1908,7 @@ export default function App() {
         {tab === "picks" && <Picks scored={scored} byTicker={byTicker} scan={screener.source !== "mock" ? scanRes.data : null} onOpen={setOpen} />}
         {tab === "short" && <ShortTermTab data={shortRes.data} byTicker={byTicker} priceBook={priceBook} pf={pf} total={analysis.total} onOpen={setOpen} />}
         {tab === "intelligence" && <Intelligence scored={scored} byTicker={byTicker} feedRes={feed} txRes={insider} onOpen={setOpen} />}
-        {tab === "portfolio" && <PortfolioTab scored={scored} byTicker={byTicker} priceBook={priceBook} pf={pf} a={analysis} onOpen={setOpen} />}
+        {tab === "portfolio" && <PortfolioTab scored={scored} byTicker={byTicker} priceBook={priceBook} pf={pf} a={analysis} onOpen={setOpen} shortItems={(shortRes.data && shortRes.data.items) || []} />}
       </main>
 
       <footer className="mx-auto max-w-7xl px-4 pb-8 text-xs text-slate-500 sm:px-6">
