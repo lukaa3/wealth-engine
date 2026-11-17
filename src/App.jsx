@@ -1460,7 +1460,7 @@ function TermToggle({ r, onAddTrade, onCloseTrade }) {
   );
 }
 
-function HoldingRow({ r, onOpen, onSave, onDelete, onAddTrade, onCloseTrade }) {
+function HoldingRow({ r, onOpen, onSave, onDelete, onAddTrade, onCloseTrade, shortBy = {} }) {
   const [editing, setEditing] = useState(false);
   const [sh, setSh] = useState(String(r.shares));
   const [c, setC] = useState(String(r.cost));
@@ -1493,7 +1493,10 @@ function HoldingRow({ r, onOpen, onSave, onDelete, onAddTrade, onCloseTrade }) {
       <td className={cell + " " + tone(r.pl)}>{cash ? "—" : <>{usd(r.pl)} <span className="text-xs opacity-80">({spct(r.plPct)})</span></>}</td>
       <td className="max-w-[16rem] px-3 py-3">{r.advice ? <div title={r.advice.why.join("\n")}><ActionChip action={r.advice.action} /><div className="mt-0.5 truncate text-[11px] text-slate-400">{r.advice.why[0]}</div>{r.stock && r.stock.upd && r.stock.upd.events.length > 0 && (Date.now() - Date.parse(r.stock.upd.date)) / 864e5 <= 5 && <div className={"mt-0.5 truncate text-[11px] " + (r.stock.upd.tone === "bad" ? "text-rose-300" : r.stock.upd.tone === "good" ? "text-emerald-300" : "text-slate-300")}>Today: {r.stock.upd.events.map((e) => e.text).join(" · ")}</div>}</div> : r.unpriced ? <span className="text-xs text-amber-300">No price data yet (held at cost)</span> : <span className="text-slate-500">—</span>}</td>
       <td className={cell + " text-slate-300"}>{pct(r.weight)}</td>
-      <td className="px-3 py-3">{r.score != null ? <ScoreBadge score={r.score} size="sm" /> : <span className="text-slate-500">—</span>}</td>
+      <td className="px-3 py-3">{r.term === "short"
+        ? (() => { const it = shortBy[r.ticker], st = it ? shortStrength(r.trade.setup, it) : null;
+            return st ? <StrengthChip st={st} /> : <span className="flex flex-col items-center" title="Short-term trade: it's no longer on today's list, which is normal. Hold to the sell date."><span className="rounded-md bg-amber-500/15 px-1.5 py-0.5 text-xs font-semibold text-amber-300">Trade</span><span className="mt-0.5 text-[9px] uppercase tracking-wide text-slate-500">short-term</span></span>; })()
+        : r.score != null ? <ScoreBadge score={r.score} size="sm" /> : <span className="text-slate-500">—</span>}</td>
       <td className="relative whitespace-nowrap px-3 py-3 text-right">
         {editing ? (
           <>
@@ -1596,6 +1599,7 @@ function NewMoneyPlanner({ a, scored, onOpen }) {
 
 function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen, shortItems = [] }) {
   const { addHolding, updateHolding, resetPortfolio, sync } = pf;
+  const shortBy = useMemo(() => Object.fromEntries((shortItems || []).map((x) => [x.ticker, x])), [shortItems]);
   // Deleting a holding also ends its short-term trade, so the two never drift apart.
   const deleteHolding = (id) => {
     const h = pf.holdings.find((x) => x.id === id);
@@ -1633,7 +1637,7 @@ function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen, shortItems =
               <th className="relative px-3 py-2.5"><span className="sr-only">Actions</span></th>
             </tr></thead>
             <tbody>
-              {rows.map((r) => <HoldingRow key={r.id} r={r} onOpen={onOpen} onSave={updateHolding} onDelete={deleteHolding} onAddTrade={pf.addTrade} onCloseTrade={pf.closeTrade} />)}
+              {rows.map((r) => <HoldingRow key={r.id} r={r} onOpen={onOpen} onSave={updateHolding} onDelete={deleteHolding} onAddTrade={pf.addTrade} onCloseTrade={pf.closeTrade} shortBy={shortBy} />)}
               {rows.length === 0 && <tr><td colSpan={10} className="p-8 text-center text-slate-400">No positions yet. Add one above.</td></tr>}
             </tbody>
           </table>
