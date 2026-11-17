@@ -70,6 +70,11 @@ export function updateAdvice(s, holding) {
   const upd = s.upd;
   if (holding && holding.advice) {
     const a = holding.advice.action, pl = holding.plPct || 0;
+    if (holding.advice.term === "short") {
+      if (a === "Sell") return { text: "Short-term trade: sell date reached, sell it all (" + fmtPct(pl) + ")", tone: "bad" };
+      if (a === "Review") return { text: "Short-term trade with a headline: read it, but hold unless it's serious", tone: "neutral" };
+      return { text: "Short-term trade: hold until the sell date (" + holding.advice.daysLeft + " days left)", tone: "good" };
+    }
     const day = (d) => new Date(d + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
     if (holding.advice.checkup === "sell") return { text: "3-month check-up: it's no longer a pick, sell it (" + (pl >= 0 ? "you're " : "you're ") + fmtPct(pl) + ") and buy a current top pick", tone: "bad" };
     if (holding.advice.checkup === "wait") return { text: "Dropped out of the picks: hold until the " + day(holding.advice.nextCheck) + " check-up, sell then if it's still out", tone: "neutral" };

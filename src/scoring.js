@@ -392,8 +392,24 @@ export function adviseHolding(r, s, chart, { downgrades = [], today = new Date()
   return { action, why, rank: ACTION_RANK[action] ?? 5, checkup, nextCheck: check.date };
 }
 
+/**
+ * Advice for a holding that's a short-term trade (you tapped "I bought this" or marked it short-term). The tested
+ * rule is time-based: hold to the sell date, then sell it all. The long-term score doesn't apply.
+ */
+export function adviseShortTrade(r, trade, today = new Date()) {
+  const t = iso(today), sellBy = trade.sellBy;
+  const days = sellBy ? Math.round((Date.parse(sellBy) - Date.parse(t)) / 864e5) : null;
+  const upd = r.stock && r.stock.upd && (Date.parse(t) - Date.parse(r.stock.upd.date)) / 864e5 <= 3 ? r.stock.upd : null;
+  const headline = upd && upd.events.find((e) => e.text.startsWith("Headline"));
+  let action = "Hold", why;
+  if (days != null && days <= 0) { action = "Sell"; why = ["Short-term trade: the sell date (" + fmtDay(sellBy) + ") is here. Sell it all, whatever the price; that's the tested rule"]; }
+  else if (headline) { action = "Review"; why = [headline.text + ". Read it, but hold to the sell date unless it's truly serious (fraud, bankruptcy)"]; }
+  else why = ["Short-term trade: hold until " + (sellBy ? fmtDay(sellBy) + " (" + days + " day" + (days === 1 ? "" : "s") + " left)" : "its sell date") + ". The long-term score doesn't matter for this one"];
+  return { action, why, rank: ACTION_RANK[action] ?? 5, term: "short", sellBy, daysLeft: days, checkup: null, nextCheck: null };
+}
+
 /** Portfolio math, per-holding advice, and portfolio-level signals. */
-export function analyzePortfolio(holdings, byTicker, sectors, sectorColors, priceBook = {}, { analyst = [] } = {}) {
+export function analyzePortfolio(holdings, byTicker, sectors, sectorColors, priceBook = {}, { analyst = [], trades = [], today = new Date() } = {}) {
   const rows = holdings
     .map((h) => {
       const pb = priceBook[h.ticker];
@@ -430,9 +446,14 @@ export function analyzePortfolio(holdings, byTicker, sectors, sectorColors, pric
   const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
   const bad = {};
   analyst.filter((a) => a.date >= since && (a.action === "Downgrade" || a.action === "PT Cut")).forEach((a) => (bad[a.ticker] = bad[a.ticker] || []).push(a));
+  // Holdings that are open short-term trades get the short-term (time-based) rule instead of the long-term one.
+  const tradeOf = {};
+  trades.forEach((t) => { if (!tradeOf[t.ticker] || (t.date || "") > (tradeOf[t.ticker].date || "")) tradeOf[t.ticker] = t; });
   rows.forEach((r) => {
     if (r.ticker === "CASH" || r.unpriced) { r.advice = null; return; }
-    r.advice = adviseHolding(r, r.stock, r.chart, { downgrades: bad[r.ticker] || [] });
+    r.trade = tradeOf[r.ticker] || null;
+    r.term = r.trade ? "short" : "long";
+    r.advice = r.trade ? adviseShortTrade(r, r.trade, today) : adviseHolding(r, r.stock, r.chart, { downgrades: bad[r.ticker] || [], today });
   });
 
   const sectorRows = sectors.map((sec) => {

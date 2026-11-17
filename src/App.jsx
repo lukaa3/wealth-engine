@@ -6,7 +6,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, createContext
 import * as LucideIcons from "lucide-react";
 import { SECTORS, SECTOR_COLORS, SOURCE_URLS, insiderSourceUrl } from "./mockData.js";
 import { LIMITS, FACTORS, HORIZON_INFO, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio, suggestedSize, planNewMoney, nextCheckup, inCheckupWindow } from "./scoring.js";
-import { SETUPS, RULED_OUT, tradePlanFor, shortStrength } from "./lib/shortterm.js";
+import { SETUPS, RULED_OUT, tradePlanFor, shortStrength, addTradingDays } from "./lib/shortterm.js";
 import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, useShort, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
 import { ruleSummary, PROMPT_VERSION } from "./lib/ai.js";
@@ -1390,7 +1390,42 @@ function AdviceFeed({ a, onOpen }) {
   );
 }
 
-function HoldingRow({ r, onOpen, onSave, onDelete }) {
+/** Switch a holding between long-term and a short-term trade (time-based: sell on a date). */
+function TermToggle({ r, onAddTrade, onCloseTrade }) {
+  const [open, setOpen] = useState(false);
+  const [setup, setSetup] = useState("momentum");
+  const [date, setDate] = useState(todayISO());
+  if (r.ticker === "CASH" || r.fund || r.unpriced) return null;
+  if (r.term === "short") {
+    return (
+      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+        <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-300">Short-term · sell {r.trade.sellBy ? fmtDate(r.trade.sellBy) : "—"}</span>
+        <button type="button" onClick={() => onCloseTrade(r.trade.id)} className="text-slate-500 hover:text-indigo-300" title="Treat it as a long-term holding instead">make long-term</button>
+      </div>
+    );
+  }
+  if (!open) return <button type="button" onClick={() => setOpen(true)} className="mt-1 text-[11px] text-slate-500 hover:text-indigo-300">Long-term · it's a short-term trade?</button>;
+  const hold = (SETUPS[setup] || {}).holdDays || 20;
+  return (
+    <div className="mt-1.5 space-y-1.5 rounded-md border border-slate-700 bg-slate-900/70 p-2 text-[11px]">
+      <label className="block text-slate-400">Type
+        <select value={setup} onChange={(e) => setSetup(e.target.value)} className="ml-1 rounded border border-slate-600 bg-slate-800 px-1 py-0.5 text-slate-100">
+          <option value="momentum">Momentum (4 weeks)</option><option value="gap">Gap-up (~2 months)</option>
+        </select>
+      </label>
+      <label className="block text-slate-400">Bought on
+        <input type="date" value={date} max={todayISO()} onChange={(e) => setDate(e.target.value)} className="ml-1 rounded border border-slate-600 bg-slate-800 px-1 py-0.5 text-slate-100" />
+      </label>
+      <div className="text-slate-400">Sell on {fmtDate(addTradingDays(date, hold))}</div>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => { onAddTrade({ ticker: r.ticker, setup, date, price: r.cost, sellBy: addTradingDays(date, hold) }); setOpen(false); }} className="rounded bg-amber-500 px-2 py-0.5 font-semibold text-slate-900">Save</button>
+        <button type="button" onClick={() => setOpen(false)} className="text-slate-400 hover:text-white">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function HoldingRow({ r, onOpen, onSave, onDelete, onAddTrade, onCloseTrade }) {
   const [editing, setEditing] = useState(false);
   const [sh, setSh] = useState(String(r.shares));
   const [c, setC] = useState(String(r.cost));
@@ -1409,6 +1444,7 @@ function HoldingRow({ r, onOpen, onSave, onDelete }) {
       <td className="px-4 py-3">
         {cash ? <div className="font-semibold text-white">Cash</div> : <button type="button" onClick={() => onOpen(r.ticker)} className="font-semibold text-white hover:text-indigo-300">{r.ticker}</button>}
         <div><SectorChip sector={r.sector} /></div>
+        <TermToggle r={r} onAddTrade={onAddTrade} onCloseTrade={onCloseTrade} />
       </td>
       <td className={cell + " text-slate-300"}>
         {editing ? <input type="number" step="any" min="0" value={sh} onChange={(e) => setSh(e.target.value)} aria-label={cash ? "Cash amount" : "Shares"} className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-right text-sm text-slate-100 focus:border-indigo-500 focus:outline-none" />
@@ -1556,7 +1592,7 @@ function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen }) {
               <th className="relative px-3 py-2.5"><span className="sr-only">Actions</span></th>
             </tr></thead>
             <tbody>
-              {rows.map((r) => <HoldingRow key={r.id} r={r} onOpen={onOpen} onSave={updateHolding} onDelete={deleteHolding} />)}
+              {rows.map((r) => <HoldingRow key={r.id} r={r} onOpen={onOpen} onSave={updateHolding} onDelete={deleteHolding} onAddTrade={pf.addTrade} onCloseTrade={pf.closeTrade} />)}
               {rows.length === 0 && <tr><td colSpan={10} className="p-8 text-center text-slate-400">No positions yet. Add one above.</td></tr>}
             </tbody>
           </table>
@@ -1761,7 +1797,7 @@ export default function App() {
   const pf = usePortfolio();
   const scanLive = screener.source !== "mock" ? scanRes.data : null;
   const priceBook = useMemo(() => Object.fromEntries(((scanLive && scanLive.items) || []).map((r) => [r.ticker, r])), [scanLive]);
-  const analysis = useMemo(() => analyzePortfolio(pf.holdings, byTicker, SECTORS, SECTOR_COLORS, priceBook, { analyst: feed.data.items }), [pf.holdings, byTicker, priceBook, feed.data]);
+  const analysis = useMemo(() => analyzePortfolio(pf.holdings, byTicker, SECTORS, SECTOR_COLORS, priceBook, { analyst: feed.data.items, trades: pf.trades }), [pf.holdings, byTicker, priceBook, feed.data, pf.trades]);
   const holdingRows = useMemo(() => Object.fromEntries(analysis.rows.filter((r) => r.stock).map((r) => [r.ticker, r])), [analysis]);
 
   useEffect(() => {
