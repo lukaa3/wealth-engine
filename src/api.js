@@ -224,7 +224,8 @@ const lsSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localSt
 const loadTrades = () => { try { const t = JSON.parse(lsGet(TRADES_KEY) || "[]"); return Array.isArray(t) ? t : []; } catch (e) { return []; } };
 const cleanTrades = (list) => (Array.isArray(list) ? list : []).filter((t) => t && t.ticker && t.date).map((t) => ({ ...t, ticker: String(t.ticker).toUpperCase() }));
 const cleanHoldings = (list) => (Array.isArray(list) ? list : []).filter((h) => h && h.ticker)
-  .map((h) => ({ id: h.id || newId(), ticker: String(h.ticker).toUpperCase(), shares: Number(h.shares) || 0, cost: Number(h.cost) || 0 }));
+  .map((h) => ({ id: h.id || newId(), ticker: String(h.ticker).toUpperCase(), shares: Number(h.shares) || 0, cost: Number(h.cost) || 0,
+    ...(h.term ? { term: h.term } : {}), ...(h.added ? { added: h.added } : {}) })); // term: "long" = you chose long-term
 const syncClient = createSyncClient(SYNC_CONFIG);
 
 /**
@@ -250,9 +251,10 @@ export function usePortfolio() {
   /** Short-term trades you've taken: { id, ticker, setup, date, price, sellBy, stop }. */
   const addTrade = useCallback((t) => editTrades((prev) => [...prev, { id: newId(), ...t }]), [editTrades]);
   const closeTrade = useCallback((id) => editTrades((prev) => prev.filter((t) => t.id !== id)), [editTrades]);
-  const addHolding = useCallback(({ ticker, shares, cost }) => edit((prev) => {
+  const updateTrade = useCallback((id, patch) => editTrades((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t))), [editTrades]);
+  const addHolding = useCallback(({ ticker, shares, cost, term }) => edit((prev) => {
     const i = prev.findIndex((h) => h.ticker === ticker);
-    if (i < 0) return [...prev, { id: newId(), ticker, shares, cost: ticker === "CASH" ? 1 : cost }];
+    if (i < 0) return [...prev, { id: newId(), ticker, shares, cost: ticker === "CASH" ? 1 : cost, added: new Date().toISOString().slice(0, 10), ...(term ? { term } : {}) }];
     const cur = prev[i], total = cur.shares + shares;
     const blended = ticker === "CASH" ? 1 : (cur.shares * cur.cost + shares * cost) / total;
     return prev.map((h, j) => (j === i ? { ...h, shares: total, cost: blended } : h));
@@ -342,7 +344,7 @@ export function usePortfolio() {
   const syncLink = code ? window.location.origin + window.location.pathname + "#portfolio&sync=" + code : null;
   return {
     holdings: state.holdings, addHolding, updateHolding, deleteHolding, resetPortfolio,
-    trades: state.trades || [], addTrade, closeTrade,
+    trades: state.trades || [], addTrade, closeTrade, updateTrade,
     sync: { available: !!syncClient, code, link: syncLink, ...sync, start: startSync, join: joinSync, stop: stopSync, refresh: () => pull(code) },
   };
 }

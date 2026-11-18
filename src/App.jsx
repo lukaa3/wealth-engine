@@ -1263,7 +1263,7 @@ function HoldingForm({ byTicker, scored, priceBook, onAdd, shortItems = [], trad
     if (!isCash && !/^[A-Z][A-Z0-9.\-]{0,9}$/.test(t)) return setErr("That doesn't look like a ticker symbol (e.g. AAPL, BRK.B).");
     if (!(sh > 0)) return setErr(isCash ? "Enter a cash amount above 0." : "Shares must be above 0.");
     if (!isCash && !(c > 0)) return setErr("Average cost must be above 0.");
-    onAdd({ ticker: t, shares: sh, cost: isCash ? 1 : c });
+    onAdd({ ticker: t, shares: sh, cost: isCash ? 1 : c, term: !isCash && !isShort && autoSetup ? "long" : undefined });
     // Short-term: track it as a trade from today (the sell date counts from the day you buy).
     if (isShort && !openTrade && onAddTrade) onAddTrade({ ticker: t, setup: setupNow, date: today, price: c, sellBy });
     setTicker(""); setShares(""); setCost(""); setErr(""); setTerm(null);
@@ -1426,16 +1426,30 @@ function AdviceFeed({ a, onOpen }) {
 }
 
 /** Switch a holding between long-term and a short-term trade (time-based: sell on a date). */
-function TermToggle({ r, onAddTrade, onCloseTrade }) {
+function TermToggle({ r, onAddTrade, onCloseTrade, onUpdateTrade, onMarkLong }) {
   const [open, setOpen] = useState(false);
+  const [fixDate, setFixDate] = useState(false);
   const [setup, setSetup] = useState("momentum");
   const [date, setDate] = useState(todayISO());
   if (r.ticker === "CASH" || r.fund || r.unpriced) return null;
   if (r.term === "short") {
     return (
-      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
-        <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-300">Short-term · sell {r.trade.sellBy ? fmtDate(r.trade.sellBy) : "—"}</span>
-        <button type="button" onClick={() => onCloseTrade(r.trade.id)} className="text-slate-500 hover:text-indigo-300" title="Treat it as a long-term holding instead">make long-term</button>
+      <div className="mt-1 space-y-1 text-[11px]">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-300">Short-term · sell {r.trade.sellBy ? fmtDate(r.trade.sellBy) : "—"}</span>
+          <button type="button" onClick={() => { onCloseTrade(r.trade.id); onMarkLong(r.id); }} className="text-slate-500 hover:text-indigo-300" title="Treat it as a long-term holding instead">make long-term</button>
+        </div>
+        {fixDate ? (
+          <label className="flex items-center gap-1 text-slate-400">Bought on
+            <input type="date" defaultValue={r.trade.date} max={todayISO()} onChange={(e) => { const d = e.target.value; if (d) onUpdateTrade(r.trade.id, { date: d, sellBy: addTradingDays(d, (SETUPS[r.trade.setup] || {}).holdDays || 20), guessed: false }); }}
+              className="rounded border border-slate-600 bg-slate-800 px-1 py-0.5 text-slate-100" />
+            <button type="button" onClick={() => setFixDate(false)} className="text-indigo-300">done</button>
+          </label>
+        ) : (
+          <button type="button" onClick={() => setFixDate(true)} className={r.trade.guessed ? "text-amber-300 hover:text-amber-200" : "text-slate-500 hover:text-indigo-300"}>
+            {r.trade.guessed ? "Bought on " + fmtDate(r.trade.date) + "? (a guess) Set the real day →" : "bought " + fmtDate(r.trade.date) + " · change"}
+          </button>
+        )}
       </div>
     );
   }
@@ -1460,7 +1474,7 @@ function TermToggle({ r, onAddTrade, onCloseTrade }) {
   );
 }
 
-function HoldingRow({ r, onOpen, onSave, onDelete, onAddTrade, onCloseTrade, shortBy = {} }) {
+function HoldingRow({ r, onOpen, onSave, onDelete, onAddTrade, onCloseTrade, onUpdateTrade, onMarkLong, shortBy = {} }) {
   const [editing, setEditing] = useState(false);
   const [sh, setSh] = useState(String(r.shares));
   const [c, setC] = useState(String(r.cost));
@@ -1479,7 +1493,7 @@ function HoldingRow({ r, onOpen, onSave, onDelete, onAddTrade, onCloseTrade, sho
       <td className="px-4 py-3">
         {cash ? <div className="font-semibold text-white">Cash</div> : <button type="button" onClick={() => onOpen(r.ticker)} className="font-semibold text-white hover:text-indigo-300">{r.ticker}</button>}
         <div><SectorChip sector={r.sector} /></div>
-        <TermToggle r={r} onAddTrade={onAddTrade} onCloseTrade={onCloseTrade} />
+        <TermToggle r={r} onAddTrade={onAddTrade} onCloseTrade={onCloseTrade} onUpdateTrade={onUpdateTrade} onMarkLong={onMarkLong} />
       </td>
       <td className={cell + " text-slate-300"}>
         {editing ? <input type="number" step="any" min="0" value={sh} onChange={(e) => setSh(e.target.value)} aria-label={cash ? "Cash amount" : "Shares"} className="w-24 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-right text-sm text-slate-100 focus:border-indigo-500 focus:outline-none" />
@@ -1600,6 +1614,20 @@ function NewMoneyPlanner({ a, scored, onOpen }) {
 function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen, shortItems = [] }) {
   const { addHolding, updateHolding, resetPortfolio, sync } = pf;
   const shortBy = useMemo(() => Object.fromEntries((shortItems || []).map((x) => [x.ticker, x])), [shortItems]);
+  // Holdings added before auto-detection: if it's on today's short-term list and isn't a long-term pick (under 65),
+  // you almost certainly bought it as a short-term trade. Track it from today and ask for the real buy day.
+  useEffect(() => {
+    if (!shortItems || !shortItems.length) return;
+    const traded = new Set((pf.trades || []).map((t) => t.ticker));
+    pf.holdings.forEach((h) => {
+      if (h.ticker === "CASH" || h.term === "long" || traded.has(h.ticker)) return;
+      const k = bestSetup(shortBy[h.ticker]);
+      const sc = byTicker[h.ticker] ? byTicker[h.ticker].composite : priceBook[h.ticker] && priceBook[h.ticker].sc;
+      if (!k || (sc != null && sc >= L.RECOMMEND)) return;
+      const d = h.added && h.added <= todayISO() ? h.added : todayISO();
+      pf.addTrade({ ticker: h.ticker, setup: k, date: d, price: h.cost, sellBy: addTradingDays(d, (SETUPS[k] || {}).holdDays || 20), guessed: !h.added });
+    });
+  }, [shortItems, pf.holdings, pf.trades]); // eslint-disable-line react-hooks/exhaustive-deps
   // Deleting a holding also ends its short-term trade, so the two never drift apart.
   const deleteHolding = (id) => {
     const h = pf.holdings.find((x) => x.id === id);
@@ -1637,7 +1665,7 @@ function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen, shortItems =
               <th className="relative px-3 py-2.5"><span className="sr-only">Actions</span></th>
             </tr></thead>
             <tbody>
-              {rows.map((r) => <HoldingRow key={r.id} r={r} onOpen={onOpen} onSave={updateHolding} onDelete={deleteHolding} onAddTrade={pf.addTrade} onCloseTrade={pf.closeTrade} shortBy={shortBy} />)}
+              {rows.map((r) => <HoldingRow key={r.id} r={r} onOpen={onOpen} onSave={updateHolding} onDelete={deleteHolding} onAddTrade={(t) => { pf.addTrade(t); const h = pf.holdings.find((x) => x.ticker === t.ticker); if (h && h.term) pf.updateHolding(h.id, { term: null }); }} onCloseTrade={pf.closeTrade} onUpdateTrade={pf.updateTrade} onMarkLong={(id) => pf.updateHolding(id, { term: "long" })} shortBy={shortBy} />)}
               {rows.length === 0 && <tr><td colSpan={10} className="p-8 text-center text-slate-400">No positions yet. Add one above.</td></tr>}
             </tbody>
           </table>
