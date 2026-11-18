@@ -11,6 +11,7 @@ import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, useShort,
 import { DEFAULT_SETTINGS } from "./config.js";
 import { ruleSummary, PROMPT_VERSION } from "./lib/ai.js";
 import { updateAdvice, tierOf } from "./lib/updates.js";
+import { projectPortfolio, ASSUME, PROJ_HORIZONS } from "./lib/projection.js";
 
 const L = LIMITS;
 /** Your portfolio's total value, so buy plans can say "about $X" instead of only "% of portfolio". */
@@ -219,6 +220,157 @@ function CheckupBanner({ rows }) {
       </p>
       <p className="mt-1 text-[11px] text-slate-500">This is how the 10-year test was run. Selling early on drops did worse; the only other sells are a broken downtrend or one stock growing past 20% of your money.</p>
     </div>
+  );
+}
+
+/* ===================== Advanced: portfolio projection ===================== */
+function useWidth(ref, fallback = 640) {
+  const [w, setW] = useState(fallback);
+  useEffect(() => {
+    if (!ref.current || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver((es) => { const cw = es[0].contentRect.width; if (cw > 0) setW(Math.round(cw)); });
+    ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, [ref]);
+  return w;
+}
+const KIND_LABEL = { index: "Index fund", pick: "Long-term pick", short: "Short-term trade", other: "Not a pick", cash: "Cash" };
+const addDaysISO = (iso, n) => { const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+
+function ProjectionChart({ proj, horizon, mode, history }) {
+  const box = useRef(null);
+  const W = useWidth(box), H = 260, padL = 54, padR = 74, padT = 14, padB = 26;
+  const [hover, setHover] = useState(null);
+  const today = todayISO();
+  const days = Math.round(proj.horizons[horizon].years * 365); // calendar days ahead
+  const tradingAhead = Math.round(proj.horizons[horizon].years * 252);
+  const fwd = proj.path.filter((p) => p.day <= tradingAhead).map((p) => ({ date: addDaysISO(today, Math.round(p.day * 365 / 252)), ...p }));
+  const histStart = addDaysISO(today, -Math.max(30, days)); // show as much past as future (when we have it)
+  const past = history.filter((x) => x.d >= histStart && x.d < today);
+  const t0 = Date.parse((past[0] ? past[0].d : today) + "T12:00:00Z"), t1 = Date.parse(fwd[fwd.length - 1].date + "T12:00:00Z");
+  const base = proj.total;
+  const val = (v) => (mode === "pct" ? (v / base - 1) * 100 : v);
+  const all = [...fwd.flatMap((p) => [p.values[0.05], p.values[0.95]]), ...past.map((x) => x.v), base].map(val);
+  let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * 0.08 || 1; lo -= pad; hi += pad;
+  const X = (d) => padL + ((Date.parse(d + "T12:00:00Z") - t0) / Math.max(1, t1 - t0)) * (W - padL - padR);
+  const Y = (v) => padT + (1 - (val(v) - lo) / (hi - lo)) * (H - padT - padB);
+  const area = (a, b) => "M" + fwd.map((p) => X(p.date) + "," + Y(p.values[a])).join("L") + "L" + fwd.slice().reverse().map((p) => X(p.date) + "," + Y(p.values[b])).join("L") + "Z";
+  const line = (pts) => "M" + pts.join("L");
+  const ticks = Array.from({ length: 5 }, (_, i) => lo + ((hi - lo) * i) / 4);
+  const fmtTick = (v) => (mode === "pct" ? (v >= 0 ? "+" : "") + v.toFixed(Math.abs(hi - lo) < 6 ? 1 : 0) + "%" : "$" + (Math.abs(v) >= 10000 ? (v / 1000).toFixed(1) + "k" : Math.round(v).toLocaleString()));
+  const fmtV = (v) => (mode === "pct" ? spct(v / base - 1) : usd(v));
+  const end = fwd[fwd.length - 1];
+  const onMove = (e) => {
+    const r = e.currentTarget.getBoundingClientRect(), x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    const t = t0 + ((x - padL) / (W - padL - padR)) * (t1 - t0);
+    const iso = new Date(t).toISOString().slice(0, 10);
+    if (iso < today) { const h = past.reduce((b, p) => (!b || Math.abs(Date.parse(p.d) - t) < Math.abs(Date.parse(b.d) - t) ? p : b), null); setHover(h ? { kind: "past", d: h.d, v: h.v } : null); }
+    else { const f = fwd.reduce((b, p) => (!b || Math.abs(Date.parse(p.date) - t) < Math.abs(Date.parse(b.date) - t) ? p : b), null); setHover(f ? { kind: "fwd", d: f.date, p: f } : null); }
+  };
+  const hx = hover ? X(hover.d) : null;
+  return (
+    <div ref={box} className="relative w-full select-none">
+      <svg width={W} height={H} role="img" aria-label="Portfolio value: past and projected range" onMouseMove={onMove} onTouchMove={onMove} onMouseLeave={() => setHover(null)} onTouchEnd={() => setHover(null)}>
+        {ticks.map((v) => <g key={v}><line x1={padL} x2={W - padR} y1={padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB)} y2={padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB)} stroke="rgb(51 65 85 / 0.5)" strokeWidth="1" />
+          <text x={padL - 6} y={padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB) + 4} textAnchor="end" fontSize="11" fill="rgb(148 163 184)">{fmtTick(v)}</text></g>)}
+        <path d={area(0.05, 0.95)} fill="rgb(99 102 241 / 0.14)" />
+        <path d={area(0.25, 0.75)} fill="rgb(99 102 241 / 0.30)" />
+        <line x1={X(today)} x2={X(today)} y1={padT} y2={H - padB} stroke="rgb(148 163 184 / 0.6)" strokeDasharray="3 3" />
+        <text x={X(today)} y={H - 8} textAnchor="middle" fontSize="11" fill="rgb(148 163 184)">Today</text>
+        {past.length > 1 && <path d={line([...past.map((x) => X(x.d) + "," + Y(x.v)), X(today) + "," + Y(base)])} fill="none" stroke="rgb(226 232 240)" strokeWidth="2" strokeLinejoin="round" />}
+        <path d={line(fwd.map((p) => X(p.date) + "," + Y(p.values[0.5])))} fill="none" stroke="rgb(165 180 252)" strokeWidth="2" strokeDasharray="5 4" />
+        <text x={W - padR + 6} y={Y(end.values[0.5]) + 4} fontSize="11" fill="rgb(226 232 240)" fontWeight="600">Middle</text>
+        <text x={W - padR + 6} y={Y(end.values[0.75]) - 2} fontSize="10" fill="rgb(165 180 252)">Likely</text>
+        <text x={W - padR + 6} y={Y(end.values[0.95]) + 10} fontSize="10" fill="rgb(148 163 184)">Wide</text>
+        <text x={X(fwd[fwd.length - 1].date)} y={H - 8} textAnchor="end" fontSize="11" fill="rgb(148 163 184)">{fmtDate(end.date)}</text>
+        {past.length > 0 && <text x={padL} y={H - 8} fontSize="11" fill="rgb(148 163 184)">{fmtDate(past[0].d)}</text>}
+        {hover && <line x1={hx} x2={hx} y1={padT} y2={H - padB} stroke="rgb(226 232 240 / 0.5)" />}
+        {hover && hover.kind === "fwd" && <circle cx={hx} cy={Y(hover.p.values[0.5])} r="4" fill="rgb(165 180 252)" stroke="rgb(30 41 59)" strokeWidth="2" />}
+        {hover && hover.kind === "past" && <circle cx={hx} cy={Y(hover.v)} r="4" fill="rgb(226 232 240)" stroke="rgb(30 41 59)" strokeWidth="2" />}
+      </svg>
+      {hover && (
+        <div className="pointer-events-none absolute top-1 rounded-lg border border-slate-600 bg-slate-900/95 px-2.5 py-1.5 text-xs shadow-lg" style={{ left: Math.min(Math.max(hx - 80, 0), W - 170) }}>
+          <div className="font-semibold text-white">{fmtDate(hover.d)}</div>
+          {hover.kind === "past" ? <div className="text-slate-300">Actual: {fmtV(hover.v)}</div> : <>
+            <div className="text-slate-200">Middle: {fmtV(hover.p.values[0.5])}</div>
+            <div className="text-indigo-200">Likely: {fmtV(hover.p.values[0.25])} – {fmtV(hover.p.values[0.75])}</div>
+            <div className="text-slate-400">Wide: {fmtV(hover.p.values[0.05])} – {fmtV(hover.p.values[0.95])}</div>
+          </>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProjectionCard({ a, priceBook, history }) {
+  const [horizon, setHorizon] = useState("3M");
+  const [mode, setMode] = useState("usd");
+  const [showWhy, setShowWhy] = useState(false);
+  const proj = useMemo(() => projectPortfolio(a.rows, priceBook), [a.rows, priceBook]);
+  if (!proj) return null;
+  const h = proj.horizons[horizon];
+  const chg = (v) => v - proj.total;
+  const both = (v) => usd(v) + " (" + spct(v / proj.total - 1) + ")";
+  const items = proj.items.slice().sort((x, y) => y.riskShare - x.riskShare);
+  const btn = (on) => "rounded-md px-2.5 py-1 text-xs font-medium " + (on ? "bg-indigo-500 text-white" : "text-slate-300 hover:bg-slate-700");
+  return (
+    <Card className="p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-white"><Icon name="LineChart" size={15} className="text-indigo-300" />Advanced: where your portfolio could be</h3>
+        <div className="flex gap-2">
+          <div className="flex rounded-lg bg-slate-900/70 p-0.5">{PROJ_HORIZONS.map((x) => <button key={x.key} type="button" onClick={() => setHorizon(x.key)} className={btn(horizon === x.key)}>{x.key}</button>)}</div>
+          <div className="flex rounded-lg bg-slate-900/70 p-0.5">{[["usd", "$"], ["pct", "%"]].map(([k, l]) => <button key={k} type="button" onClick={() => setMode(k)} className={btn(mode === k)}>{l}</button>)}</div>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div><div className="text-[11px] text-slate-400">Middle outcome in {h.label}</div><div className="text-lg font-bold tabular-nums text-white">{mode === "pct" ? spct(h.values[0.5] / proj.total - 1) : usd(h.values[0.5])}</div><div className={"text-xs tabular-nums " + tone(chg(h.values[0.5]))}>{mode === "pct" ? usd(chg(h.values[0.5])) : spct(h.values[0.5] / proj.total - 1)}</div></div>
+        <div><div className="text-[11px] text-slate-400">Likely range (1 in 2)</div><div className="text-sm font-semibold tabular-nums text-indigo-200">{mode === "pct" ? spct(h.values[0.25] / proj.total - 1) + " to " + spct(h.values[0.75] / proj.total - 1) : usd(h.values[0.25]) + " – " + usd(h.values[0.75])}</div></div>
+        <div><div className="text-[11px] text-slate-400">Bad case (1 in 20)</div><div className="text-sm font-semibold tabular-nums text-rose-300">{mode === "pct" ? spct(h.values[0.05] / proj.total - 1) : usd(h.values[0.05])}</div><div className="text-[11px] text-slate-500">good case {mode === "pct" ? spct(h.values[0.95] / proj.total - 1) : usd(h.values[0.95])}</div></div>
+        <div><div className="text-[11px] text-slate-400">Chance you're up</div><div className="text-lg font-bold tabular-nums text-white">{Math.round(h.probUp * 100)}%</div><div className="text-[11px] text-slate-500">down 10%+: {Math.round(h.probDown10 * 100)}%</div></div>
+      </div>
+
+      <div className="mt-3"><ProjectionChart proj={proj} horizon={horizon} mode={mode} history={history} /></div>
+      <p className="mt-1 text-[11px] text-slate-500">
+        White line: your actual value{history.length < 3 ? " (it starts building from today, one point a day)" : ""}. Dashed: the middle outcome. Dark band: the likely range (half of outcomes). Light band: 9 in 10 outcomes. Recalculated every night with the latest prices.
+      </p>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-lg bg-slate-900/50 p-3"><div className="text-[11px] text-slate-400">Expected return per year</div><div className="font-semibold tabular-nums text-white">{spct(proj.mu)}</div><div className="text-[11px] text-slate-500">SPY's long-run is about +9%</div></div>
+        <div className="rounded-lg bg-slate-900/50 p-3"><div className="text-[11px] text-slate-400">Typical yearly swing</div><div className="font-semibold tabular-nums text-white">±{Math.round(proj.sigma * 100)}%</div><div className="text-[11px] text-slate-500">SPY: about ±{Math.round(proj.marketVol * 100)}% right now</div></div>
+        <div className="rounded-lg bg-slate-900/50 p-3"><div className="text-[11px] text-slate-400">Moves with the market</div><div className="font-semibold tabular-nums text-white">{proj.beta.toFixed(2)}x</div><div className="text-[11px] text-slate-500">{Math.round(proj.diversified * 100)}% of your risk is the market itself</div></div>
+      </div>
+
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[520px] text-xs">
+          <thead><tr className="text-left text-slate-400"><th className="px-2 py-1.5 font-medium">Holding</th><th className="px-2 py-1.5 font-medium">Type</th><th className="px-2 py-1.5 text-right font-medium">Value</th><th className="px-2 py-1.5 text-right font-medium">Expected / yr</th><th className="px-2 py-1.5 text-right font-medium">Yearly swing</th><th className="px-2 py-1.5 pl-3 font-medium">Share of your risk</th></tr></thead>
+          <tbody>
+            {items.map((x) => (
+              <tr key={x.ticker} className="border-t border-slate-700/50">
+                <td className="px-2 py-1.5 font-semibold text-white">{x.label}</td>
+                <td className="px-2 py-1.5 text-slate-300">{KIND_LABEL[x.kind]}</td>
+                <td className="px-2 py-1.5 text-right tabular-nums text-slate-300">{usd(x.value)}</td>
+                <td className="px-2 py-1.5 text-right tabular-nums text-slate-200">{spct(x.mu)}</td>
+                <td className="px-2 py-1.5 text-right tabular-nums text-slate-300">{x.vol ? "±" + Math.round(x.vol * 100) + "%" : "—"}</td>
+                <td className="px-2 py-1.5 pl-3"><div className="flex items-center gap-2"><div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-700"><div className="h-full rounded-full bg-indigo-400" style={{ width: Math.max(0, Math.min(100, x.riskShare * 100)) + "%" }} /></div><span className="tabular-nums text-slate-300">{Math.round(x.riskShare * 100)}%</span></div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="mt-1 text-[11px] text-slate-500">"Share of your risk" adds up to 100%: a small, wild stock can carry more risk than a big, calm fund.</p>
+      </div>
+
+      <button type="button" onClick={() => setShowWhy(!showWhy)} className="mt-3 text-xs text-indigo-300 hover:text-indigo-200">{showWhy ? "Hide" : "How this is calculated"} {showWhy ? "▴" : "▾"}</button>
+      {showWhy && (
+        <ul className="mt-2 space-y-1 text-xs text-slate-300">
+          <li>• <b>Risk:</b> each holding's last ~3 months of daily moves (blended with a long-run level), how much it moves with the market, and how your holdings offset each other. Stocks moving a lot right now, often because of news, get wider ranges.</li>
+          <li>• <b>Return:</b> cash rate ({Math.round(ASSUME.cashRate * 100)}%) + the market's long-run premium ({Math.round(ASSUME.marketPremium * 100)}%) × how much it moves with the market.</li>
+          <li>• <b>Extra for what the backtests support,</b> counting only {Math.round(ASSUME.shrink * 100)}% of the tested edge (backtests always look better than real life): long-term picks 65+ get +{(ASSUME.shrink * ASSUME.edges.longPick * 100).toFixed(1)}%/yr, momentum trades +{(ASSUME.shrink * ASSUME.edges.momentum * 100).toFixed(1)}%, gap-ups +{(ASSUME.shrink * ASSUME.edges.gap * 100).toFixed(1)}%. Index funds, cash and non-picks get none.</li>
+          <li>• <b>The ranges</b> follow the standard way prices grow (lognormal): "likely" = the middle half of outcomes, "wide" = 9 in 10. Real markets have rare crashes beyond the wide range, about 1 year in 20.</li>
+          <li>• It assumes you keep today's holdings, add no new money, and that short-term trades roll into new ones when they end. It's a range of likely outcomes, not a promise.</li>
+        </ul>
+      )}
+    </Card>
   );
 }
 
@@ -1647,6 +1799,7 @@ function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen, shortItems =
       <HoldingForm byTicker={byTicker} scored={scored} priceBook={priceBook} onAdd={addHolding} shortItems={shortItems} trades={pf.trades} onAddTrade={pf.addTrade} />
       <SyncCard sync={sync} />
       <NewMoneyPlanner a={a} scored={scored} onOpen={onOpen} />
+      <ProjectionCard a={a} priceBook={priceBook} history={pf.history || []} />
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
         <AllocationChart sectors={a.sectors} total={a.total} />
         <AdviceFeed a={a} onOpen={onOpen} />
@@ -1871,6 +2024,10 @@ export default function App() {
   const scanLive = screener.source !== "mock" ? scanRes.data : null;
   const priceBook = useMemo(() => Object.fromEntries(((scanLive && scanLive.items) || []).map((r) => [r.ticker, r])), [scanLive]);
   const analysis = useMemo(() => analyzePortfolio(pf.holdings, byTicker, SECTORS, SECTOR_COLORS, priceBook, { analyst: feed.data.items, trades: pf.trades }), [pf.holdings, byTicker, priceBook, feed.data, pf.trades]);
+  // One point a day for the projection chart's "actual" line (only once real prices are loaded).
+  useEffect(() => {
+    if (scanLive && scanLive.items && scanLive.items.length && analysis.total > 0 && pf.recordValue) pf.recordValue(todayISO(), analysis.total);
+  }, [scanLive, analysis.total]); // eslint-disable-line react-hooks/exhaustive-deps
   const holdingRows = useMemo(() => Object.fromEntries(analysis.rows.filter((r) => r.stock).map((r) => [r.ticker, r])), [analysis]);
 
   useEffect(() => {

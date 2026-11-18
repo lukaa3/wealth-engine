@@ -219,6 +219,12 @@ function loadHoldings() {
 const UPDATED_KEY = "wealth-engine-portfolio-updated";
 const TRADES_KEY = "wealth-engine-trades-v1";
 const SYNC_KEY = "wealth-engine-sync-code";
+const HISTORY_KEY = "wealth-engine-value-history-v1";
+// Daily portfolio value, [{ d: "YYYY-MM-DD", v: 1234.56 }]. Kept apart from holdings (it never bumps updatedAt),
+// and merged by date across devices, so recording it can't overwrite edits made on another device.
+const cleanHistory = (list) => (Array.isArray(list) ? list : []).filter((x) => x && /^\d{4}-\d{2}-\d{2}$/.test(x.d) && x.v > 0).map((x) => ({ d: x.d, v: Math.round(x.v * 100) / 100 }));
+const mergeHistory = (a, b) => { const m = new Map(); [...cleanHistory(a), ...cleanHistory(b)].forEach((x) => m.set(x.d, x)); return [...m.values()].sort((x, y) => x.d.localeCompare(y.d)).slice(-800); };
+const loadHistory = () => { try { return cleanHistory(JSON.parse(lsGet(HISTORY_KEY) || "[]")); } catch (e) { return []; } };
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const lsSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
 const loadTrades = () => { try { const t = JSON.parse(lsGet(TRADES_KEY) || "[]"); return Array.isArray(t) ? t : []; } catch (e) { return []; } };
@@ -238,6 +244,17 @@ export function usePortfolio() {
   const [sync, setSync] = useState({ status: lsGet(SYNC_KEY) ? "syncing" : "off", at: null, error: null, note: null });
   const stateRef = useRef(state);
   stateRef.current = state;
+  const [history, setHistory] = useState(loadHistory);
+  const historyRef = useRef(history);
+  historyRef.current = history;
+  useEffect(() => { lsSet(HISTORY_KEY, JSON.stringify(history)); }, [history]);
+  /** Record today's portfolio value (one point per day; later in the day overwrites). */
+  const recordValue = useCallback((d, v) => setHistory((h) => {
+    if (!(v > 0)) return h;
+    const last = h[h.length - 1];
+    if (last && last.d === d && Math.abs(last.v - v) < 0.01) return h;
+    return mergeHistory(h, [{ d, v }]);
+  }), []);
 
   // Persist locally on every change.
   useEffect(() => {
@@ -266,6 +283,7 @@ export function usePortfolio() {
   // Take the cloud copy when it's newer than this device's last edit.
   const applyRemote = useCallback((remote) => {
     if (!remote || !remote.data) return false;
+    if (remote.data.history) setHistory((h) => mergeHistory(h, remote.data.history));
     const mine = stateRef.current.updatedAt ? Date.parse(stateRef.current.updatedAt) : 0;
     if (Date.parse(remote.updated_at) > mine) {
       setState({ holdings: cleanHoldings(remote.data.holdings), trades: cleanTrades(remote.data.trades), updatedAt: remote.updated_at, local: false });
@@ -281,7 +299,7 @@ export function usePortfolio() {
       if (remote) applyRemote(remote);
       else { // nothing saved under this code yet → upload this device's portfolio
         const s = stateRef.current;
-        await syncClient.save(c, { holdings: s.holdings, trades: s.trades || [] }, s.updatedAt || new Date().toISOString());
+        await syncClient.save(c, { holdings: s.holdings, trades: s.trades || [], history: historyRef.current }, s.updatedAt || new Date().toISOString());
       }
       setSync((x) => ({ ...x, status: "synced", at: new Date(), error: null }));
     } catch (e) { setSync((x) => ({ ...x, status: "error", error: e.message })); }
@@ -293,7 +311,7 @@ export function usePortfolio() {
     setSync((x) => ({ ...x, status: "syncing" }));
     const t = setTimeout(async () => {
       try {
-        const stored = await syncClient.save(code, { holdings: state.holdings, trades: state.trades || [] }, state.updatedAt);
+        const stored = await syncClient.save(code, { holdings: state.holdings, trades: state.trades || [], history: historyRef.current }, state.updatedAt);
         if (stored) applyRemote(stored); // another device edited later → take theirs
         setSync((x) => ({ ...x, status: "synced", at: new Date(), error: null }));
       } catch (e) { setSync((x) => ({ ...x, status: "error", error: e.message })); }
@@ -338,13 +356,14 @@ export function usePortfolio() {
     if (!m) return;
     const c = normalizeSyncCode(m[1]);
     if (c && c !== lsGet(SYNC_KEY)) joinSync(c);
-    try { history.replaceState(null, "", window.location.pathname + window.location.search + "#portfolio"); } catch (e) {}
+    try { window.history.replaceState(null, "", window.location.pathname + window.location.search + "#portfolio"); } catch (e) {}
   }, [joinSync]);
 
   const syncLink = code ? window.location.origin + window.location.pathname + "#portfolio&sync=" + code : null;
   return {
     holdings: state.holdings, addHolding, updateHolding, deleteHolding, resetPortfolio,
     trades: state.trades || [], addTrade, closeTrade, updateTrade,
+    history, recordValue,
     sync: { available: !!syncClient, code, link: syncLink, ...sync, start: startSync, join: joinSync, stop: stopSync, refresh: () => pull(code) },
   };
 }
