@@ -55,6 +55,7 @@ async function history(t) {
 let listed = [];
 try { listed = await loadListedStocks({ minCap: MINCAP, minPrice: MINCAP >= 2e9 ? 5 : 3 }); } catch (e) { console.error("No stock list:", e.message); process.exit(1); }
 listed.push({ ticker: "SPY", marketCap: 1e13 });
+if (env.BT_SET === "mix") listed.push({ ticker: "QQQ", marketCap: 1e13 });
 console.log(`Short-term backtest: ${listed.length} stocks ($${MINCAP / 1e6}M+, $3+), ${YEARS} years`);
 const S = {};
 let failed = 0;
@@ -113,7 +114,7 @@ for (const x of Object.values(S)) {
 }
 const ret = (x, i, n) => (i - n >= 0 ? x.c[i] / x.c[i - n] - 1 : NaN);
 // 6-month momentum rank per day (among $2B+ and small separately is overkill; use all liquid stocks), computed weekly to save time.
-const tick = Object.keys(S).filter((t) => t !== "SPY");
+const tick = Object.keys(S).filter((t) => t !== "SPY" && t !== "QQQ");
 const rank6 = {}; // rank6[t] = Float32Array(D)
 tick.forEach((t) => (rank6[t] = new Float32Array(D).fill(NaN)));
 for (let k = START; k < D; k += 5) {
@@ -216,8 +217,8 @@ const earlyExit = (n, trig) => (x, e) => {
 };
 const MOM = (x, i) => (x.c[i] > x.s50[i] ? ret(x, i, 21) : null);
 const GAPUP = (x, i) => x.o[i] >= x.c[i - 1] * 1.04 && x.v[i] >= 3 * x.av50[i] && x.c[i] >= x.o[i] && up200(x, i);
-const chase = env.BT_SET === "chase", rankSet = env.BT_SET === "rank";
-const SETUPS = chase || rankSet ? [] : manage ? [
+const chase = env.BT_SET === "chase", rankSet = env.BT_SET === "rank", mixSet = env.BT_SET === "mix";
+const SETUPS = chase || rankSet || mixSet ? [] : manage ? [
   runWeekly("Momentum 4 wks: hold to the sell date", MOM, 20),
   runWeekly("Momentum 4 wks: sell early on a -5% day on 2x volume (bad news)", MOM, 20, 20, earlyExit(20, badDay)),
   runWeekly("Momentum 4 wks: sell early on any -5% day", MOM, 20, 20, earlyExit(20, drop5)),
@@ -524,6 +525,94 @@ if (rankSet) {
     console.log("  " + g);
     for (const [l, v] of Object.entries(rows)) console.log("    " + l.padEnd(24) + (v.n ? `avg${cp(v.avg)}  vs SPY${cp(v.vsSpy)}  win ${Math.round(v.win * 100)}%  (${v.n})` : "none"));
   }
+}
+
+/* ----- Portfolio mixes: index core vs long-term picks vs short-term trades, rebalanced monthly ----- */
+if (mixSet) {
+  const qqq = S.QQQ;
+  // 1) Index core: 50% SPY / 50% QQQ, value per calendar day.
+  const core = new Float64Array(D).fill(NaN);
+  { const s0 = spy.c[START], qi0 = qqq ? qqq.at[START] : -1;
+    for (let k = START; k < D; k++) { const qi = qqq ? qqq.at[k] : -1; core[k] = qi >= 0 && qi0 >= 0 ? 0.5 * spy.c[k] / s0 + 0.5 * qqq.c[qi] / qqq.c[qi0] : spy.c[k] / s0; } }
+  // 2) Long-term picks: top 20 by the site's score at each quarter end, equal weight, marked daily.
+  const picks = new Float64Array(D).fill(NaN);
+  { let eq = 1;
+    const topAt = (k) => [...scoreRank.get(k).entries()].sort((a, b) => b[1] - a[1]).slice(0, 20).map(([t]) => t);
+    for (let k = START; k <= qEnds[0]; k++) picks[k] = 1;
+    for (let q = 0; q < qEnds.length; q++) {
+      const k = qEnds[q], k2 = q + 1 < qEnds.length ? qEnds[q + 1] : D - 1;
+      const hold = topAt(k).map((t) => ({ x: S[t], i0: S[t].at[k], last: 1 })).filter((h) => h.i0 >= 0);
+      for (let kk = k + 1; kk <= k2; kk++) {
+        hold.forEach((h) => { const i = h.x.at[kk]; if (i >= 0) h.last = h.x.c[i] / h.x.c[h.i0]; });
+        picks[kk] = eq * (mean(hold.map((h) => h.last)) || 1);
+      }
+      eq = picks[k2] * (1 - 0.002); // trading costs at each re-check
+    }
+  }
+  // 3) Short-term: only the setups the site shows (momentum Good+ = up 30%+ in a month; gap-ups Strong+ = 5x+ volume),
+  //    8 equal slots, idle money in cash (0%), marked daily.
+  const MOMG = (x, i) => (x.c[i] > x.s50[i] && ret(x, i, 21) >= 0.3 ? ret(x, i, 21) : null);
+  const GAPS = (x, i) => GAPUP(x, i) && x.v[i] >= 5 * x.av50[i];
+  const trades = [...runWeekly("mom good+", MOMG, 20).trades.filter((x) => !x.small), ...runEvent("gap strong+", GAPS, (x, e) => exitTime(x, e, 40), { cooldown: 5 }).trades.filter((x) => !x.small)];
+  const short = new Float64Array(D).fill(NaN);
+  { const byDay = {}; trades.forEach((x) => (byDay[x.k] = byDay[x.k] || []).push(x));
+    let cash = 1; const open = [], SLOTS = 8;
+    for (let k = START; k < D; k++) {
+      for (let q = open.length - 1; q >= 0; q--) if (open[q].ek <= k) { cash += open[q].size * (1 + open[q].r); open.splice(q, 1); }
+      const eqNow = cash + open.reduce((a, o) => { const i = S[o.t].at[k]; return a + o.size * (i >= 0 ? S[o.t].c[i] / o.px0 : o.lastRel || 1); }, 0);
+      const today = (byDay[k] || []).slice().sort((a, b) => (rank6[b.t][b.k - 1] || 0) - (rank6[a.t][a.k - 1] || 0));
+      for (const x of today) {
+        if (open.length >= SLOTS) break; if (open.find((o) => o.t === x.t)) continue;
+        const e = S[x.t].at[x.k]; if (e < 0) continue;
+        const size = Math.min(cash, eqNow / SLOTS); if (size <= 0) break;
+        cash -= size; open.push({ ...x, size, px0: S[x.t].o[e] });
+      }
+      short[k] = cash + open.reduce((a, o) => { const i = S[o.t].at[k]; const rel = i >= 0 ? S[o.t].c[i] / o.px0 : o.lastRel || 1; o.lastRel = rel; return a + o.size * rel; }, 0);
+    }
+  }
+  // 4) Mixes, rebalanced to target at each month end.
+  const sleeves = { core, picks, short };
+  const MIXES = {
+    "100% index (SPY/QQQ)": { core: 1 },
+    "50% index / 28% picks / 22% short (plan now)": { core: 0.5, picks: 0.28, short: 0.22 },
+    "30% index / 45% picks / 25% short": { core: 0.3, picks: 0.45, short: 0.25 },
+    "20% index / 55% picks / 25% short": { core: 0.2, picks: 0.55, short: 0.25 },
+    "0% index / 70% picks / 30% short": { core: 0, picks: 0.7, short: 0.3 },
+    "100% long-term picks": { picks: 1 },
+    "100% short-term trades": { short: 1 },
+  };
+  const mStarts = new Set(monthEnds);
+  const curve = (w) => {
+    const v = new Float64Array(D).fill(NaN); let units = null;
+    for (let k = START; k < D; k++) {
+      const val = units ? Object.entries(units).reduce((a, [s2, u]) => a + u * sleeves[s2][k], 0) : 1;
+      v[k] = val;
+      if (!units || mStarts.has(k)) units = Object.fromEntries(Object.entries(w).filter(([, x]) => x > 0).map(([s2, x]) => [s2, (val * x) / sleeves[s2][k]]));
+    }
+    return v;
+  };
+  const stats = (v, a, b) => {
+    const yrs = (b - a) / 252, cagr = Math.pow(v[b] / v[a], 1 / yrs) - 1;
+    let peak = v[a], dd = 0; for (let k = a; k <= b; k++) { peak = Math.max(peak, v[k]); dd = Math.min(dd, v[k] / peak - 1); }
+    const years = {}; for (let k = a; k <= b; k++) { const y = days[k].slice(0, 4); years[y] = years[y] || [v[k], v[k]]; years[y][1] = v[k]; }
+    const ys = Object.keys(years).sort(); const yr = ys.map((y, j) => [y, years[y][1] / (j ? years[ys[j - 1]][1] : years[y][0]) - 1]);
+    let r12 = 0, r12n = 0, r12neg = 0; for (let k = a + 252; k <= b; k += 5) { const r = v[k] / v[k - 252] - 1; r12n++; if (r >= 0.2) r12++; if (r < 0) r12neg++; }
+    const worst = yr.reduce((m, x) => (x[1] < m[1] ? x : m), ["", Infinity]);
+    return { cagr: r4(cagr), maxDD: r4(dd), worstYear: [worst[0], r4(worst[1])], share12mOver20: r4(r12 / r12n), share12mDown: r4(r12neg / r12n), growth1k: Math.round(1000 * v[b] / v[a]) };
+  };
+  const mid = START + Math.floor((D - 1 - START) / 2);
+  const periods = { [`full (${days[START]} → ${days[D - 1]})`]: [START, D - 1], [`first half (${days[START]} → ${days[mid]})`]: [START, mid], [`second half (${days[mid]} → ${days[D - 1]})`]: [mid, D - 1] };
+  out.mix = {};
+  const cp = (x) => (x == null ? "   n/a" : ((x * 100).toFixed(1) + "%").padStart(7));
+  for (const [pn, [a, b]] of Object.entries(periods)) {
+    out.mix[pn] = {};
+    console.log(`\n=== Mixes: ${pn} ===  yearly | worst drop | worst year | 12-mo windows ≥20% | 12-mo down | $1k →`);
+    for (const [name, w] of Object.entries(MIXES)) {
+      const st = stats(curve(w), a, b); out.mix[pn][name] = st;
+      console.log("  " + name.padEnd(46) + cp(st.cagr) + cp(st.maxDD) + "  " + st.worstYear[0] + cp(st.worstYear[1]) + cp(st.share12mOver20) + cp(st.share12mDown) + ("  $" + st.growth1k.toLocaleString()).padStart(11));
+    }
+  }
+  console.log(`\nShort-term trades used: ${trades.length} (momentum up 30%+ in a month, gap-ups on 5x+ volume), 8 slots`);
 }
 
 out.longTermSplit = { hold: longTerm(null), sellThirdAt15: longTerm(0.15), sellThirdAt25: longTerm(0.25), sellThirdAt40: longTerm(0.4) };
