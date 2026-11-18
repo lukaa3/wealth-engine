@@ -5,7 +5,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import * as LucideIcons from "lucide-react";
 import { SECTORS, SECTOR_COLORS, SOURCE_URLS, insiderSourceUrl } from "./mockData.js";
-import { LIMITS, FACTORS, HORIZON_INFO, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio, suggestedSize, planNewMoney, nextCheckup, inCheckupWindow } from "./scoring.js";
+import { LIMITS, FACTORS, HORIZON_INFO, UNMANAGED_SECTORS, scoreUniverse, analyzePortfolio, suggestedSize, nextCheckup, inCheckupWindow } from "./scoring.js";
 import { SETUPS, RULED_OUT, tradePlanFor, shortStrength, addTradingDays } from "./lib/shortterm.js";
 import { useScreenerData, useAnalystFeed, useInsiderActivity, useScan, useShort, usePortfolio, useSettings, clearLiveCache } from "./api.js";
 import { DEFAULT_SETTINGS } from "./config.js";
@@ -1726,42 +1726,6 @@ function SyncCard({ sync }) {
   );
 }
 
-/** "I have $X to invest": what to buy now, sized to the portfolio. */
-function NewMoneyPlanner({ a, scored, onOpen }) {
-  const [raw, setRaw] = useState("");
-  const cash = Number(String(raw).replace(/[^0-9.]/g, "")) || 0;
-  const plan = useMemo(() => planNewMoney(cash, a, scored), [cash, a, scored]);
-  return (
-    <Card className="p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-white"><Icon name="Wallet" size={15} className="text-emerald-300" />Have money to invest?</h3>
-        <label className="flex items-center gap-2 text-sm text-slate-300">
-          <span>Amount</span>
-          <span className="relative"><span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-            <input inputMode="decimal" value={raw} onChange={(e) => setRaw(e.target.value)} placeholder="200" aria-label="Amount to invest"
-              className="w-28 rounded-lg border border-slate-600 bg-slate-900 py-1.5 pl-6 pr-2 text-sm text-white placeholder:text-slate-500 focus:border-indigo-400 focus:outline-none" /></span>
-        </label>
-      </div>
-      {cash <= 0 ? (
-        <p className="mt-2 text-sm text-slate-400">Type an amount and I'll split it: about half tops up your index funds (until they're ~50% of your money), the rest buys the best picks, sized by risk.</p>
-      ) : (
-        <div className="mt-3 space-y-2">
-          {plan.items.map((x) => (
-            <div key={x.ticker + x.kind} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-lg bg-slate-900/50 px-3 py-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-sm font-semibold tabular-nums text-emerald-300">{usd(x.amount)}</span>
-                <button type="button" onClick={() => x.stock && onOpen(x.ticker)} className="text-sm font-semibold text-white hover:text-indigo-200">{x.ticker}</button>
-                <span className="text-xs text-slate-400">{x.kind === "core" ? "index-fund core" : x.kind === "add" ? "add to your position" : "new position"}</span>
-              </div>
-              <div className="text-xs text-slate-400">{x.kind === "core" ? x.why : "Target " + usd(x.target) + " (" + Math.round(x.pct * 100) + "%) · score " + x.stock.composite + " · " + x.stock.risk.toLowerCase() + " risk" + (x.amount < x.target - 1 ? " · rest from future money" : "")}</div>
-            </div>
-          ))}
-          <p className="text-xs text-slate-500">Buy each one all at once (tested better than waiting for dips). Fractional shares are fine.</p>
-        </div>
-      )}
-    </Card>
-  );
-}
 
 function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen, shortItems = [] }) {
   const { addHolding, updateHolding, resetPortfolio, sync } = pf;
@@ -1798,7 +1762,6 @@ function PortfolioTab({ scored, byTicker, priceBook, pf, a, onOpen, shortItems =
       </div>
       <HoldingForm byTicker={byTicker} scored={scored} priceBook={priceBook} onAdd={addHolding} shortItems={shortItems} trades={pf.trades} onAddTrade={pf.addTrade} />
       <SyncCard sync={sync} />
-      <NewMoneyPlanner a={a} scored={scored} onOpen={onOpen} />
       <ProjectionCard a={a} priceBook={priceBook} history={pf.history || []} />
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
         <AllocationChart sectors={a.sectors} total={a.total} />
